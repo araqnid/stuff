@@ -42,12 +42,13 @@ public class RequestActivityFilter implements Filter {
 	private void doHttpFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
 		RequestActivity requestActivity = stateProvider.get();
-		String ruid = request.getHeader("ruid");
+		String ruid = request.getHeader("X-RUID");
 		if (ruid != null) {
 			requestActivity.setRuid(ruid);
 		}
 		requestActivity.beginRequest("REQ", request.getServletPath());
 		try {
+			response.setHeader("X-RUID", requestActivity.getRuid());
 			chain.doFilter(request, response);
 		} finally {
 			requestActivity.finishRequest("REQ");
