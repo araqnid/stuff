@@ -9,6 +9,7 @@ import org.araqnid.stuff.BeanstalkProcessor.DeliveryTarget;
 import org.araqnid.stuff.RequestActivity;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
 import com.google.inject.Binder;
 import com.google.inject.Key;
@@ -71,6 +72,7 @@ public abstract class BeanstalkModule extends AbstractModule {
 	public static class TubeBinding {
 		private final String tubeName;
 		private Key<? extends DeliveryTarget> targetKey;
+		private Provider<? extends DeliveryTarget> targetProvider;
 		private int maxThreads = 1;
 
 		private TubeBinding(String tubeName) {
@@ -90,15 +92,37 @@ public abstract class BeanstalkModule extends AbstractModule {
 			this.targetKey = targetKey;
 		}
 
+		public void with(Provider<? extends DeliveryTarget> targetProvider) {
+			this.targetProvider = targetProvider;
+		}
+
 		private void bind(Binder binder, Multibinder<? super BeanstalkProcessor> multibinder) {
+			multibinder.addBinding().toProvider(makeProvider(binder));
+		}
+
+		private Provider<BeanstalkProcessor> makeProvider(Binder binder) {
 			Provider<Client> connectionProvider = binder.getProvider(Client.class);
 			Provider<RequestActivity> requestStateProvider = binder.getProvider(RequestActivity.class);
-			Provider<? extends DeliveryTarget> targetProvider = binder.getProvider(targetKey);
-			Set<Dependency<?>> dependencies = ImmutableSet.<Dependency<?>> of(Dependency.get(Key.get(Client.class)),
-					Dependency.get(Key.get(RequestActivity.class)), Dependency.get(targetKey));
-			Provider<BeanstalkProcessor> tubeProcessorProvider = new TubeProcessorProvider(dependencies,
-					connectionProvider, tubeName, maxThreads, requestStateProvider, targetProvider);
-			multibinder.addBinding().toProvider(tubeProcessorProvider);
+			Provider<BeanstalkProcessor> tubeProcessorProvider;
+			if (targetKey != null) {
+				Set<Dependency<?>> dependencies = ImmutableSet.<Dependency<?>> of(Dependency.get(Key.get(Client.class)),
+						Dependency.get(Key.get(RequestActivity.class)), Dependency.get(targetKey));
+				tubeProcessorProvider = new TubeProcessorProvider(dependencies, connectionProvider, tubeName, maxThreads, requestStateProvider,
+						binder.getProvider(targetKey));
+			}
+			else if (targetProvider != null) {
+				Set<Dependency<?>> dependencies = Sets.<Dependency<?>> newHashSet(Dependency.get(Key.get(Client.class)),
+						Dependency.get(Key.get(RequestActivity.class)));
+				if (targetProvider instanceof ProviderWithDependencies) {
+					dependencies.addAll(((ProviderWithDependencies<? extends DeliveryTarget>) targetProvider).getDependencies());
+				}
+				tubeProcessorProvider = new TubeProcessorProvider(ImmutableSet.copyOf(dependencies), connectionProvider, tubeName, maxThreads,
+						requestStateProvider, targetProvider);
+			}
+			else {
+				throw new IllegalStateException();
+			}
+			return tubeProcessorProvider;
 		}
 	}
 
