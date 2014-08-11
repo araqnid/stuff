@@ -31,6 +31,7 @@ import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.util.resource.Resource;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
 import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
 
@@ -158,12 +159,19 @@ public class AppConfig extends AbstractModule {
 		@Provides
 		@Singleton
 		@Named("vanilla")
-		public Handler vanillaContext(GuiceFilter guiceFilter) {
+		public Handler vanillaContext(GuiceFilter guiceFilter, @Named("webapp-root") Resource baseResource) {
 			ServletContextHandler context = new ServletContextHandler();
 			context.setContextPath("/");
 			context.addFilter(new FilterHolder(guiceFilter), "/*", EnumSet.of(DispatcherType.REQUEST));
 			context.addServlet(DefaultServlet.class, "/");
+			context.setBaseResource(baseResource);
 			return context;
+		}
+
+		@Provides
+		@Named("webapp-root")
+		public Resource webappRoot() {
+			return new EmbeddedResource(getClass().getClassLoader(), "web");
 		}
 
 		@Provides
