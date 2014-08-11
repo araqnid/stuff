@@ -23,7 +23,13 @@ import org.araqnid.stuff.RequestActivityFilter;
 import org.araqnid.stuff.RootServlet;
 import org.araqnid.stuff.ScheduledJobs;
 import org.araqnid.stuff.ScheduledJobs.CacheRefresher;
+import org.araqnid.stuff.SomeQueueProcessor;
 import org.araqnid.stuff.SometubeHandler;
+import org.araqnid.stuff.workqueue.SqlWorkQueue;
+import org.araqnid.stuff.workqueue.WorkDispatcher;
+import org.araqnid.stuff.workqueue.WorkProcessor;
+import org.araqnid.stuff.workqueue.WorkQueue;
+import org.araqnid.stuff.workqueue.WorkQueueBeanstalkHandler;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
@@ -39,6 +45,7 @@ import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
+import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Provider;
 import com.google.inject.Provides;
@@ -121,6 +128,20 @@ public class AppConfig extends AbstractModule {
 		protected void configureDelivery() {
 			into(Multibinder.newSetBinder(binder(), AppService.class));
 			process("sometube").with(SometubeHandler.class);
+			process("somequeue").with(Key.get(WorkQueueBeanstalkHandler.class, Names.named("somequeue")));
+			bind(WorkProcessor.class).annotatedWith(Names.named("somequeue")).to(SomeQueueProcessor.class);
+		}
+
+		@Provides
+		@Named("somequeue")
+		public WorkQueueBeanstalkHandler workQueueHandler(@Named("somequeue") WorkQueue queue, @Named("somequeue") WorkProcessor processor) {
+			return new WorkQueueBeanstalkHandler(new WorkDispatcher(queue, processor));
+		}
+
+		@Provides
+		@Named("somequeue")
+		public WorkQueue workQueue() {
+			return new SqlWorkQueue("somequeue");
 		}
 
 		@Provides
