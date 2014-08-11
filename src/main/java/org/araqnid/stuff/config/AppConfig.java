@@ -2,12 +2,16 @@ package org.araqnid.stuff.config;
 
 import java.util.EnumSet;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.servlet.DispatcherType;
 import javax.servlet.ServletContext;
 
 import org.araqnid.stuff.AppService;
 import org.araqnid.stuff.AppStateServlet;
+import org.araqnid.stuff.AsyncActivityEventSink;
+import org.araqnid.stuff.AsyncActivityEventsProcessor;
 import org.araqnid.stuff.HelloResource;
 import org.araqnid.stuff.LogActivityEvents;
 import org.araqnid.stuff.RequestActivity;
@@ -64,7 +68,14 @@ public class AppConfig extends AbstractModule {
 		@Override
 		protected void configure() {
 			bindConstant().annotatedWith(Names.named("http_port")).to(port(61000));
-			bind(ActivityEventSink.class).to(LogActivityEvents.class);
+			bind(ActivityEventSink.class).to(AsyncActivityEventSink.class);
+			bind(ActivityEventSink.class).annotatedWith(Names.named("backend")).to(LogActivityEvents.class);
+		}
+
+		@Provides
+		@Singleton
+		public BlockingQueue<AsyncActivityEventSink.Event> activityEventQueue() {
+			return new LinkedBlockingQueue<>();
 		}
 	}
 
@@ -73,6 +84,12 @@ public class AppConfig extends AbstractModule {
 		protected void configure() {
 			Multibinder<AppService> appServices = Multibinder.newSetBinder(binder(), AppService.class);
 			appServices.addBinding().to(ScheduledJobs.class);
+			appServices.addBinding().to(AsyncActivityEventsProcessor.class);
+		}
+
+		@Provides
+		public AsyncActivityEventsProcessor activityEventProcessor(@Named("backend") ActivityEventSink sink, BlockingQueue<AsyncActivityEventSink.Event> queue) {
+			return new AsyncActivityEventsProcessor(sink, queue);
 		}
 	}
 
