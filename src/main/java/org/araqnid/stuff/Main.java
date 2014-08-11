@@ -13,8 +13,7 @@ public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
 	public static void main(String[] args) {
-		Stage stage = Stage.DEVELOPMENT;
-		final Injector injector = Guice.createInjector(stage, new AppConfig());
+		final Injector injector = Guice.createInjector(Stage.PRODUCTION, new AppConfig());
 		final AppServicesManager servicesManager = injector.getInstance(AppServicesManager.class);
 		final Server server = injector.getInstance(Server.class);
 		try {
