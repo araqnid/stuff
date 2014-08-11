@@ -5,7 +5,9 @@ import java.util.Set;
 
 import org.araqnid.stuff.RequestActivity;
 import org.araqnid.stuff.ScheduledJobs;
+import org.araqnid.stuff.ScheduledJobs.JobDefinition;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
@@ -46,13 +48,13 @@ public abstract class ScheduledJobsModule extends AbstractModule {
 		@Override
 		public void configure(Binder binder) {
 			Set<Dependency<?>> dependencies = Sets.<Dependency<?>>newHashSet(Dependency.get(Key.get(RequestActivity.class)));
-			Set<Provider<? extends Runnable>> jobProviders = Sets.newHashSet();
+			Set<JobDefinition> jobProviders = Sets.newHashSet();
 			for (JobBinding<?> job : bindings) {
 				dependencies.add(Dependency.get(job.key));
-				jobProviders.add(binder.getProvider(job.key));
+				jobProviders.add(new JobDefinition(job.asRunnable(binder), job.delay, job.interval));
 			}
 			binder.bind(ScheduledJobs.class).toProvider(
-					new ScheduledJobsProvider(dependencies, binder.getProvider(RequestActivity.class), jobProviders));
+					new ScheduledJobsProvider(ImmutableSet.copyOf(dependencies), binder.getProvider(RequestActivity.class), jobProviders));
 		}
 
 		public <T extends Runnable> JobBinding<T> createJobBinding(Key<T> key) {
@@ -62,13 +64,31 @@ public abstract class ScheduledJobsModule extends AbstractModule {
 		}
 	}
 
+	private static final class ProvidedJobRunner<T extends Runnable> implements Runnable {
+		private final Provider<T> provider;
+
+		public ProvidedJobRunner(Provider<T> provider) {
+			this.provider = provider;
+		}
+
+		@Override
+		public void run() {
+			provider.get().run();
+		}
+
+		@Override
+		public String toString() {
+			return provider.toString();
+		}
+	}
+
 	private static final class ScheduledJobsProvider implements ProviderWithDependencies<ScheduledJobs> {
 		private final Set<Dependency<?>> dependencies;
 		private final Provider<RequestActivity> requestStateProvider;
-		private final Set<Provider<? extends Runnable>> jobProviders;
+		private final Set<JobDefinition> jobProviders;
 
 		public ScheduledJobsProvider(Set<Dependency<?>> dependencies, Provider<RequestActivity> requestStateProvider,
-				Set<Provider<? extends Runnable>> jobProviders) {
+				Set<JobDefinition> jobProviders) {
 			this.dependencies = dependencies;
 			this.requestStateProvider = requestStateProvider;
 			this.jobProviders = jobProviders;
@@ -85,7 +105,7 @@ public abstract class ScheduledJobsModule extends AbstractModule {
 		}
 	}
 
-	private static class JobBinding<T extends Runnable> {
+	public static class JobBinding<T extends Runnable> {
 		private final Key<T> key;
 		private long interval = 2000L;
 		private long delay = -1L;
@@ -102,6 +122,10 @@ public abstract class ScheduledJobsModule extends AbstractModule {
 		public JobBinding<T> withInterval(long interval) {
 			this.interval = interval;
 			return this;
+		}
+
+		private Runnable asRunnable(Binder binder) {
+			return new ProvidedJobRunner<T>(binder.getProvider(key));
 		}
 	}
 }
