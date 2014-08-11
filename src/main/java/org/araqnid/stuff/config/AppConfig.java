@@ -52,10 +52,16 @@ public class AppConfig extends AbstractModule {
 		install(new JettyModule());
 	}
 
+	private static int port(int defaultPort) {
+		String envValue = System.getenv("PORT");
+		if (envValue == null) return defaultPort;
+		return Integer.valueOf(envValue);
+	}
+
 	public static final class CoreModule extends AbstractModule {
 		@Override
 		protected void configure() {
-			bindConstant().annotatedWith(Names.named("http_port")).to(61000);
+			bindConstant().annotatedWith(Names.named("http_port")).to(port(61000));
 			bind(ActivityEventSink.class).to(LogActivityEvents.class);
 		}
 	}
