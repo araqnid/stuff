@@ -9,6 +9,7 @@ import javax.servlet.DispatcherType;
 import javax.servlet.ServletContext;
 
 import org.araqnid.stuff.AppService;
+import org.araqnid.stuff.AppServicesManager;
 import org.araqnid.stuff.AppStateServlet;
 import org.araqnid.stuff.AsyncActivityEventSink;
 import org.araqnid.stuff.AsyncActivityEventsProcessor;
@@ -51,9 +52,9 @@ public class AppConfig extends AbstractModule {
 	@Override
 	protected void configure() {
 		install(new CoreModule());
-		install(new ServicesModule());
 		install(new JobQueueModule());
 		install(new ScheduledModule());
+		install(new SynchronousActivityEventsModule());
 		install(new WebModule());
 		install(new JettyModule());
 	}
@@ -67,9 +68,19 @@ public class AppConfig extends AbstractModule {
 	public static final class CoreModule extends AbstractModule {
 		@Override
 		protected void configure() {
-			bindConstant().annotatedWith(Names.named("http_port")).to(port(61000));
+			Multibinder<AppService> appServices = Multibinder.newSetBinder(binder(), AppService.class);
+			bind(AppServicesManager.class);
+			appServices.addBinding().to(ScheduledJobs.class);
+		}
+	}
+
+	public static final class AsynchronousActivityEventsModule extends AbstractModule {
+		@Override
+		protected void configure() {
+			Multibinder<AppService> appServices = Multibinder.newSetBinder(binder(), AppService.class);
 			bind(ActivityEventSink.class).to(AsyncActivityEventSink.class);
 			bind(ActivityEventSink.class).annotatedWith(Names.named("backend")).to(LogActivityEvents.class);
+			appServices.addBinding().to(AsyncActivityEventsProcessor.class);
 		}
 
 		@Provides
@@ -77,19 +88,17 @@ public class AppConfig extends AbstractModule {
 		public BlockingQueue<AsyncActivityEventSink.Event> activityEventQueue() {
 			return new LinkedBlockingQueue<>();
 		}
-	}
-
-	public static final class ServicesModule extends AbstractModule {
-		@Override
-		protected void configure() {
-			Multibinder<AppService> appServices = Multibinder.newSetBinder(binder(), AppService.class);
-			appServices.addBinding().to(ScheduledJobs.class);
-			appServices.addBinding().to(AsyncActivityEventsProcessor.class);
-		}
 
 		@Provides
 		public AsyncActivityEventsProcessor activityEventProcessor(@Named("backend") ActivityEventSink sink, BlockingQueue<AsyncActivityEventSink.Event> queue) {
 			return new AsyncActivityEventsProcessor(sink, queue);
+		}
+	}
+
+	public static final class SynchronousActivityEventsModule extends AbstractModule {
+		@Override
+		protected void configure() {
+			bind(ActivityEventSink.class).to(LogActivityEvents.class);
 		}
 	}
 
@@ -127,6 +136,7 @@ public class AppConfig extends AbstractModule {
 	public static final class JettyModule extends AbstractModule {
 		@Override
 		protected void configure() {
+			bindConstant().annotatedWith(Names.named("http_port")).to(port(61000));
 			bind(GuiceResteasyBootstrapServletContextListener.class).toInstance(
 					new GuiceResteasyBootstrapServletContextListener() {
 						@Override
