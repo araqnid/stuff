@@ -20,12 +20,12 @@ import com.google.inject.servlet.ServletScopes;
 
 public class ScheduledJobs implements AppService {
 	private static final Logger LOG = LoggerFactory.getLogger(ScheduledJobs.class);
-	private final Set<Provider<? extends Runnable>> jobs;
+	private final Set<JobDefinition> jobs;
 	private final Provider<RequestActivity> requestStateProvider;
 	private ScheduledExecutorService executorService;
 
 	@Inject
-	public ScheduledJobs(Provider<RequestActivity> requestStateProvider, Set<Provider<? extends Runnable>> jobs) {
+	public ScheduledJobs(Provider<RequestActivity> requestStateProvider, Set<JobDefinition> jobs) {
 		this.requestStateProvider = requestStateProvider;
 		this.jobs = jobs;
 	}
@@ -35,8 +35,8 @@ public class ScheduledJobs implements AppService {
 		LOG.info("Starting job scheduler");
 		executorService = new ScheduledThreadPoolExecutor(16, new ThreadFactoryBuilder().setNameFormat("Scheduled-%d")
 				.build());
-		for (Provider<? extends Runnable> provider : jobs) {
-			executorService.scheduleAtFixedRate(withRequestScope(jobProvidedBy(provider)), 0, 5, TimeUnit.SECONDS);
+		for (JobDefinition definition : jobs) {
+			executorService.scheduleAtFixedRate(withRequestScope(definition.body), definition.delay, definition.interval, TimeUnit.MILLISECONDS);
 		}
 	}
 
@@ -49,20 +49,6 @@ public class ScheduledJobs implements AppService {
 		} catch (Exception e) {
 			LOG.warn("Unable to wait for job shutdown", e);
 		}
-	}
-
-	private <T extends Runnable> Runnable jobProvidedBy(final Provider<T> provider) {
-		return new Runnable() {
-			@Override
-			public void run() {
-				provider.get().run();
-			}
-
-			@Override
-			public String toString() {
-				return provider.toString();
-			}
-		};
 	}
 
 	private Runnable withRequestScope(final Runnable underlying) {
@@ -90,6 +76,18 @@ public class ScheduledJobs implements AppService {
 				}
 			}
 		};
+	}
+
+	public static final class JobDefinition {
+		private final Runnable body;
+		private final long delay;
+		private final long interval;
+
+		public JobDefinition(Runnable body, long delay, long interval) {
+			this.body = body;
+			this.delay = delay;
+			this.interval = interval;
+		}
 	}
 
 	@Singleton

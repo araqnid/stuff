@@ -85,7 +85,7 @@ public class AppConfig extends AbstractModule {
 	public static final class ScheduledModule extends ScheduledJobsModule {
 		@Override
 		protected void configureJobs() {
-			run(CacheRefresher.class);
+			run(CacheRefresher.class).withInterval(60*1000L);
 		}
 	}
 
