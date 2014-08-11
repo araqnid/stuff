@@ -65,10 +65,6 @@ public class AppConfig extends AbstractModule {
 		protected void configure() {
 			Multibinder<AppService> appServices = Multibinder.newSetBinder(binder(), AppService.class);
 			appServices.addBinding().to(ScheduledJobs.class);
-
-			Multibinder<Runnable> scheduledJobs = Multibinder.newSetBinder(binder(), Runnable.class,
-					Names.named("scheduled-jobs"));
-			scheduledJobs.addBinding().to(ScheduledJobs.CacheRefresher.class);
 		}
 	}
 
