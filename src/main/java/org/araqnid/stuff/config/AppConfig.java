@@ -51,6 +51,8 @@ import com.surftools.BeanstalkClientImpl.ClientImpl;
 public class AppConfig extends AbstractModule {
 	@Override
 	protected void configure() {
+		bindConstant().annotatedWith(Names.named("http_port")).to(port(61000));
+
 		install(new CoreModule());
 		install(new JobQueueModule());
 		install(new ScheduledModule());
@@ -59,7 +61,7 @@ public class AppConfig extends AbstractModule {
 		install(new JettyModule());
 	}
 
-	private static int port(int defaultPort) {
+	private int port(int defaultPort) {
 		String envValue = System.getenv("PORT");
 		if (envValue == null) return defaultPort;
 		return Integer.valueOf(envValue);
@@ -136,7 +138,6 @@ public class AppConfig extends AbstractModule {
 	public static final class JettyModule extends AbstractModule {
 		@Override
 		protected void configure() {
-			bindConstant().annotatedWith(Names.named("http_port")).to(port(61000));
 			bind(GuiceResteasyBootstrapServletContextListener.class).toInstance(
 					new GuiceResteasyBootstrapServletContextListener() {
 						@Override
