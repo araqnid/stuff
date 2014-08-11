@@ -15,7 +15,6 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.Provider;
-import com.google.inject.Singleton;
 import com.google.inject.servlet.ServletScopes;
 
 public class ScheduledJobs implements AppService {
@@ -90,7 +89,6 @@ public class ScheduledJobs implements AppService {
 		}
 	}
 
-	@Singleton
 	public static class CacheRefresher implements Runnable {
 		private final RequestActivity requestActivity;
 
