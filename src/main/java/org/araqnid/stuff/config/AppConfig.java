@@ -40,6 +40,8 @@ import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import com.google.inject.servlet.GuiceFilter;
 import com.google.inject.servlet.ServletModule;
+import com.surftools.BeanstalkClient.Client;
+import com.surftools.BeanstalkClientImpl.ClientImpl;
 
 public class AppConfig extends AbstractModule {
 	@Override
@@ -79,6 +81,13 @@ public class AppConfig extends AbstractModule {
 		protected void configureDelivery() {
 			into(Multibinder.newSetBinder(binder(), AppService.class));
 			process("sometube").with(SometubeHandler.class);
+		}
+
+		@Provides
+		public Client beanstalkClient() {
+			ClientImpl client = new ClientImpl();
+			client.setUniqueConnectionPerThread(false);
+			return client;
 		}
 	}
 

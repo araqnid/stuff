@@ -5,8 +5,8 @@ import java.util.Collection;
 import java.util.Set;
 
 import org.araqnid.stuff.BeanstalkProcessor;
-import org.araqnid.stuff.RequestActivity;
 import org.araqnid.stuff.BeanstalkProcessor.DeliveryTarget;
+import org.araqnid.stuff.RequestActivity;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
@@ -14,12 +14,10 @@ import com.google.inject.Binder;
 import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Provider;
-import com.google.inject.Provides;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.spi.Dependency;
 import com.google.inject.spi.ProviderWithDependencies;
 import com.surftools.BeanstalkClient.Client;
-import com.surftools.BeanstalkClientImpl.ClientImpl;
 
 public abstract class BeanstalkModule extends AbstractModule {
 	private BeanstalkModuleBuilder moduleBuilder;
@@ -133,12 +131,5 @@ public abstract class BeanstalkModule extends AbstractModule {
 			return new BeanstalkProcessor(connectionProvider, tubeName, maxThreads, requestStateProvider,
 					targetProvider);
 		}
-	}
-
-	@Provides
-	public Client beanstalkClient() {
-		ClientImpl client = new ClientImpl();
-		client.setUniqueConnectionPerThread(false);
-		return client;
 	}
 }
