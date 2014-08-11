@@ -11,6 +11,8 @@ import javax.servlet.ServletContext;
 import org.araqnid.stuff.AppService;
 import org.araqnid.stuff.AppServicesManager;
 import org.araqnid.stuff.AppStateServlet;
+import org.araqnid.stuff.AppVersion;
+import org.araqnid.stuff.AppVersionServlet;
 import org.araqnid.stuff.AsyncActivityEventSink;
 import org.araqnid.stuff.AsyncActivityEventsProcessor;
 import org.araqnid.stuff.HelloResource;
@@ -74,6 +76,15 @@ public class AppConfig extends AbstractModule {
 			Multibinder<AppService> appServices = Multibinder.newSetBinder(binder(), AppService.class);
 			bind(AppServicesManager.class);
 			appServices.addBinding().to(ScheduledJobs.class);
+			bind(AppVersion.class).toInstance(appVersion());
+		}
+
+		private AppVersion appVersion() {
+			Package pkg = getClass().getPackage();
+			String title = getClass().getPackage().getImplementationTitle();
+			String vendor = pkg.getImplementationVendor();
+			String version = getClass().getPackage().getImplementationVersion();
+			return new AppVersion(title, vendor, version);
 		}
 	}
 
@@ -132,6 +143,7 @@ public class AppConfig extends AbstractModule {
 		protected void configureServlets() {
 			serve("/").with(RootServlet.class);
 			serve("/_info/state").with(AppStateServlet.class);
+			serve("/_info/version").with(AppVersionServlet.class);
 			filter("/*").through(RequestActivityFilter.class);
 		}
 	}
