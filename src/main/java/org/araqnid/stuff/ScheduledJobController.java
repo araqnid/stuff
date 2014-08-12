@@ -17,8 +17,8 @@ import com.google.inject.Key;
 import com.google.inject.Provider;
 import com.google.inject.servlet.ServletScopes;
 
-public class ScheduledJobs implements AppService {
-	private static final Logger LOG = LoggerFactory.getLogger(ScheduledJobs.class);
+public class ScheduledJobController implements AppService {
+	private static final Logger LOG = LoggerFactory.getLogger(ScheduledJobController.class);
 	private static final Provider<ScheduledExecutorService> EXECUTOR_FACTORY = new Provider<ScheduledExecutorService>() {
 		@Override
 		public ScheduledExecutorService get() {
@@ -32,11 +32,11 @@ public class ScheduledJobs implements AppService {
 	private ScheduledExecutorService executorService;
 
 	@Inject
-	public ScheduledJobs(Provider<RequestActivity> requestStateProvider, Set<JobDefinition> jobs) {
+	public ScheduledJobController(Provider<RequestActivity> requestStateProvider, Set<JobDefinition> jobs) {
 		this(requestStateProvider, EXECUTOR_FACTORY, jobs);
 	}
 
-	public ScheduledJobs(Provider<RequestActivity> requestStateProvider,
+	public ScheduledJobController(Provider<RequestActivity> requestStateProvider,
 			Provider<ScheduledExecutorService> executorProvider, Set<JobDefinition> jobs) {
 		this.requestStateProvider = requestStateProvider;
 		this.executorProvider = executorProvider;
@@ -102,20 +102,6 @@ public class ScheduledJobs implements AppService {
 			this.body = body;
 			this.delay = delay;
 			this.interval = interval;
-		}
-	}
-
-	public static class CacheRefresher implements Runnable {
-		private final RequestActivity requestActivity;
-
-		@Inject
-		public CacheRefresher(RequestActivity requestActivity) {
-			this.requestActivity = requestActivity;
-		}
-
-		@Override
-		public void run() {
-			LOG.info("{} Cache refresh", requestActivity.getRuid());
 		}
 	}
 }

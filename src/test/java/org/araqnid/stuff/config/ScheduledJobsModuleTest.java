@@ -3,8 +3,8 @@ package org.araqnid.stuff.config;
 import java.util.Random;
 
 import org.araqnid.stuff.RequestActivity.ActivityEventSink;
-import org.araqnid.stuff.ScheduledJobs;
-import org.araqnid.stuff.ScheduledJobs.JobDefinition;
+import org.araqnid.stuff.ScheduledJobController;
+import org.araqnid.stuff.ScheduledJobController.JobDefinition;
 import org.araqnid.stuff.config.ScheduledJobsModule.ProvidedJobRunner;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -44,7 +44,7 @@ public class ScheduledJobsModuleTest {
 				run(TestJob.class);
 			}
 		});
-		ScheduledJobs jobs = injector.getInstance(ScheduledJobs.class);
+		ScheduledJobController jobs = injector.getInstance(ScheduledJobController.class);
 		MatcherAssert.assertThat(
 				jobs.getJobs(),
 				Matchers.contains(aJob().calling(TestJob.class).havingDelay(Matchers.equalTo(0L))
@@ -60,7 +60,7 @@ public class ScheduledJobsModuleTest {
 				run(TestJob.class).withDelayedStartup(delay);
 			}
 		});
-		ScheduledJobs jobs = injector.getInstance(ScheduledJobs.class);
+		ScheduledJobController jobs = injector.getInstance(ScheduledJobController.class);
 		MatcherAssert.assertThat(jobs.getJobs(), Matchers.contains(aJob().havingDelay(Matchers.equalTo(delay))));
 	}
 
@@ -73,7 +73,7 @@ public class ScheduledJobsModuleTest {
 				run(TestJob.class).withInterval(interval);
 			}
 		});
-		ScheduledJobs jobs = injector.getInstance(ScheduledJobs.class);
+		ScheduledJobController jobs = injector.getInstance(ScheduledJobController.class);
 		MatcherAssert.assertThat(jobs.getJobs(), Matchers.contains(aJob().havingInterval(Matchers.equalTo(interval))));
 	}
 

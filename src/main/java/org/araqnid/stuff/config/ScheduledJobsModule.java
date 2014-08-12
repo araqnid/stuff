@@ -4,8 +4,8 @@ import java.util.List;
 import java.util.Set;
 
 import org.araqnid.stuff.RequestActivity;
-import org.araqnid.stuff.ScheduledJobs;
-import org.araqnid.stuff.ScheduledJobs.JobDefinition;
+import org.araqnid.stuff.ScheduledJobController;
+import org.araqnid.stuff.ScheduledJobController.JobDefinition;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -53,7 +53,7 @@ public abstract class ScheduledJobsModule extends AbstractModule {
 				dependencies.add(Dependency.get(job.key));
 				jobProviders.add(new JobDefinition(job.asRunnable(binder), job.delay, job.interval));
 			}
-			binder.bind(ScheduledJobs.class).toProvider(
+			binder.bind(ScheduledJobController.class).toProvider(
 					new ScheduledJobsProvider(ImmutableSet.copyOf(dependencies), binder.getProvider(RequestActivity.class), jobProviders));
 		}
 
@@ -82,7 +82,7 @@ public abstract class ScheduledJobsModule extends AbstractModule {
 		}
 	}
 
-	private static final class ScheduledJobsProvider implements ProviderWithDependencies<ScheduledJobs> {
+	private static final class ScheduledJobsProvider implements ProviderWithDependencies<ScheduledJobController> {
 		private final Set<Dependency<?>> dependencies;
 		private final Provider<RequestActivity> requestStateProvider;
 		private final Set<JobDefinition> jobProviders;
@@ -100,8 +100,8 @@ public abstract class ScheduledJobsModule extends AbstractModule {
 		}
 
 		@Override
-		public ScheduledJobs get() {
-			return new ScheduledJobs(requestStateProvider, jobProviders);
+		public ScheduledJobController get() {
+			return new ScheduledJobController(requestStateProvider, jobProviders);
 		}
 	}
 

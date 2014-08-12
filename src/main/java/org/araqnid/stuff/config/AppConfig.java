@@ -15,14 +15,14 @@ import org.araqnid.stuff.AppVersion;
 import org.araqnid.stuff.AppVersionServlet;
 import org.araqnid.stuff.AsyncActivityEventSink;
 import org.araqnid.stuff.AsyncActivityEventsProcessor;
+import org.araqnid.stuff.CacheRefresher;
 import org.araqnid.stuff.HelloResource;
 import org.araqnid.stuff.LogActivityEvents;
 import org.araqnid.stuff.RequestActivity;
 import org.araqnid.stuff.RequestActivity.ActivityEventSink;
 import org.araqnid.stuff.RequestActivityFilter;
 import org.araqnid.stuff.RootServlet;
-import org.araqnid.stuff.ScheduledJobs;
-import org.araqnid.stuff.ScheduledJobs.CacheRefresher;
+import org.araqnid.stuff.ScheduledJobController;
 import org.araqnid.stuff.SomeQueueProcessor;
 import org.araqnid.stuff.SometubeHandler;
 import org.araqnid.stuff.workqueue.SqlWorkQueue;
@@ -79,7 +79,7 @@ public class AppConfig extends AbstractModule {
 		protected void configure() {
 			Multibinder<AppService> appServices = Multibinder.newSetBinder(binder(), AppService.class);
 			bind(AppServicesManager.class);
-			appServices.addBinding().to(ScheduledJobs.class);
+			appServices.addBinding().to(ScheduledJobController.class);
 			bind(AppVersion.class).toInstance(appVersion());
 		}
 
