@@ -13,17 +13,15 @@ public class WorkDispatcher {
 		Work entry = new Work(id);
 		entry.begin();
 		try {
-			try {
-				processor.process(id, payload);
-				entry.success();
-				return true;
-			} catch (PermanentWorkProcessorException e) {
-				entry.permanentFailure(e.getMessage(), e);
-				return true;
-			} catch (RuntimeException e) {
-				entry.temporaryFailure(e);
-				return false;
-			}
+			processor.process(id, payload);
+			entry.success();
+			return true;
+		} catch (PermanentWorkProcessorException e) {
+			entry.permanentFailure(e.getMessage(), e);
+			return true;
+		} catch (Exception e) {
+			entry.temporaryFailure(e);
+			return false;
 		} finally {
 			entry.cleanup();
 		}
@@ -53,7 +51,7 @@ public class WorkDispatcher {
 		}
 
 		public void permanentFailure(String message, Throwable t) {
-			queue.markFailed(id, false, message, t);
+			queue.markFailed(id, true, message, t);
 			marked = true;
 		}
 
