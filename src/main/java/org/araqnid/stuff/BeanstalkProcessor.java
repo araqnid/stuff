@@ -1,5 +1,7 @@
 package org.araqnid.stuff;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -16,6 +18,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Key;
 import com.google.inject.Provider;
 import com.google.inject.servlet.ServletScopes;
+import com.surftools.BeanstalkClient.BeanstalkException;
 import com.surftools.BeanstalkClient.Client;
 import com.surftools.BeanstalkClient.Job;
 
@@ -26,8 +29,8 @@ public class BeanstalkProcessor implements AppService {
 	private final Provider<RequestActivity> requestStateProvider;
 	private final Provider<? extends DeliveryTarget> targetProvider;
 	private final ExecutorService executor;
-	private final AtomicBoolean stopRequest;
 	private final int maxThreads;
+	private final Set<TubeConsumer> consumers = new HashSet<>();
 
 	public BeanstalkProcessor(Provider<Client> connectionProvider, String tubeName, int maxThreads,
 			Provider<RequestActivity> requestStateProvider, Provider<? extends DeliveryTarget> targetProvider) {
@@ -37,20 +40,23 @@ public class BeanstalkProcessor implements AppService {
 		this.targetProvider = targetProvider;
 		this.executor = Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat(
 				"beanstalk-" + tubeName + "-%d").build());
-		this.stopRequest = new AtomicBoolean(false);
 		this.maxThreads = maxThreads;
 	}
 
 	@Override
 	public void start() {
 		for (int i = 0; i < maxThreads; i++) {
-			executor.execute(new TubeConsumer());
+			TubeConsumer consumer = new TubeConsumer();
+			consumers.add(consumer);
+			executor.execute(consumer);
 		}
 	}
 
 	@Override
 	public void stop() {
-		stopRequest.set(true);
+		for (TubeConsumer consumer : consumers) {
+			consumer.halt();
+		}
 		executor.shutdown();
 		try {
 			executor.awaitTermination(5, TimeUnit.SECONDS);
@@ -103,38 +109,68 @@ public class BeanstalkProcessor implements AppService {
 	private final class TubeConsumer implements Runnable {
 		private Client connection;
 		private Logger log = LoggerFactory.getLogger(BeanstalkProcessor.class.getName() + "." + tubeName);
+		private AtomicBoolean halted = new AtomicBoolean();
 
 		@Override
 		public void run() {
-			connection = connectionProvider.get();
-			log.debug("Got connection {}", connection);
+			connect();
 			if (!tubeName.equals("default")) {
 				connection.watch(tubeName);
 				connection.ignore("default");
 			}
 			connection.useTube(tubeName);
-			log.info("Listening for jobs");
-			while (true) {
-				if (stopRequest.get()) {
-					break;
-				}
-				log.debug("Reserving job");
-				Job job = connection.reserve(2);
-				if (job != null) {
-					log.debug("<{}> starting", job.getJobId());
-					if (deliver(job)) {
-						connection.delete(job.getJobId());
-						log.info("<{}> processed", job.getJobId());
-					}
-					else {
-						connection.release(job.getJobId(), 0, 5);
-						log.info("<{}> failed temporarily", job.getJobId());
-					}
+			try {
+				pollConnection();
+			} finally {
+				synchronized (this) {
+					connection = null;
 				}
 			}
-			log.info("Closing connection");
+		}
+
+		private void connect() {
+			Client newConnection = connectionProvider.get();
+			synchronized (this) {
+				connection = newConnection;
+			}
+		}
+
+		private void pollConnection() {
+			log.info("Listening for jobs");
+			while (true) {
+				if (halted.get()) break;
+				log.debug("Reserving job");
+				Job job;
+				try {
+					job = connection.reserve(100);
+				} catch (BeanstalkException e) {
+					if (halted.get()) {
+						log.debug("Error reserving job -- ignoring during halt", e);
+					}
+					else {
+						log.error("Error reserving job", e);
+					}
+					return;
+				}
+				if (job == null) continue;
+				log.debug("<{}> starting", job.getJobId());
+				if (deliver(job)) {
+					connection.delete(job.getJobId());
+					log.info("<{}> processed", job.getJobId());
+				}
+				else {
+					connection.release(job.getJobId(), 0, 5);
+					log.info("<{}> failed temporarily", job.getJobId());
+				}
+			}
+			log.debug("Closing connection");
 			connection.close();
-			connection = null;
+		}
+
+		public synchronized void halt() {
+			if (connection == null) return;
+			halted.set(true);
+			connection.close();
 		}
 	}
 
