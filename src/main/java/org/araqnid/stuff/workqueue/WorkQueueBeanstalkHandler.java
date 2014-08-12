@@ -36,8 +36,8 @@ public class WorkQueueBeanstalkHandler implements DeliveryTarget {
 		}
 		else {
 			id = new String(data, 0, pos, UTF8);
-			payload = new byte[data.length - pos];
-			System.arraycopy(data, pos, data, 0, data.length - pos);
+			payload = new byte[data.length - pos - 1];
+			System.arraycopy(data, pos + 1, payload, 0, data.length - pos - 1);
 		}
 		requestActivity.beginEvent("WQP", Joiner.on('\t').join(queueId, id));
 		try {
