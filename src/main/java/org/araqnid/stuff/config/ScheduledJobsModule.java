@@ -64,8 +64,8 @@ public abstract class ScheduledJobsModule extends AbstractModule {
 		}
 	}
 
-	private static final class ProvidedJobRunner<T extends Runnable> implements Runnable {
-		private final Provider<T> provider;
+	static final class ProvidedJobRunner<T extends Runnable> implements Runnable {
+		final Provider<T> provider;
 
 		public ProvidedJobRunner(Provider<T> provider) {
 			this.provider = provider;
@@ -108,7 +108,7 @@ public abstract class ScheduledJobsModule extends AbstractModule {
 	public static class JobBinding<T extends Runnable> {
 		private final Key<T> key;
 		private long interval = 2000L;
-		private long delay = -1L;
+		private long delay = 0L;
 
 		public JobBinding(Key<T> key) {
 			this.key = key;
