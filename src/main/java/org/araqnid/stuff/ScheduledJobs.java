@@ -19,23 +19,37 @@ import com.google.inject.servlet.ServletScopes;
 
 public class ScheduledJobs implements AppService {
 	private static final Logger LOG = LoggerFactory.getLogger(ScheduledJobs.class);
+	private static final Provider<ScheduledExecutorService> EXECUTOR_FACTORY = new Provider<ScheduledExecutorService>() {
+		@Override
+		public ScheduledExecutorService get() {
+			return new ScheduledThreadPoolExecutor(16, new ThreadFactoryBuilder().setNameFormat("Scheduled-%d").build());
+		}
+	};
+
 	private final Set<JobDefinition> jobs;
 	private final Provider<RequestActivity> requestStateProvider;
+	private final Provider<ScheduledExecutorService> executorProvider;
 	private ScheduledExecutorService executorService;
 
 	@Inject
 	public ScheduledJobs(Provider<RequestActivity> requestStateProvider, Set<JobDefinition> jobs) {
+		this(requestStateProvider, EXECUTOR_FACTORY, jobs);
+	}
+
+	public ScheduledJobs(Provider<RequestActivity> requestStateProvider,
+			Provider<ScheduledExecutorService> executorProvider, Set<JobDefinition> jobs) {
 		this.requestStateProvider = requestStateProvider;
+		this.executorProvider = executorProvider;
 		this.jobs = jobs;
 	}
 
 	@Override
 	public void start() {
 		LOG.info("Starting job scheduler");
-		executorService = new ScheduledThreadPoolExecutor(16, new ThreadFactoryBuilder().setNameFormat("Scheduled-%d")
-				.build());
+		executorService = executorProvider.get();
 		for (JobDefinition definition : jobs) {
-			executorService.scheduleAtFixedRate(withRequestScope(definition.body), definition.delay, definition.interval, TimeUnit.MILLISECONDS);
+			executorService.scheduleAtFixedRate(withRequestScope(definition.body), definition.delay,
+					definition.interval, TimeUnit.MILLISECONDS);
 		}
 	}
 
