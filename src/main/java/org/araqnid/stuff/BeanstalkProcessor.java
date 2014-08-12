@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Key;
@@ -89,7 +90,7 @@ public class BeanstalkProcessor implements AppService {
 
 	private boolean dispatchDelivery(Job job) {
 		RequestActivity requestActivity = requestStateProvider.get();
-		requestActivity.beginRequest("BJP", tubeName + " " + job.getJobId());
+		requestActivity.beginRequest("BJP", Joiner.on('\t').join(tubeName, job.getJobId()));
 		try {
 			return targetProvider.get().deliver(job.getData());
 		} finally {

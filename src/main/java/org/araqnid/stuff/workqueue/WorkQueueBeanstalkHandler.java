@@ -5,6 +5,8 @@ import java.nio.charset.Charset;
 import org.araqnid.stuff.BeanstalkProcessor.DeliveryTarget;
 import org.araqnid.stuff.RequestActivity;
 
+import com.google.common.base.Joiner;
+
 public class WorkQueueBeanstalkHandler implements DeliveryTarget {
 	private static final Charset UTF8 = Charset.forName("UTF-8");
 	private final WorkDispatcher dispatcher;
@@ -37,7 +39,7 @@ public class WorkQueueBeanstalkHandler implements DeliveryTarget {
 			payload = new byte[data.length - pos];
 			System.arraycopy(data, pos, data, 0, data.length - pos);
 		}
-		requestActivity.beginEvent("WQP", queueId + " " + id);
+		requestActivity.beginEvent("WQP", Joiner.on('\t').join(queueId, id));
 		try {
 			return dispatcher.process(id, payload);
 		} finally {
