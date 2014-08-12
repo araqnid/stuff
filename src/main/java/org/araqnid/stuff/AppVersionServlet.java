@@ -7,6 +7,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -15,10 +16,12 @@ import com.google.inject.Singleton;
 public class AppVersionServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private final AppVersion versionInfo;
+	private final Gson gson;
 
 	@Inject
 	public AppVersionServlet(AppVersion versionInfo) {
 		this.versionInfo = versionInfo;
+		this.gson = new GsonBuilder().serializeNulls().create();
 	}
 
 	@Override
@@ -26,6 +29,6 @@ public class AppVersionServlet extends HttpServlet {
 		resp.setContentType("application/json");
 		resp.setCharacterEncoding("UTF-8");
 		resp.setHeader("Cache-Control", "no-cache, no-store");
-		new GsonBuilder().serializeNulls().create().toJson(versionInfo, resp.getWriter());
+		gson.toJson(versionInfo, resp.getWriter());
 	}
 }
