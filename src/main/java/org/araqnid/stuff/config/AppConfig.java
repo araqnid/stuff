@@ -134,8 +134,9 @@ public class AppConfig extends AbstractModule {
 
 		@Provides
 		@Named("somequeue")
-		public WorkQueueBeanstalkHandler workQueueHandler(@Named("somequeue") WorkQueue queue, @Named("somequeue") WorkProcessor processor) {
-			return new WorkQueueBeanstalkHandler(new WorkDispatcher(queue, processor));
+		public WorkQueueBeanstalkHandler workQueueHandler(@Named("somequeue") WorkQueue queue, @Named("somequeue") WorkProcessor processor,
+				RequestActivity requestActivity) {
+			return new WorkQueueBeanstalkHandler("somequeue", new WorkDispatcher(queue, processor), requestActivity);
 		}
 
 		@Provides
