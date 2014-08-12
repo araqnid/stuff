@@ -50,6 +50,10 @@ public class ScheduledJobs implements AppService {
 		}
 	}
 
+	public Set<JobDefinition> getJobs() {
+		return jobs;
+	}
+
 	private Runnable withRequestScope(final Runnable underlying) {
 		return new Runnable() {
 			@Override
@@ -78,9 +82,9 @@ public class ScheduledJobs implements AppService {
 	}
 
 	public static final class JobDefinition {
-		private final Runnable body;
-		private final long delay;
-		private final long interval;
+		public final Runnable body;
+		public final long delay;
+		public final long interval;
 
 		public JobDefinition(Runnable body, long delay, long interval) {
 			this.body = body;
