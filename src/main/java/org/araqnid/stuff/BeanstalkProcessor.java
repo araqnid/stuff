@@ -43,7 +43,6 @@ public class BeanstalkProcessor implements AppService {
 
 	@Override
 	public void start() {
-		LOG.info("Starting");
 		for (int i = 0; i < maxThreads; i++) {
 			executor.execute(new TubeConsumer());
 		}
@@ -51,7 +50,6 @@ public class BeanstalkProcessor implements AppService {
 
 	@Override
 	public void stop() {
-		LOG.info("Requesting stop");
 		stopRequest.set(true);
 		executor.shutdown();
 		try {
@@ -59,7 +57,6 @@ public class BeanstalkProcessor implements AppService {
 		} catch (InterruptedException e) {
 			LOG.warn("Waiting for executor shutdown interrupted: " + e);
 		}
-		LOG.info("Stopped");
 	}
 
 	private boolean deliver(Job job) {
@@ -98,9 +95,14 @@ public class BeanstalkProcessor implements AppService {
 		}
 	}
 
+	@Override
+	public String toString() {
+		return "BeanstalkProcessor:" + tubeName + " => " + targetProvider;
+	}
+
 	private final class TubeConsumer implements Runnable {
 		private Client connection;
-		private Logger log = LoggerFactory.getLogger("jobs." + tubeName);
+		private Logger log = LoggerFactory.getLogger(BeanstalkProcessor.class.getName() + "." + tubeName);
 
 		@Override
 		public void run() {
