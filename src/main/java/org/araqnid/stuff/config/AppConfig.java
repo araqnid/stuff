@@ -26,10 +26,7 @@ import org.araqnid.stuff.ScheduledJobs.CacheRefresher;
 import org.araqnid.stuff.SomeQueueProcessor;
 import org.araqnid.stuff.SometubeHandler;
 import org.araqnid.stuff.workqueue.SqlWorkQueue;
-import org.araqnid.stuff.workqueue.WorkDispatcher;
-import org.araqnid.stuff.workqueue.WorkProcessor;
 import org.araqnid.stuff.workqueue.WorkQueue;
-import org.araqnid.stuff.workqueue.WorkQueueBeanstalkHandler;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
@@ -45,7 +42,6 @@ import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
-import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Provider;
 import com.google.inject.Provides;
@@ -64,7 +60,8 @@ public class AppConfig extends AbstractModule {
 		bindConstant().annotatedWith(Names.named("http_port")).to(port(61000));
 
 		install(new CoreModule());
-		install(new JobQueueModule());
+		install(new RawBeanstalkModule());
+		install(new WorkQueueModule());
 		install(new ScheduledModule());
 		install(new SynchronousActivityEventsModule());
 		install(new WebModule());
@@ -123,26 +120,11 @@ public class AppConfig extends AbstractModule {
 		}
 	}
 
-	public static final class JobQueueModule extends BeanstalkModule {
+	public static final class RawBeanstalkModule extends BeanstalkModule {
 		@Override
 		protected void configureDelivery() {
 			into(Multibinder.newSetBinder(binder(), AppService.class));
 			process("sometube").with(SometubeHandler.class);
-			process("somequeue").with(Key.get(WorkQueueBeanstalkHandler.class, Names.named("somequeue")));
-			bind(WorkProcessor.class).annotatedWith(Names.named("somequeue")).to(SomeQueueProcessor.class);
-		}
-
-		@Provides
-		@Named("somequeue")
-		public WorkQueueBeanstalkHandler workQueueHandler(@Named("somequeue") WorkQueue queue, @Named("somequeue") WorkProcessor processor,
-				RequestActivity requestActivity) {
-			return new WorkQueueBeanstalkHandler("somequeue", new WorkDispatcher(queue, processor), requestActivity);
-		}
-
-		@Provides
-		@Named("somequeue")
-		public WorkQueue workQueue() {
-			return new SqlWorkQueue("somequeue");
 		}
 
 		@Provides
@@ -150,6 +132,27 @@ public class AppConfig extends AbstractModule {
 			ClientImpl client = new ClientImpl();
 			client.setUniqueConnectionPerThread(false);
 			return client;
+		}
+	}
+
+	public static final class WorkQueueModule extends BeanstalkWorkQueueModule {
+		@Override
+		protected void configureDelivery() {
+			into(Multibinder.newSetBinder(binder(), AppService.class));
+			process("somequeue").with(SomeQueueProcessor.class);
+			process("otherqueue").with(SomeQueueProcessor.class);
+		}
+
+		@Provides
+		@Named("somequeue")
+		public WorkQueue somequeue() {
+			return new SqlWorkQueue("somequeue");
+		}
+
+		@Provides
+		@Named("otherqueue")
+		public WorkQueue otherqueue() {
+			return new SqlWorkQueue("otherqueue");
 		}
 	}
 
