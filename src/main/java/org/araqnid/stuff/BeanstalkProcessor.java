@@ -45,6 +45,7 @@ public class BeanstalkProcessor implements AppService {
 
 	@Override
 	public void start() {
+		LOG.info("Consuming from tube \"{}\" with {} thread(s)", tubeName, maxThreads);
 		for (int i = 0; i < maxThreads; i++) {
 			TubeConsumer consumer = new TubeConsumer();
 			consumers.add(consumer);
@@ -136,7 +137,7 @@ public class BeanstalkProcessor implements AppService {
 		}
 
 		private void pollConnection() {
-			log.info("Listening for jobs");
+			log.debug("Listening for jobs");
 			while (true) {
 				if (halted.get()) break;
 				log.debug("Reserving job");
@@ -153,14 +154,14 @@ public class BeanstalkProcessor implements AppService {
 					return;
 				}
 				if (job == null) continue;
-				log.debug("<{}> starting", job.getJobId());
+				log.debug("<{}> reserved", job.getJobId());
 				if (deliver(job)) {
 					connection.delete(job.getJobId());
-					log.info("<{}> processed", job.getJobId());
+					log.info("<{}> deleted", job.getJobId());
 				}
 				else {
 					connection.release(job.getJobId(), 0, 5);
-					log.info("<{}> failed temporarily", job.getJobId());
+					log.info("<{}> released", job.getJobId());
 				}
 			}
 			log.debug("Closing connection");
