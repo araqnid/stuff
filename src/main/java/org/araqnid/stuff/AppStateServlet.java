@@ -26,6 +26,6 @@ public class AppStateServlet extends HttpServlet {
 		resp.setContentType("text/plain");
 		resp.setHeader("Cache-Control", "no-cache, no-store");
 		PrintWriter pw = resp.getWriter();
-		pw.println(servicesManager.getState().toString());
+		pw.print(servicesManager.getState().toString());
 	}
 }
