@@ -3,13 +3,18 @@ package org.araqnid.stuff.workqueue;
 import java.nio.charset.Charset;
 
 import org.araqnid.stuff.BeanstalkProcessor.DeliveryTarget;
+import org.araqnid.stuff.RequestActivity;
 
 public class WorkQueueBeanstalkHandler implements DeliveryTarget {
 	private static final Charset UTF8 = Charset.forName("UTF-8");
 	private final WorkDispatcher dispatcher;
+	private final RequestActivity requestActivity;
+	private final String queueId;
 
-	public WorkQueueBeanstalkHandler(WorkDispatcher dispatcher) {
+	public WorkQueueBeanstalkHandler(String queueId, WorkDispatcher dispatcher, RequestActivity requestActivity) {
+		this.queueId = queueId;
 		this.dispatcher = dispatcher;
+		this.requestActivity = requestActivity;
 	}
 
 	@Override
@@ -32,6 +37,11 @@ public class WorkQueueBeanstalkHandler implements DeliveryTarget {
 			payload = new byte[data.length - pos];
 			System.arraycopy(data, pos, data, 0, data.length - pos);
 		}
-		return dispatcher.process(id, payload);
+		requestActivity.beginEvent("WQP", queueId + " " + id);
+		try {
+			return dispatcher.process(id, payload);
+		} finally {
+			requestActivity.finishEvent("WQP");
+		}
 	}
 }
