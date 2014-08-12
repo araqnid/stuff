@@ -45,7 +45,6 @@ public class ScheduledJobs implements AppService {
 
 	@Override
 	public void start() {
-		LOG.info("Starting job scheduler");
 		executorService = executorProvider.get();
 		for (JobDefinition definition : jobs) {
 			executorService.scheduleAtFixedRate(withRequestScope(definition.body), definition.delay,
@@ -55,7 +54,6 @@ public class ScheduledJobs implements AppService {
 
 	@Override
 	public void stop() {
-		LOG.info("Stopping job scheduler");
 		executorService.shutdown();
 		try {
 			executorService.awaitTermination(2, TimeUnit.MINUTES);
