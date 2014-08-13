@@ -18,7 +18,6 @@ import org.araqnid.stuff.AsyncActivityEventsProcessor;
 import org.araqnid.stuff.CacheRefresher;
 import org.araqnid.stuff.HelloResource;
 import org.araqnid.stuff.LogActivityEvents;
-import org.araqnid.stuff.RequestActivity;
 import org.araqnid.stuff.RequestActivity.ActivityEventSink;
 import org.araqnid.stuff.RequestActivityFilter;
 import org.araqnid.stuff.RootServlet;
@@ -35,15 +34,15 @@ import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.resource.Resource;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
 import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
+import com.google.inject.Exposed;
 import com.google.inject.Module;
-import com.google.inject.Provider;
+import com.google.inject.PrivateModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
@@ -58,13 +57,12 @@ public class AppConfig extends AbstractModule {
 	@Override
 	protected void configure() {
 		bindConstant().annotatedWith(Names.named("http_port")).to(port(61000));
-
+		bindScope(ActivityScoped.class, ActivityScope.SCOPE);
 		install(new CoreModule());
 		install(new RawBeanstalkModule());
 		install(new WorkQueueModule());
 		install(new ScheduledModule());
 		install(new SynchronousActivityEventsModule());
-		install(new WebModule());
 		install(new JettyModule());
 	}
 
@@ -108,7 +106,8 @@ public class AppConfig extends AbstractModule {
 		}
 
 		@Provides
-		public AsyncActivityEventsProcessor activityEventProcessor(@Named("backend") ActivityEventSink sink, BlockingQueue<AsyncActivityEventSink.Event> queue) {
+		public AsyncActivityEventsProcessor activityEventProcessor(@Named("backend") ActivityEventSink sink,
+				BlockingQueue<AsyncActivityEventSink.Event> queue) {
 			return new AsyncActivityEventsProcessor(sink, queue);
 		}
 	}
@@ -159,17 +158,7 @@ public class AppConfig extends AbstractModule {
 	public static final class ScheduledModule extends ScheduledJobsModule {
 		@Override
 		protected void configureJobs() {
-			run(CacheRefresher.class).withInterval(60*1000L);
-		}
-	}
-
-	public static final class WebModule extends ServletModule {
-		@Override
-		protected void configureServlets() {
-			serve("/").with(RootServlet.class);
-			serve("/_info/state").with(AppStateServlet.class);
-			serve("/_info/version").with(AppVersionServlet.class);
-			filter("/*").through(RequestActivityFilter.class);
+			run(CacheRefresher.class).withInterval(60 * 1000L);
 		}
 	}
 
@@ -183,6 +172,74 @@ public class AppConfig extends AbstractModule {
 							return ImmutableList.of(new ResteasyModule());
 						}
 					});
+			install(new VanillaContextModule());
+			install(new ResteasyContextModule());
+		}
+
+		public static final class VanillaContextModule extends PrivateModule {
+			@Override
+			protected void configure() {
+				install(new WebModule());
+			}
+
+			public static final class WebModule extends ServletModule {
+				@Override
+				protected void configureServlets() {
+					serve("/").with(RootServlet.class);
+					serve("/_info/state").with(AppStateServlet.class);
+					serve("/_info/version").with(AppVersionServlet.class);
+					filter("/*").through(RequestActivityFilter.class);
+				}
+			}
+
+			@Provides
+			@Singleton
+			@Named("vanilla")
+			@Exposed
+			public Handler vanillaContext(GuiceFilter guiceFilter, @Named("webapp-root") Resource baseResource) {
+				ServletContextHandler context = new ServletContextHandler();
+				context.setContextPath("/");
+				context.addFilter(new FilterHolder(guiceFilter), "/*", EnumSet.of(DispatcherType.REQUEST));
+				context.addServlet(DefaultServlet.class, "/");
+				context.setBaseResource(baseResource);
+				return context;
+			}
+
+			@Provides
+			@Named("webapp-root")
+			public Resource webappRoot() {
+				return new EmbeddedResource(getClass().getClassLoader(), "web");
+			}
+		}
+
+		public static final class ResteasyContextModule extends PrivateModule {
+			@Override
+			protected void configure() {
+				install(new WebModule());
+			}
+
+			public static final class WebModule extends ServletModule {
+				@Override
+				protected void configureServlets() {
+					bind(HttpServletDispatcher.class).in(Singleton.class);
+					serve("/*").with(HttpServletDispatcher.class);
+					filter("/*").through(RequestActivityFilter.class);
+				}
+			}
+
+			@Provides
+			@Singleton
+			@Named("resteasy")
+			@Exposed
+			public Handler resteasyContext(GuiceFilter guiceFilter,
+					GuiceResteasyBootstrapServletContextListener listener) {
+				ServletContextHandler context = new ServletContextHandler();
+				context.setContextPath("/_api");
+				context.addFilter(new FilterHolder(guiceFilter), "/*", EnumSet.of(DispatcherType.REQUEST));
+				context.addServlet(DefaultServlet.class, "/");
+				context.addEventListener(listener);
+				return context;
+			}
 		}
 
 		@Provides
@@ -191,49 +248,6 @@ public class AppConfig extends AbstractModule {
 			Connector connector = new SelectChannelConnector();
 			connector.setPort(port);
 			return connector;
-		}
-
-		@Provides
-		@Singleton
-		@Named("vanilla")
-		public Handler vanillaContext(GuiceFilter guiceFilter, @Named("webapp-root") Resource baseResource) {
-			ServletContextHandler context = new ServletContextHandler();
-			context.setContextPath("/");
-			context.addFilter(new FilterHolder(guiceFilter), "/*", EnumSet.of(DispatcherType.REQUEST));
-			context.addServlet(DefaultServlet.class, "/");
-			context.setBaseResource(baseResource);
-			return context;
-		}
-
-		@Provides
-		@Named("webapp-root")
-		public Resource webappRoot() {
-			return new EmbeddedResource(getClass().getClassLoader(), "web");
-		}
-
-		@Provides
-		@Singleton
-		@Named("resteasy")
-		public Handler resteasyContext(GuiceResteasyBootstrapServletContextListener listener,
-				@Named("resteasy") RequestActivityFilter activityFilter) {
-			ServletContextHandler context = new ServletContextHandler();
-			context.setContextPath("/_api");
-			context.addEventListener(listener);
-			context.addServlet(new ServletHolder(HttpServletDispatcher.class), "/");
-			context.addFilter(new FilterHolder(activityFilter), "/*", EnumSet.of(DispatcherType.REQUEST));
-			return context;
-		}
-
-		@Provides
-		@Named("resteasy")
-		public RequestActivityFilter hackedFilterForResteasy(final ActivityEventSink activityEventSink) {
-			RequestActivityFilter activityFilter = new RequestActivityFilter(new Provider<RequestActivity>() {
-				@Override
-				public RequestActivity get() {
-					return new RequestActivity(activityEventSink);
-				}
-			});
-			return activityFilter;
 		}
 
 		@Provides

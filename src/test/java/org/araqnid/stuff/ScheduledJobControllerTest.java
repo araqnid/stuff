@@ -1,7 +1,9 @@
 package org.araqnid.stuff;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -9,6 +11,8 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.araqnid.stuff.ScheduledJobController.JobDefinition;
+import org.araqnid.stuff.config.ActivityScope;
+import org.araqnid.stuff.config.ActivityScoped;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
@@ -23,40 +27,68 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Key;
 import com.google.inject.OutOfScopeException;
 import com.google.inject.Provider;
 import com.google.inject.ProvisionException;
-import com.google.inject.servlet.RequestScoped;
-import com.google.inject.servlet.ServletScopes;
+import com.google.inject.Scope;
 
 public class ScheduledJobControllerTest {
-	private final Provider<RequestActivity> requestStateProvider = new Provider<RequestActivity>() {
-		@Override
-		public RequestActivity get() {
-			return requestActivity;
-		}
-	};
 	private final Provider<ScheduledExecutorService> executorProvider = new Provider<ScheduledExecutorService>() {
 		@Override
 		public ScheduledThreadPoolExecutor get() {
 			return mockExecutor;
 		}
 	};
-	private final RequestActivity requestActivity = Mockito.mock(RequestActivity.class);
+	private final ActivityScope.Control scopeControl = Mockito.mock(ActivityScope.Control.class);
 	private final ScheduledThreadPoolExecutor mockExecutor = Mockito.mock(ScheduledThreadPoolExecutor.class);
 	private final List<Runnable> scheduledJobBodies = new ArrayList<>();
 	private final ScheduledFuture<?> mockFuture = Mockito.mock(ScheduledFuture.class);
+	private final Map<Key<?>, Object> testScopeContent = new HashMap<>();
+	private final Scope testScope = new Scope() {
+		@Override
+		public <T> Provider<T> scope(final Key<T> key, final Provider<T> unscoped) {
+			return new Provider<T>() {
+				@Override
+				public T get() {
+					if (!inScope) throw new OutOfScopeException("Not in scope");
+					@SuppressWarnings("unchecked")
+					T value = (T) testScopeContent.get(key);
+					if (value == null) {
+						value = unscoped.get();
+						testScopeContent.put(key, value);
+					}
+					return value;
+				}
+			};
+		}
+	};
 	private Injector injector;
+	private boolean inScope;
 
 	@Before
 	public void setupInjector() {
 		injector = Guice.createInjector(new AbstractModule() {
 			@Override
 			protected void configure() {
-				bindScope(RequestScoped.class, ServletScopes.REQUEST);
-				bind(RequestScopedThing.class).in(RequestScoped.class);
+				bindScope(ActivityScoped.class, testScope);
+				bind(ActivityScopedThing.class).in(ActivityScoped.class);
 			}
 		});
+		Mockito.doAnswer(new Answer<Void>() {
+			@Override
+			public Void answer(InvocationOnMock invocation) throws Throwable {
+				inScope = true;
+				return null;
+			}
+		}).when(scopeControl).beginRequest(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+		Mockito.doAnswer(new Answer<Void>() {
+			@Override
+			public Void answer(InvocationOnMock invocation) throws Throwable {
+				inScope = false;
+				return null;
+			}
+		}).when(scopeControl).finishRequest(Mockito.anyString());
 	}
 
 	@Test
@@ -64,8 +96,9 @@ public class ScheduledJobControllerTest {
 		Random random = new Random();
 		long delay = random.nextLong();
 		long interval = random.nextLong();
-		ScheduledJobController.JobDefinition job = new ScheduledJobController.JobDefinition(Mockito.mock(Runnable.class), delay, interval);
-		new ScheduledJobController(requestStateProvider, executorProvider, ImmutableSet.of(job));
+		ScheduledJobController.JobDefinition job = new ScheduledJobController.JobDefinition(
+				Mockito.mock(Runnable.class), delay, interval);
+		new ScheduledJobController(executorProvider, scopeControl, ImmutableSet.of(job));
 		Mockito.verifyZeroInteractions(mockExecutor);
 	}
 
@@ -74,8 +107,10 @@ public class ScheduledJobControllerTest {
 		Random random = new Random();
 		long delay = random.nextLong();
 		long interval = random.nextLong();
-		ScheduledJobController.JobDefinition job = new ScheduledJobController.JobDefinition(Mockito.mock(Runnable.class), delay, interval);
-		ScheduledJobController controller = new ScheduledJobController(requestStateProvider, executorProvider, ImmutableSet.of(job));
+		ScheduledJobController.JobDefinition job = new ScheduledJobController.JobDefinition(
+				Mockito.mock(Runnable.class), delay, interval);
+		ScheduledJobController controller = new ScheduledJobController(executorProvider, scopeControl,
+				ImmutableSet.of(job));
 		controller.start();
 		Mockito.verify(mockExecutor).scheduleAtFixedRate(Mockito.any(Runnable.class), Mockito.eq(delay),
 				Mockito.eq(interval), Mockito.eq(TimeUnit.MILLISECONDS));
@@ -83,7 +118,7 @@ public class ScheduledJobControllerTest {
 
 	@Test
 	public void executor_is_terminated_on_stop() throws Exception {
-		ScheduledJobController controller = new ScheduledJobController(requestStateProvider, executorProvider,
+		ScheduledJobController controller = new ScheduledJobController(executorProvider, scopeControl,
 				ImmutableSet.<JobDefinition> of());
 		controller.start();
 		controller.stop();
@@ -95,8 +130,10 @@ public class ScheduledJobControllerTest {
 	public void scheduled_jobs_call_through_to_body() throws Exception {
 		Random random = new Random();
 		Runnable jobBody = Mockito.mock(Runnable.class);
-		ScheduledJobController.JobDefinition job = new ScheduledJobController.JobDefinition(jobBody, random.nextLong(), random.nextLong());
-		ScheduledJobController controller = new ScheduledJobController(requestStateProvider, executorProvider, ImmutableSet.of(job));
+		ScheduledJobController.JobDefinition job = new ScheduledJobController.JobDefinition(jobBody, random.nextLong(),
+				random.nextLong());
+		ScheduledJobController controller = new ScheduledJobController(executorProvider, scopeControl,
+				ImmutableSet.of(job));
 		captureSubmittedJobs();
 		controller.start();
 		scheduledJobBodies.get(0).run();
@@ -104,28 +141,30 @@ public class ScheduledJobControllerTest {
 	}
 
 	@Test
-	public void scheduled_job_execution_is_wrapped_in_request_scope() throws Exception {
-		final List<RequestScopedThing> requestScopedThings = new ArrayList<>();
+	public void scheduled_job_execution_is_wrapped_in_activity_scope() throws Exception {
+		final List<ActivityScopedThing> activityScopedThings = new ArrayList<>();
 		Runnable jobBody = new Runnable() {
 			@Override
 			public void run() {
 				try {
-					requestScopedThings.add(injector.getInstance(RequestScopedThing.class));
+					activityScopedThings.add(injector.getInstance(ActivityScopedThing.class));
 				} catch (ProvisionException e) {
 					if (e.getCause() instanceof OutOfScopeException) {
-						Assert.fail("Job body not in request scope");
+						Assert.fail("Job body not in activity scope");
 					}
 					throw e;
 				}
 			}
 		};
 		Random random = new Random();
-		ScheduledJobController.JobDefinition job = new ScheduledJobController.JobDefinition(jobBody, random.nextLong(), random.nextLong());
-		ScheduledJobController controller = new ScheduledJobController(requestStateProvider, executorProvider, ImmutableSet.of(job));
+		ScheduledJobController.JobDefinition job = new ScheduledJobController.JobDefinition(jobBody, random.nextLong(),
+				random.nextLong());
+		ScheduledJobController controller = new ScheduledJobController(executorProvider, scopeControl,
+				ImmutableSet.of(job));
 		captureSubmittedJobs();
 		controller.start();
 		scheduledJobBodies.get(0).run();
-		MatcherAssert.assertThat(requestScopedThings, Matchers.contains(Matchers.instanceOf(RequestScopedThing.class)));
+		MatcherAssert.assertThat(activityScopedThings, Matchers.contains(Matchers.instanceOf(ActivityScopedThing.class)));
 	}
 
 	@Test
@@ -142,15 +181,17 @@ public class ScheduledJobControllerTest {
 			}
 		};
 		Random random = new Random();
-		ScheduledJobController.JobDefinition job = new ScheduledJobController.JobDefinition(jobBody, random.nextLong(), random.nextLong());
-		ScheduledJobController controller = new ScheduledJobController(requestStateProvider, executorProvider, ImmutableSet.of(job));
+		ScheduledJobController.JobDefinition job = new ScheduledJobController.JobDefinition(jobBody, random.nextLong(),
+				random.nextLong());
+		ScheduledJobController controller = new ScheduledJobController(executorProvider, scopeControl,
+				ImmutableSet.of(job));
 		captureSubmittedJobs();
 		controller.start();
 		scheduledJobBodies.get(0).run();
-		Mockito.verify(requestActivity).beginRequest(Mockito.eq("SCH"),
+		Mockito.verify(scopeControl).beginRequest(Mockito.isNull(String.class), Mockito.eq("SCH"),
 				Mockito.argThat(Matchers.stringContainsInOrder(ImmutableList.of(jobString))));
-		Mockito.verify(requestActivity).finishRequest("SCH");
-		Mockito.verifyNoMoreInteractions(requestActivity);
+		Mockito.verify(scopeControl).finishRequest("SCH");
+		Mockito.verifyNoMoreInteractions(scopeControl);
 	}
 
 	private void captureSubmittedJobs() {
@@ -165,7 +206,7 @@ public class ScheduledJobControllerTest {
 		});
 	}
 
-	public static final class RequestScopedThing {
+	public static final class ActivityScopedThing {
 	}
 
 	private static String randomString() {

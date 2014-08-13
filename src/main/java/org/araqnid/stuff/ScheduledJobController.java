@@ -1,21 +1,17 @@
 package org.araqnid.stuff;
 
-import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.araqnid.stuff.config.ActivityScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
-import com.google.inject.Key;
 import com.google.inject.Provider;
-import com.google.inject.servlet.ServletScopes;
 
 public class ScheduledJobController implements AppService {
 	private static final Logger LOG = LoggerFactory.getLogger(ScheduledJobController.class);
@@ -26,20 +22,20 @@ public class ScheduledJobController implements AppService {
 		}
 	};
 
+	private final ActivityScope.Control scopeControl;
 	private final Set<JobDefinition> jobs;
-	private final Provider<RequestActivity> requestStateProvider;
 	private final Provider<ScheduledExecutorService> executorProvider;
 	private ScheduledExecutorService executorService;
 
 	@Inject
-	public ScheduledJobController(Provider<RequestActivity> requestStateProvider, Set<JobDefinition> jobs) {
-		this(requestStateProvider, EXECUTOR_FACTORY, jobs);
+	public ScheduledJobController(ActivityScope.Control scopeControl, Set<JobDefinition> jobs) {
+		this(EXECUTOR_FACTORY, scopeControl, jobs);
 	}
 
-	public ScheduledJobController(Provider<RequestActivity> requestStateProvider,
-			Provider<ScheduledExecutorService> executorProvider, Set<JobDefinition> jobs) {
-		this.requestStateProvider = requestStateProvider;
+	public ScheduledJobController(Provider<ScheduledExecutorService> executorProvider, ActivityScope.Control scopeControl,
+			Set<JobDefinition> jobs) {
 		this.executorProvider = executorProvider;
+		this.scopeControl = scopeControl;
 		this.jobs = jobs;
 	}
 
@@ -70,24 +66,11 @@ public class ScheduledJobController implements AppService {
 		return new Runnable() {
 			@Override
 			public void run() {
-				Map<Key<?>, Object> seedMap = Collections.emptyMap();
-				Callable<Void> scopeRequest = ServletScopes.scopeRequest(new Callable<Void>() {
-					@Override
-					public Void call() throws Exception {
-						RequestActivity requestActivity = requestStateProvider.get();
-						requestActivity.beginRequest("SCH", underlying.toString());
-						try {
-							underlying.run();
-							return null;
-						} finally {
-							requestActivity.finishRequest("SCH");
-						}
-					}
-				}, seedMap);
+				scopeControl.beginRequest(null, "SCH", underlying.toString());
 				try {
-					scopeRequest.call();
-				} catch (Exception e) {
-					throw new RuntimeException(e);
+					underlying.run();
+				} finally {
+					scopeControl.finishRequest("SCH");
 				}
 			}
 		};

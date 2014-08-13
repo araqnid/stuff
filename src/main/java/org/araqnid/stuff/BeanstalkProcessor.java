@@ -2,22 +2,19 @@ package org.araqnid.stuff;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.araqnid.stuff.config.ActivityScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.google.inject.Key;
 import com.google.inject.Provider;
-import com.google.inject.servlet.ServletScopes;
 import com.surftools.BeanstalkClient.BeanstalkException;
 import com.surftools.BeanstalkClient.Client;
 import com.surftools.BeanstalkClient.Job;
@@ -26,17 +23,17 @@ public class BeanstalkProcessor implements AppService {
 	private static final Logger LOG = LoggerFactory.getLogger(BeanstalkProcessor.class);
 	private final Provider<Client> connectionProvider;
 	private final String tubeName;
-	private final Provider<RequestActivity> requestStateProvider;
+	private final ActivityScope.Control scopeControl;
 	private final Provider<? extends DeliveryTarget> targetProvider;
 	private final ExecutorService executor;
 	private final int maxThreads;
 	private final Set<TubeConsumer> consumers = new HashSet<>();
 
 	public BeanstalkProcessor(Provider<Client> connectionProvider, String tubeName, int maxThreads,
-			Provider<RequestActivity> requestStateProvider, Provider<? extends DeliveryTarget> targetProvider) {
+			ActivityScope.Control scopeControl, Provider<? extends DeliveryTarget> targetProvider) {
 		this.connectionProvider = connectionProvider;
 		this.tubeName = tubeName;
-		this.requestStateProvider = requestStateProvider;
+		this.scopeControl = scopeControl;
 		this.targetProvider = targetProvider;
 		this.executor = Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat(
 				"beanstalk-" + tubeName + "-%d").build());
@@ -70,35 +67,18 @@ public class BeanstalkProcessor implements AppService {
 		PushedMdcValue queue = new PushedMdcValue("queue", tubeName);
 		PushedMdcValue jobId = new PushedMdcValue("jobId", String.valueOf(job.getJobId()));
 		try {
-			return deliverWithinGuiceScope(job);
+			return dispatchDelivery(job);
 		} finally {
 			PushedMdcValue.restoreValues(queue, jobId);
 		}
 	}
 
-	private boolean deliverWithinGuiceScope(final Job job) {
-		ImmutableMap<Key<?>, Object> seedMap = ImmutableMap.<Key<?>, Object> of(Key.get(Job.class), job);
-		Callable<Boolean> scoped = ServletScopes.scopeRequest(new Callable<Boolean>() {
-			@Override
-			public Boolean call() throws Exception {
-				return dispatchDelivery(job);
-			}
-		}, seedMap);
-		try {
-			return scoped.call();
-		} catch (Exception e) {
-			LOG.error("Fatal exception processing Beanstalk job", e);
-			return false;
-		}
-	}
-
 	private boolean dispatchDelivery(Job job) {
-		RequestActivity requestActivity = requestStateProvider.get();
-		requestActivity.beginRequest("BJP", Joiner.on('\t').join(tubeName, job.getJobId()));
+		scopeControl.beginRequest(null, "BJP", Joiner.on('\t').join(tubeName, job.getJobId()));
 		try {
 			return targetProvider.get().deliver(job.getData());
 		} finally {
-			requestActivity.finishRequest("BJP");
+			scopeControl.finishRequest("BJP");
 		}
 	}
 

@@ -11,6 +11,8 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.araqnid.stuff.config.ActivityScope;
+
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
@@ -18,10 +20,12 @@ import com.google.inject.Singleton;
 @Singleton
 public class RequestActivityFilter implements Filter {
 	private final Provider<RequestActivity> stateProvider;
+	private final ActivityScope.Control scopeControl;
 
 	@Inject
-	public RequestActivityFilter(Provider<RequestActivity> stateProvider) {
+	public RequestActivityFilter(Provider<RequestActivity> stateProvider, ActivityScope.Control scopeControl) {
 		this.stateProvider = stateProvider;
+		this.scopeControl = scopeControl;
 	}
 
 	@Override
@@ -41,17 +45,14 @@ public class RequestActivityFilter implements Filter {
 
 	private void doHttpFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
-		RequestActivity requestActivity = stateProvider.get();
 		String ruid = request.getHeader("X-RUID");
-		if (ruid != null) {
-			requestActivity.setRuid(ruid);
-		}
-		requestActivity.beginRequest("REQ", request.getServletPath());
+		scopeControl.beginRequest(ruid, "REQ", request.getServletPath());
 		try {
+			RequestActivity requestActivity = stateProvider.get();
 			response.setHeader("X-RUID", requestActivity.getRuid());
 			chain.doFilter(request, response);
 		} finally {
-			requestActivity.finishRequest("REQ");
+			scopeControl.finishRequest("REQ");
 		}
 	}
 
