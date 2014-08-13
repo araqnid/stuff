@@ -17,6 +17,7 @@ import org.araqnid.stuff.AsyncActivityEventSink;
 import org.araqnid.stuff.AsyncActivityEventsProcessor;
 import org.araqnid.stuff.CacheRefresher;
 import org.araqnid.stuff.HelloResource;
+import org.araqnid.stuff.JettyAppService;
 import org.araqnid.stuff.LogActivityEvents;
 import org.araqnid.stuff.RequestActivity;
 import org.araqnid.stuff.RequestActivity.ActivityEventSink;
@@ -78,6 +79,7 @@ public class AppConfig extends AbstractModule {
 		protected void configure() {
 			Multibinder<AppService> appServices = Multibinder.newSetBinder(binder(), AppService.class);
 			bind(AppServicesManager.class);
+			appServices.addBinding().to(JettyAppService.class);
 			appServices.addBinding().to(ScheduledJobController.class);
 			bind(AppVersion.class).toInstance(appVersion());
 		}
