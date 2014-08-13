@@ -196,7 +196,6 @@ public class AppConfig extends AbstractModule {
 			}
 
 			@Provides
-			@Singleton
 			@Named("vanilla")
 			@Exposed
 			public Handler vanillaContext(GuiceFilter guiceFilter, @Named("webapp-root") Resource baseResource) {
@@ -231,7 +230,6 @@ public class AppConfig extends AbstractModule {
 			}
 
 			@Provides
-			@Singleton
 			@Named("resteasy")
 			@Exposed
 			public Handler resteasyContext(GuiceFilter guiceFilter,
@@ -246,7 +244,6 @@ public class AppConfig extends AbstractModule {
 		}
 
 		@Provides
-		@Singleton
 		public Connector connector(@Named("http_port") int port) {
 			Connector connector = new SelectChannelConnector();
 			connector.setPort(port);
@@ -254,7 +251,6 @@ public class AppConfig extends AbstractModule {
 		}
 
 		@Provides
-		@Singleton
 		public Handler handler(@Named("vanilla") Handler vanillaContext, @Named("resteasy") Handler resteasyContext) {
 			ContextHandlerCollection contexts = new ContextHandlerCollection();
 			contexts.setHandlers(new Handler[] { vanillaContext, resteasyContext });
@@ -262,7 +258,6 @@ public class AppConfig extends AbstractModule {
 		}
 
 		@Provides
-		@Singleton
 		public Server server(Connector connector, Handler handler) {
 			Server server = new Server();
 			server.setConnectors(new Connector[] { connector });

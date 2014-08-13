@@ -5,9 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-import com.google.inject.Singleton;
-
-@Singleton
 public class LogActivityEvents implements ActivityEventSink {
 	private static final Logger LOG = LoggerFactory.getLogger(LogActivityEvents.class);
 
