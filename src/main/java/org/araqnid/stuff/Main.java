@@ -15,12 +15,10 @@ public class Main {
 		final Injector injector = Guice.createInjector(Stage.PRODUCTION, new AppConfig());
 		final AppServicesManager servicesManager = injector.getInstance(AppServicesManager.class);
 		try {
-			LOG.info("Starting app services");
 			servicesManager.start();
 			Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
 				@Override
 				public void run() {
-					LOG.info("Starting graceful shutdown");
 					servicesManager.stop();
 				}
 			}, "GracefulShutdownThread"));
