@@ -2,8 +2,10 @@ package org.araqnid.stuff.config;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import org.araqnid.stuff.RequestActivity;
+import org.araqnid.stuff.RequestActivity.ActivityEventSink;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -51,24 +53,37 @@ public final class ActivityScope {
 	};
 
 	public static class Control {
-		private final Provider<RequestActivity> requestActivityProvider;
+		private final Provider<ActivityEventSink> activitySinkProvider;
 
 		@Inject
-		public Control(Provider<RequestActivity> requestActivityProvider) {
-			this.requestActivityProvider = requestActivityProvider;
+		public Control(Provider<ActivityEventSink> activitySinkProvider) {
+			this.activitySinkProvider = activitySinkProvider;
+		}
+
+		public void beginRequest(String type, String description) {
+			beginRequestWithRuid(newRuid(), type, description);
 		}
 
 		public void beginRequest(String ruid, String type, String description) {
+			beginRequestWithRuid(ruid == null ? newRuid() : ruid, type, description);
+		}
+
+		private void beginRequestWithRuid(String ruid, String type, String description) {
 			if (contexts.get() != null) throw new IllegalStateException(
 					"Activity context already attached to this thread");
-			contexts.set(new Context());
-			RequestActivity requestActivity = requestActivityProvider.get();
-			if (ruid != null) requestActivity.setRuid(ruid);
+			RequestActivity requestActivity = new RequestActivity(ruid, activitySinkProvider.get());
+			Context context = new Context(requestActivity);
 			requestActivity.beginRequest(type, description);
+			contexts.set(context);
+		}
+
+		public String newRuid() {
+			return UUID.randomUUID().toString();
 		}
 
 		public void finishRequest(String type) {
-			RequestActivity requestActivity = requestActivityProvider.get();
+			Context context = acquireContext();
+			RequestActivity requestActivity = context.getRequestActivity();
 			requestActivity.finishRequest(type);
 			contexts.remove();
 		}
@@ -81,7 +96,17 @@ public final class ActivityScope {
 	}
 
 	private static class Context {
-		private final Map<Key<?>, Object> contents = new HashMap<>();
+		private static final Key<RequestActivity> ACTIVITY_KEY = Key.get(RequestActivity.class);
+		private final Map<Key<?>, Object> contents;
+
+		private Context(RequestActivity requestActivity) {
+			contents = new HashMap<>();
+			contents.put(ACTIVITY_KEY, requestActivity);
+		}
+
+		public RequestActivity getRequestActivity() {
+			return (RequestActivity) contents.get(ACTIVITY_KEY);
+		}
 
 		public <T> T scope(Key<T> key, Provider<T> unscoped) {
 			@SuppressWarnings("unchecked")
