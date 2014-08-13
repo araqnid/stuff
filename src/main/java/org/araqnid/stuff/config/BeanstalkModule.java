@@ -6,7 +6,6 @@ import java.util.Set;
 
 import org.araqnid.stuff.BeanstalkProcessor;
 import org.araqnid.stuff.BeanstalkProcessor.DeliveryTarget;
-import org.araqnid.stuff.RequestActivity;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -102,22 +101,24 @@ public abstract class BeanstalkModule extends AbstractModule {
 
 		private Provider<BeanstalkProcessor> makeProvider(Binder binder) {
 			Provider<Client> connectionProvider = binder.getProvider(Client.class);
-			Provider<RequestActivity> requestStateProvider = binder.getProvider(RequestActivity.class);
+			Provider<ActivityScope.Control> scopeControlProvider = binder.getProvider(ActivityScope.Control.class);
 			Provider<BeanstalkProcessor> tubeProcessorProvider;
 			if (targetKey != null) {
-				Set<Dependency<?>> dependencies = ImmutableSet.<Dependency<?>> of(Dependency.get(Key.get(Client.class)),
-						Dependency.get(Key.get(RequestActivity.class)), Dependency.get(targetKey));
-				tubeProcessorProvider = new TubeProcessorProvider(dependencies, connectionProvider, tubeName, maxThreads, requestStateProvider,
-						binder.getProvider(targetKey));
+				Set<Dependency<?>> dependencies = ImmutableSet.<Dependency<?>> of(
+						Dependency.get(Key.get(Client.class)), Dependency.get(Key.get(ActivityScope.Control.class)),
+						Dependency.get(targetKey));
+				tubeProcessorProvider = new TubeProcessorProvider(dependencies, connectionProvider, tubeName,
+						maxThreads, scopeControlProvider, binder.getProvider(targetKey));
 			}
 			else if (targetProvider != null) {
-				Set<Dependency<?>> dependencies = Sets.<Dependency<?>> newHashSet(Dependency.get(Key.get(Client.class)),
-						Dependency.get(Key.get(RequestActivity.class)));
+				Set<Dependency<?>> dependencies = Sets.<Dependency<?>> newHashSet(
+						Dependency.get(Key.get(Client.class)), Dependency.get(Key.get(ActivityScope.Control.class)));
 				if (targetProvider instanceof ProviderWithDependencies) {
-					dependencies.addAll(((ProviderWithDependencies<? extends DeliveryTarget>) targetProvider).getDependencies());
+					dependencies.addAll(((ProviderWithDependencies<? extends DeliveryTarget>) targetProvider)
+							.getDependencies());
 				}
-				tubeProcessorProvider = new TubeProcessorProvider(ImmutableSet.copyOf(dependencies), connectionProvider, tubeName, maxThreads,
-						requestStateProvider, targetProvider);
+				tubeProcessorProvider = new TubeProcessorProvider(ImmutableSet.copyOf(dependencies),
+						connectionProvider, tubeName, maxThreads, scopeControlProvider, targetProvider);
 			}
 			else {
 				throw new IllegalStateException();
@@ -131,17 +132,17 @@ public abstract class BeanstalkModule extends AbstractModule {
 		private final Provider<Client> connectionProvider;
 		private final String tubeName;
 		private final int maxThreads;
-		private final Provider<RequestActivity> requestStateProvider;
+		private final Provider<ActivityScope.Control> scopeControlProvider;
 		private final Provider<? extends DeliveryTarget> targetProvider;
 
 		public TubeProcessorProvider(Set<Dependency<?>> dependencies, Provider<Client> connectionProvider,
-				String tubeName, int maxThreads, Provider<RequestActivity> requestStateProvider,
+				String tubeName, int maxThreads, Provider<ActivityScope.Control> scopeControlProvider,
 				Provider<? extends DeliveryTarget> targetProvider) {
 			this.dependencies = dependencies;
 			this.connectionProvider = connectionProvider;
 			this.tubeName = tubeName;
 			this.maxThreads = maxThreads;
-			this.requestStateProvider = requestStateProvider;
+			this.scopeControlProvider = scopeControlProvider;
 			this.targetProvider = targetProvider;
 		}
 
@@ -152,7 +153,7 @@ public abstract class BeanstalkModule extends AbstractModule {
 
 		@Override
 		public BeanstalkProcessor get() {
-			return new BeanstalkProcessor(connectionProvider, tubeName, maxThreads, requestStateProvider,
+			return new BeanstalkProcessor(connectionProvider, tubeName, maxThreads, scopeControlProvider.get(),
 					targetProvider);
 		}
 	}

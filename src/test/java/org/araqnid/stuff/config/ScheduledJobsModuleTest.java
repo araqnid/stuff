@@ -18,8 +18,6 @@ import org.mockito.Mockito;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.google.inject.servlet.RequestScoped;
-import com.google.inject.servlet.ServletScopes;
 
 public class ScheduledJobsModuleTest {
 	private Injector baseInjector;
@@ -30,7 +28,7 @@ public class ScheduledJobsModuleTest {
 		baseInjector = Guice.createInjector(new AbstractModule() {
 			@Override
 			protected void configure() {
-				bindScope(RequestScoped.class, ServletScopes.REQUEST);
+				bindScope(ActivityScoped.class, ActivityScope.SCOPE);
 				bind(ActivityEventSink.class).toInstance(activityEventSink);
 			}
 		});

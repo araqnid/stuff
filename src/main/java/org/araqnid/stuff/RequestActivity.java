@@ -5,12 +5,13 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.araqnid.stuff.config.ActivityScoped;
+
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import com.google.inject.servlet.RequestScoped;
 
-@RequestScoped
+@ActivityScoped
 public class RequestActivity {
 	private static final AtomicLong idGenerator = new AtomicLong();
 	private final ActivityEventSink activityEventSink;

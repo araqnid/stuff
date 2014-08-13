@@ -3,7 +3,6 @@ package org.araqnid.stuff.config;
 import java.util.List;
 import java.util.Set;
 
-import org.araqnid.stuff.RequestActivity;
 import org.araqnid.stuff.ScheduledJobController;
 import org.araqnid.stuff.ScheduledJobController.JobDefinition;
 
@@ -47,14 +46,16 @@ public abstract class ScheduledJobsModule extends AbstractModule {
 
 		@Override
 		public void configure(Binder binder) {
-			Set<Dependency<?>> dependencies = Sets.<Dependency<?>>newHashSet(Dependency.get(Key.get(RequestActivity.class)));
+			Set<Dependency<?>> dependencies = Sets.<Dependency<?>> newHashSet(Dependency.get(Key
+					.get(ActivityScope.Control.class)));
 			Set<JobDefinition> jobProviders = Sets.newHashSet();
 			for (JobBinding<?> job : bindings) {
 				dependencies.add(Dependency.get(job.key));
 				jobProviders.add(new JobDefinition(job.asRunnable(binder), job.delay, job.interval));
 			}
 			binder.bind(ScheduledJobController.class).toProvider(
-					new ScheduledJobsProvider(ImmutableSet.copyOf(dependencies), binder.getProvider(RequestActivity.class), jobProviders));
+					new ScheduledJobsProvider(ImmutableSet.copyOf(dependencies), binder
+							.getProvider(ActivityScope.Control.class), jobProviders));
 		}
 
 		public <T extends Runnable> JobBinding<T> createJobBinding(Key<T> key) {
@@ -84,13 +85,13 @@ public abstract class ScheduledJobsModule extends AbstractModule {
 
 	private static final class ScheduledJobsProvider implements ProviderWithDependencies<ScheduledJobController> {
 		private final Set<Dependency<?>> dependencies;
-		private final Provider<RequestActivity> requestStateProvider;
+		private final Provider<ActivityScope.Control> scopeControlProvider;
 		private final Set<JobDefinition> jobProviders;
 
-		public ScheduledJobsProvider(Set<Dependency<?>> dependencies, Provider<RequestActivity> requestStateProvider,
-				Set<JobDefinition> jobProviders) {
+		public ScheduledJobsProvider(Set<Dependency<?>> dependencies,
+				Provider<ActivityScope.Control> scopeControlProvider, Set<JobDefinition> jobProviders) {
 			this.dependencies = dependencies;
-			this.requestStateProvider = requestStateProvider;
+			this.scopeControlProvider = scopeControlProvider;
 			this.jobProviders = jobProviders;
 		}
 
@@ -101,7 +102,7 @@ public abstract class ScheduledJobsModule extends AbstractModule {
 
 		@Override
 		public ScheduledJobController get() {
-			return new ScheduledJobController(requestStateProvider, jobProviders);
+			return new ScheduledJobController(scopeControlProvider.get(), jobProviders);
 		}
 	}
 
