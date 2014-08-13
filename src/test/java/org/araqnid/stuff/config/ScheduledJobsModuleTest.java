@@ -22,13 +22,14 @@ import com.google.inject.Injector;
 public class ScheduledJobsModuleTest {
 	private Injector baseInjector;
 	private ActivityEventSink activityEventSink = Mockito.mock(ActivityEventSink.class);
+	private ActivityScope.Control scopeControl = Mockito.mock(ActivityScope.Control.class);
 
 	@Before
 	public void setup() {
 		baseInjector = Guice.createInjector(new AbstractModule() {
 			@Override
 			protected void configure() {
-				bindScope(ActivityScoped.class, ActivityScope.SCOPE);
+				bind(ActivityScope.Control.class).toInstance(scopeControl);
 				bind(ActivityEventSink.class).toInstance(activityEventSink);
 			}
 		});
@@ -43,10 +44,8 @@ public class ScheduledJobsModuleTest {
 			}
 		});
 		ScheduledJobController jobs = injector.getInstance(ScheduledJobController.class);
-		MatcherAssert.assertThat(
-				jobs.getJobs(),
-				Matchers.contains(aJob().calling(TestJob.class).havingDelay(Matchers.equalTo(0L))
-						.havingInterval(Matchers.equalTo(2000L))));
+		MatcherAssert.assertThat(jobs.getJobs(),
+				Matchers.contains(aJob().calling(TestJob.class).havingDelay(Matchers.equalTo(0L)).havingInterval(Matchers.equalTo(2000L))));
 	}
 
 	@Test

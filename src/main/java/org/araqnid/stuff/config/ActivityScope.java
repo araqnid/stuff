@@ -21,7 +21,7 @@ public final class ActivityScope {
 		@Override
 		protected void configure() {
 			bindScope(ActivityScoped.class, SCOPE);
-			bind(Control.class);
+			bind(Control.class).to(ControlImpl.class);
 		}
 
 		@Override
@@ -52,18 +52,26 @@ public final class ActivityScope {
 		}
 	};
 
-	public static class Control {
+	public interface Control {
+		void beginRequest(String type, String description);
+		void beginRequest(String ruid, String type, String description);
+		void finishRequest(String type);
+	}
+
+	public static final class ControlImpl implements Control {
 		private final Provider<ActivityEventSink> activitySinkProvider;
 
 		@Inject
-		public Control(Provider<ActivityEventSink> activitySinkProvider) {
+		public ControlImpl(Provider<ActivityEventSink> activitySinkProvider) {
 			this.activitySinkProvider = activitySinkProvider;
 		}
 
+		@Override
 		public void beginRequest(String type, String description) {
 			beginRequestWithRuid(newRuid(), type, description);
 		}
 
+		@Override
 		public void beginRequest(String ruid, String type, String description) {
 			beginRequestWithRuid(ruid == null ? newRuid() : ruid, type, description);
 		}
@@ -81,6 +89,7 @@ public final class ActivityScope {
 			return UUID.randomUUID().toString();
 		}
 
+		@Override
 		public void finishRequest(String type) {
 			Context context = acquireContext();
 			RequestActivity requestActivity = context.getRequestActivity();
