@@ -18,6 +18,7 @@ import org.araqnid.stuff.AsyncActivityEventsProcessor;
 import org.araqnid.stuff.CacheRefresher;
 import org.araqnid.stuff.HelloResource;
 import org.araqnid.stuff.LogActivityEvents;
+import org.araqnid.stuff.RequestActivity;
 import org.araqnid.stuff.RequestActivity.ActivityEventSink;
 import org.araqnid.stuff.RequestActivityFilter;
 import org.araqnid.stuff.RootServlet;
@@ -144,14 +145,14 @@ public class AppConfig extends AbstractModule {
 
 		@Provides
 		@Named("somequeue")
-		public WorkQueue somequeue() {
-			return new SqlWorkQueue("somequeue");
+		public WorkQueue somequeue(RequestActivity requestActivity) {
+			return new SqlWorkQueue("somequeue", requestActivity);
 		}
 
 		@Provides
 		@Named("otherqueue")
-		public WorkQueue otherqueue() {
-			return new SqlWorkQueue("otherqueue");
+		public WorkQueue otherqueue(RequestActivity requestActivity) {
+			return new SqlWorkQueue("otherqueue", requestActivity);
 		}
 	}
 
