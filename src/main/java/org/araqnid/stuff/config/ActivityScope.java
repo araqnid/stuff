@@ -5,14 +5,39 @@ import java.util.Map;
 
 import org.araqnid.stuff.RequestActivity;
 
+import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.OutOfScopeException;
 import com.google.inject.Provider;
 import com.google.inject.Scope;
 
-public class ActivityScope {
+public final class ActivityScope {
 	private static final ThreadLocal<Context> contexts = new ThreadLocal<>();
+
+	public static final class Module extends AbstractModule {
+		@Override
+		protected void configure() {
+			bindScope(ActivityScoped.class, SCOPE);
+			bind(Control.class);
+		}
+
+		@Override
+		public int hashCode() {
+			return getClass().hashCode();
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			return obj instanceof Module;
+		}
+
+		@Override
+		public String toString() {
+			return getClass().getName();
+		}
+	}
+
 	public static final Scope SCOPE = new Scope() {
 		@Override
 		public <T> Provider<T> scope(final Key<T> key, final Provider<T> unscoped) {
@@ -67,5 +92,8 @@ public class ActivityScope {
 			}
 			return value;
 		}
+	}
+
+	private ActivityScope() {
 	}
 }

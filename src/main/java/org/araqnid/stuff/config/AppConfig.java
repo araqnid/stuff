@@ -57,7 +57,7 @@ public class AppConfig extends AbstractModule {
 	@Override
 	protected void configure() {
 		bindConstant().annotatedWith(Names.named("http_port")).to(port(61000));
-		bindScope(ActivityScoped.class, ActivityScope.SCOPE);
+		install(new ActivityScope.Module());
 		install(new CoreModule());
 		install(new RawBeanstalkModule());
 		install(new WorkQueueModule());
