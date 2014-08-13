@@ -1,42 +1,37 @@
 package org.araqnid.stuff;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.araqnid.stuff.config.ActivityScoped;
 
 import com.google.common.base.Stopwatch;
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
 @ActivityScoped
 public class RequestActivity {
 	private static final AtomicLong idGenerator = new AtomicLong();
 	private final ActivityEventSink activityEventSink;
-	private String ruid;
-	private List<EventNode> eventStack = Lists.newArrayList();
+	private final String ruid;
+	private final List<EventNode> eventStack = new ArrayList<>();
 	private boolean used;
 
 	@Inject
-	public RequestActivity(ActivityEventSink activityEventSink) {
+	public RequestActivity(String ruid, ActivityEventSink activityEventSink) {
 		this.activityEventSink = activityEventSink;
+		this.ruid = ruid;
 	}
 
 	public String getRuid() {
 		return ruid;
 	}
 
-	public void setRuid(String ruid) {
-		this.ruid = ruid;
-	}
-
 	public void beginRequest(String type, String description) {
 		if (!eventStack.isEmpty()) throw new IllegalStateException("Event stack is not empty");
 		if (used) throw new IllegalStateException("RequestActivity should be not reused");
 		type = type.intern();
-		if (ruid == null) ruid = UUID.randomUUID().toString();
 		EventNode node = new EventNode(idGenerator.incrementAndGet(), type, description);
 		eventStack.add(node);
 		activityEventSink.beginRequest(ruid, node.id, type, description);
