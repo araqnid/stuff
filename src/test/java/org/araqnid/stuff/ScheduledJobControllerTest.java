@@ -40,7 +40,6 @@ public class ScheduledJobControllerTest {
 			return mockExecutor;
 		}
 	};
-	private final ActivityScope.Control scopeControl = Mockito.mock(ActivityScope.Control.class);
 	private final ScheduledThreadPoolExecutor mockExecutor = Mockito.mock(ScheduledThreadPoolExecutor.class);
 	private final List<Runnable> scheduledJobBodies = new ArrayList<>();
 	private final ScheduledFuture<?> mockFuture = Mockito.mock(ScheduledFuture.class);
@@ -63,6 +62,26 @@ public class ScheduledJobControllerTest {
 			};
 		}
 	};
+	private final ActivityScope.Control mockScopeControl = Mockito.mock(ActivityScope.Control.class);
+	private final ActivityScope.Control scopeControl = new ActivityScope.Control() {
+		@Override
+		public void beginRequest(String ruid, String type, String description) {
+			inScope = true;
+			mockScopeControl.beginRequest(ruid, type, description);
+		}
+		
+		@Override
+		public void beginRequest(String type, String description) {
+			inScope = true;
+			mockScopeControl.beginRequest(type, description);
+		}
+
+		@Override
+		public void finishRequest(String type) {
+			inScope = false;
+			mockScopeControl.finishRequest(type);
+		}
+	};
 	private Injector injector;
 	private boolean inScope;
 
@@ -75,20 +94,6 @@ public class ScheduledJobControllerTest {
 				bind(ActivityScopedThing.class).in(ActivityScoped.class);
 			}
 		});
-		Mockito.doAnswer(new Answer<Void>() {
-			@Override
-			public Void answer(InvocationOnMock invocation) throws Throwable {
-				inScope = true;
-				return null;
-			}
-		}).when(scopeControl).beginRequest(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
-		Mockito.doAnswer(new Answer<Void>() {
-			@Override
-			public Void answer(InvocationOnMock invocation) throws Throwable {
-				inScope = false;
-				return null;
-			}
-		}).when(scopeControl).finishRequest(Mockito.anyString());
 	}
 
 	@Test
@@ -188,10 +193,10 @@ public class ScheduledJobControllerTest {
 		captureSubmittedJobs();
 		controller.start();
 		scheduledJobBodies.get(0).run();
-		Mockito.verify(scopeControl).beginRequest(Mockito.isNull(String.class), Mockito.eq("SCH"),
+		Mockito.verify(mockScopeControl).beginRequest(Mockito.isNull(String.class), Mockito.eq("SCH"),
 				Mockito.argThat(Matchers.stringContainsInOrder(ImmutableList.of(jobString))));
-		Mockito.verify(scopeControl).finishRequest("SCH");
-		Mockito.verifyNoMoreInteractions(scopeControl);
+		Mockito.verify(mockScopeControl).finishRequest("SCH");
+		Mockito.verifyNoMoreInteractions(mockScopeControl);
 	}
 
 	private void captureSubmittedJobs() {
