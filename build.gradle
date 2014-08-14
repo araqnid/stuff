@@ -30,6 +30,7 @@ dependencies {
     //compile 'org.hibernate:hibernate-core:4.3.6.Final'
     //compile 'org.hibernate:hibernate-entitymanager:4.3.6.Final'
     compile 'org.jboss.resteasy:resteasy-guice:3.0.8.Final'
+    compile 'com.lexicalscope.eventcast:eventcast:1.0.2'
     //runtime 'ch.qos.logback:logback-core:1.1.2'
     runtime 'org.slf4j:slf4j-simple:1.7.7'
     runtime 'org.postgresql:postgresql:9.3-1102-jdbc41'
