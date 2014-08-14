@@ -15,6 +15,7 @@ import com.google.common.collect.Maps;
 import com.google.inject.AbstractModule;
 import com.google.inject.Binder;
 import com.google.inject.Key;
+import com.google.inject.MembersInjector;
 import com.google.inject.Module;
 import com.google.inject.Provider;
 import com.google.inject.multibindings.Multibinder;
@@ -73,19 +74,25 @@ public abstract class BeanstalkWorkQueueModule extends AbstractModule {
 			this.multibinder = multibinder;
 		}
 
-		private Provider<WorkQueueBeanstalkHandler> makeQueueHandlerProvider(Binder binder, final String queueId, WorkQueueBinder queueBinding) {
+		private Provider<WorkQueueBeanstalkHandler> makeQueueHandlerProvider(Binder binder, final String queueId,
+				WorkQueueBinder queueBinding) {
 			final Key<WorkProcessor> processorKey = queueBinding.bindWorkProcessor(binder);
 			final Key<WorkQueue> queueKey = Key.get(WorkQueue.class, Names.named(queueId));
 			final Provider<WorkQueue> queueProvider = binder.getProvider(queueKey);
 			final Provider<WorkProcessor> processorProvider = binder.getProvider(processorKey);
 			final Provider<RequestActivity> requestActivityProvider = binder.getProvider(RequestActivity.class);
-			final Set<Dependency<?>> dependencies = ImmutableSet.<Dependency<?>> of(Dependency.get(queueKey), Dependency.get(processorKey),
-					Dependency.get(Key.get(RequestActivity.class)));
-			return new WorkQueueHandlerProvider(processorProvider, queueProvider, requestActivityProvider, dependencies, queueId);
+			final Set<Dependency<?>> dependencies = ImmutableSet.<Dependency<?>> of(Dependency.get(queueKey),
+					Dependency.get(processorKey), Dependency.get(Key.get(RequestActivity.class)));
+			MembersInjector<WorkDispatcher> dispatcherInjector = binder.getMembersInjector(WorkDispatcher.class);
+			MembersInjector<WorkQueueBeanstalkHandler> handlerInjector = binder
+					.getMembersInjector(WorkQueueBeanstalkHandler.class);
+			return new WorkQueueHandlerProvider(processorProvider, queueProvider, requestActivityProvider,
+					dependencies, queueId, dispatcherInjector, handlerInjector);
 		}
 
 		public WorkQueueBinder process(String queueId) {
-			if (bindings.containsKey(queueId)) throw new IllegalArgumentException("Queue '" + queueId + "' already bound");
+			if (bindings.containsKey(queueId)) throw new IllegalArgumentException("Queue '" + queueId
+					+ "' already bound");
 			WorkQueueBinder queueBinder = new WorkQueueBinder(queueId);
 			bindings.put(queueId, queueBinder);
 			return queueBinder;
@@ -116,9 +123,9 @@ public abstract class BeanstalkWorkQueueModule extends AbstractModule {
 		}
 
 		private Key<WorkProcessor> bindWorkProcessor(Binder binder) {
-			if (targetKey != null)
-				binder.bind(WorkProcessor.class).annotatedWith(Names.named(queueId)).to(targetKey);
-			else if (targetProvider != null) binder.bind(WorkProcessor.class).annotatedWith(Names.named(queueId)).toProvider(targetProvider);
+			if (targetKey != null) binder.bind(WorkProcessor.class).annotatedWith(Names.named(queueId)).to(targetKey);
+			else if (targetProvider != null) binder.bind(WorkProcessor.class).annotatedWith(Names.named(queueId))
+					.toProvider(targetProvider);
 			return Key.get(WorkProcessor.class, Names.named(queueId));
 		}
 	}
@@ -129,14 +136,20 @@ public abstract class BeanstalkWorkQueueModule extends AbstractModule {
 		private final Provider<RequestActivity> requestActivityProvider;
 		private final Set<Dependency<?>> dependencies;
 		private final String queueId;
+		private final MembersInjector<WorkDispatcher> dispatcherInjector;
+		private final MembersInjector<WorkQueueBeanstalkHandler> handlerInjector;
 
 		private WorkQueueHandlerProvider(Provider<WorkProcessor> processorProvider, Provider<WorkQueue> queueProvider,
-				Provider<RequestActivity> requestActivityProvider, Set<Dependency<?>> dependencies, String queueId) {
+				Provider<RequestActivity> requestActivityProvider, Set<Dependency<?>> dependencies, String queueId,
+				MembersInjector<WorkDispatcher> dispatcherInjector,
+				MembersInjector<WorkQueueBeanstalkHandler> handlerInjector) {
 			this.processorProvider = processorProvider;
 			this.queueProvider = queueProvider;
 			this.requestActivityProvider = requestActivityProvider;
 			this.dependencies = dependencies;
 			this.queueId = queueId;
+			this.dispatcherInjector = dispatcherInjector;
+			this.handlerInjector = handlerInjector;
 		}
 
 		@Override
@@ -146,8 +159,12 @@ public abstract class BeanstalkWorkQueueModule extends AbstractModule {
 
 		@Override
 		public WorkQueueBeanstalkHandler get() {
-			return new WorkQueueBeanstalkHandler(queueId, new WorkDispatcher(queueProvider.get(), processorProvider.get()),
+			WorkDispatcher dispatcher = new WorkDispatcher(queueProvider.get(), processorProvider.get());
+			dispatcherInjector.injectMembers(dispatcher);
+			WorkQueueBeanstalkHandler handler = new WorkQueueBeanstalkHandler(queueId, dispatcher,
 					requestActivityProvider.get());
+			handlerInjector.injectMembers(handler);
+			return handler;
 		}
 	}
 }
