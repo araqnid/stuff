@@ -12,6 +12,7 @@ import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
 import com.google.inject.Binder;
 import com.google.inject.Key;
+import com.google.inject.MembersInjector;
 import com.google.inject.Module;
 import com.google.inject.Provider;
 import com.google.inject.multibindings.Multibinder;
@@ -103,12 +104,13 @@ public abstract class BeanstalkModule extends AbstractModule {
 			Provider<Client> connectionProvider = binder.getProvider(Client.class);
 			Provider<ActivityScope.Control> scopeControlProvider = binder.getProvider(ActivityScope.Control.class);
 			Provider<BeanstalkProcessor> tubeProcessorProvider;
+			MembersInjector<BeanstalkProcessor> membersInjector = binder.getMembersInjector(BeanstalkProcessor.class);
 			if (targetKey != null) {
 				Set<Dependency<?>> dependencies = ImmutableSet.<Dependency<?>> of(
 						Dependency.get(Key.get(Client.class)), Dependency.get(Key.get(ActivityScope.Control.class)),
 						Dependency.get(targetKey));
-				tubeProcessorProvider = new TubeProcessorProvider(dependencies, connectionProvider, tubeName,
-						maxThreads, scopeControlProvider, binder.getProvider(targetKey));
+				tubeProcessorProvider = new TubeProcessorProvider(dependencies, membersInjector, connectionProvider,
+						tubeName, maxThreads, scopeControlProvider, binder.getProvider(targetKey));
 			}
 			else if (targetProvider != null) {
 				Set<Dependency<?>> dependencies = Sets.<Dependency<?>> newHashSet(
@@ -117,7 +119,7 @@ public abstract class BeanstalkModule extends AbstractModule {
 					dependencies.addAll(((ProviderWithDependencies<? extends DeliveryTarget>) targetProvider)
 							.getDependencies());
 				}
-				tubeProcessorProvider = new TubeProcessorProvider(ImmutableSet.copyOf(dependencies),
+				tubeProcessorProvider = new TubeProcessorProvider(ImmutableSet.copyOf(dependencies), membersInjector,
 						connectionProvider, tubeName, maxThreads, scopeControlProvider, targetProvider);
 			}
 			else {
@@ -129,16 +131,19 @@ public abstract class BeanstalkModule extends AbstractModule {
 
 	private static class TubeProcessorProvider implements ProviderWithDependencies<BeanstalkProcessor> {
 		private final Set<Dependency<?>> dependencies;
+		private final MembersInjector<BeanstalkProcessor> membersInjector;
 		private final Provider<Client> connectionProvider;
 		private final String tubeName;
 		private final int maxThreads;
 		private final Provider<ActivityScope.Control> scopeControlProvider;
 		private final Provider<? extends DeliveryTarget> targetProvider;
 
-		public TubeProcessorProvider(Set<Dependency<?>> dependencies, Provider<Client> connectionProvider,
+		public TubeProcessorProvider(Set<Dependency<?>> dependencies,
+				MembersInjector<BeanstalkProcessor> membersInjector, Provider<Client> connectionProvider,
 				String tubeName, int maxThreads, Provider<ActivityScope.Control> scopeControlProvider,
 				Provider<? extends DeliveryTarget> targetProvider) {
 			this.dependencies = dependencies;
+			this.membersInjector = membersInjector;
 			this.connectionProvider = connectionProvider;
 			this.tubeName = tubeName;
 			this.maxThreads = maxThreads;
@@ -153,8 +158,10 @@ public abstract class BeanstalkModule extends AbstractModule {
 
 		@Override
 		public BeanstalkProcessor get() {
-			return new BeanstalkProcessor(connectionProvider, tubeName, maxThreads, scopeControlProvider.get(),
-					targetProvider);
+			BeanstalkProcessor processor = new BeanstalkProcessor(connectionProvider, tubeName, maxThreads,
+					scopeControlProvider.get(), targetProvider);
+			membersInjector.injectMembers(processor);
+			return processor;
 		}
 	}
 }
