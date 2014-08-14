@@ -8,6 +8,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import javax.servlet.DispatcherType;
 import javax.servlet.ServletContext;
 
+import org.araqnid.stuff.AppLifecycleEvent;
 import org.araqnid.stuff.AppService;
 import org.araqnid.stuff.AppServicesManager;
 import org.araqnid.stuff.AppStateServlet;
@@ -52,6 +53,7 @@ import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import com.google.inject.servlet.GuiceFilter;
 import com.google.inject.servlet.ServletModule;
+import com.lexicalscope.eventcast.EventCast;
 import com.surftools.BeanstalkClient.Client;
 import com.surftools.BeanstalkClientImpl.ClientImpl;
 
@@ -77,6 +79,9 @@ public class AppConfig extends AbstractModule {
 	public static final class CoreModule extends AbstractModule {
 		@Override
 		protected void configure() {
+			install(EventCast.eventCastModuleBuilder()
+					.implement(AppLifecycleEvent.class)
+					.build());
 			Multibinder<AppService> appServices = Multibinder.newSetBinder(binder(), AppService.class);
 			bind(AppServicesManager.class);
 			appServices.addBinding().to(JettyAppService.class);

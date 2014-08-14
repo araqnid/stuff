@@ -12,38 +12,31 @@ import com.google.inject.Singleton;
 public class AppServicesManager {
 	private static final Logger LOG = LoggerFactory.getLogger(AppServicesManager.class);
 	private final Set<AppService> services;
-	private AppState state = AppState.CREATED;
+	private final AppLifecycleEvent lifecycleEvents;
 
 	@Inject
-	public AppServicesManager(Set<AppService> services) {
+	public AppServicesManager(AppLifecycleEvent lifecycleEvents, Set<AppService> services) {
+		this.lifecycleEvents = lifecycleEvents;
 		this.services = services;
 	}
 
 	public void start() {
-		setState(AppState.STARTING);
+		lifecycleEvents.starting();
 		LOG.info("Starting app services");
 		for (AppService service : services) {
 			LOG.info("Starting {}", service);
 			service.start();
 		}
-		setState(AppState.STARTED);
+		lifecycleEvents.started();
 	}
 
 	public void stop() {
-		setState(AppState.STOPPING);
+		lifecycleEvents.stopping();
 		LOG.info("Stopping app services");
 		for (AppService service : services) {
 			LOG.info("Stopping {}", service);
 			service.stop();
 		}
-		setState(AppState.STOPPED);
-	}
-
-	public synchronized AppState getState() {
-		return state;
-	}
-
-	private synchronized void setState(AppState newState) {
-		state = newState;
+		lifecycleEvents.stopped();
 	}
 }

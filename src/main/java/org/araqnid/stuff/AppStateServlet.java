@@ -14,11 +14,11 @@ import com.google.inject.Singleton;
 @Singleton
 public class AppStateServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-	private final AppServicesManager servicesManager;
+	private final AppStateMonitor servicesMonitor;
 
 	@Inject
-	public AppStateServlet(AppServicesManager servicesManager) {
-		this.servicesManager = servicesManager;
+	public AppStateServlet(AppStateMonitor servicesMonitor) {
+		this.servicesMonitor = servicesMonitor;
 	}
 
 	@Override
@@ -26,6 +26,6 @@ public class AppStateServlet extends HttpServlet {
 		resp.setContentType("text/plain");
 		resp.setHeader("Cache-Control", "no-cache, no-store");
 		PrintWriter pw = resp.getWriter();
-		pw.print(servicesManager.getState().toString());
+		pw.print(servicesMonitor.getState().toString());
 	}
 }
