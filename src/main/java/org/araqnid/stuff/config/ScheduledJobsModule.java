@@ -1,21 +1,18 @@
 package org.araqnid.stuff.config;
 
 import java.util.List;
-import java.util.Set;
 
 import org.araqnid.stuff.ScheduledJobController;
 import org.araqnid.stuff.ScheduledJobController.JobDefinition;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
 import com.google.inject.Binder;
 import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Provider;
-import com.google.inject.spi.Dependency;
-import com.google.inject.spi.ProviderWithDependencies;
+import com.google.inject.Singleton;
+import com.google.inject.multibindings.Multibinder;
 
 public abstract class ScheduledJobsModule extends AbstractModule {
 	private Builder builder;
@@ -46,16 +43,11 @@ public abstract class ScheduledJobsModule extends AbstractModule {
 
 		@Override
 		public void configure(Binder binder) {
-			Set<Dependency<?>> dependencies = Sets.<Dependency<?>> newHashSet(Dependency.get(Key
-					.get(ActivityScope.Control.class)));
-			Set<JobDefinition> jobProviders = Sets.newHashSet();
+			Multibinder<JobDefinition> jobs = Multibinder.newSetBinder(binder, JobDefinition.class);
 			for (JobBinding<?> job : bindings) {
-				dependencies.add(Dependency.get(job.key));
-				jobProviders.add(new JobDefinition(job.asRunnable(binder), job.delay, job.interval));
+				jobs.addBinding().toInstance(new JobDefinition(job.asRunnable(binder), job.delay, job.interval));
 			}
-			binder.bind(ScheduledJobController.class).toProvider(
-					new ScheduledJobsProvider(ImmutableSet.copyOf(dependencies), binder
-							.getProvider(ActivityScope.Control.class), jobProviders));
+			binder.bind(ScheduledJobController.class).in(Singleton.class);
 		}
 
 		public <T extends Runnable> JobBinding<T> createJobBinding(Key<T> key) {
@@ -80,29 +72,6 @@ public abstract class ScheduledJobsModule extends AbstractModule {
 		@Override
 		public String toString() {
 			return provider.toString();
-		}
-	}
-
-	private static final class ScheduledJobsProvider implements ProviderWithDependencies<ScheduledJobController> {
-		private final Set<Dependency<?>> dependencies;
-		private final Provider<ActivityScope.Control> scopeControlProvider;
-		private final Set<JobDefinition> jobProviders;
-
-		public ScheduledJobsProvider(Set<Dependency<?>> dependencies,
-				Provider<ActivityScope.Control> scopeControlProvider, Set<JobDefinition> jobProviders) {
-			this.dependencies = dependencies;
-			this.scopeControlProvider = scopeControlProvider;
-			this.jobProviders = jobProviders;
-		}
-
-		@Override
-		public Set<Dependency<?>> getDependencies() {
-			return dependencies;
-		}
-
-		@Override
-		public ScheduledJobController get() {
-			return new ScheduledJobController(scopeControlProvider.get(), jobProviders);
 		}
 	}
 
