@@ -40,7 +40,7 @@ dependencies {
     testCompile 'org.mockito:mockito-core:1.9.5'
 }
 
-jar.doFirst {
+task runtimeDeps(dependsOn: 'processResources') {
     def metainf = new File("$buildDir/resources/main/META-INF");
     metainf.mkdirs()
     def depsFile = new File(metainf, "stuff.deps.txt");
@@ -49,3 +49,5 @@ jar.doFirst {
         depsFile.text += artifact.moduleVersion.id.toString() + ' ' + artifact.type + '\n'
     }
 }
+
+jar.dependsOn(runtimeDeps)
