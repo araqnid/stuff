@@ -45,6 +45,7 @@ import org.jboss.resteasy.core.Dispatcher;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
 import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
 import org.jboss.resteasy.spi.Registry;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -254,6 +255,36 @@ public class AppConfig extends AbstractModule {
 			@Exposed
 			public Registry dispatcher(Dispatcher dispatcher) {
 				return dispatcher.getRegistry();
+			}
+
+			@Provides
+			@Exposed
+			public ResteasyProviderFactory providerFactory(Dispatcher dispatcher) {
+				return dispatcher.getProviderFactory();
+			}
+
+			@Provides
+			@Exposed
+			public javax.ws.rs.core.Request request() {
+				return ResteasyProviderFactory.getContextData(javax.ws.rs.core.Request.class);
+			}
+
+			@Provides
+			@Exposed
+			public javax.ws.rs.core.HttpHeaders httpHeaders() {
+				return ResteasyProviderFactory.getContextData(javax.ws.rs.core.HttpHeaders.class);
+			}
+
+			@Provides
+			@Exposed
+			public javax.ws.rs.core.UriInfo uriInfo() {
+				return ResteasyProviderFactory.getContextData(javax.ws.rs.core.UriInfo.class);
+			}
+
+			@Provides
+			@Exposed
+			public javax.ws.rs.core.SecurityContext securityContext() {
+				return ResteasyProviderFactory.getContextData(javax.ws.rs.core.SecurityContext.class);
 			}
 
 			public static final class WebModule extends ServletModule {
