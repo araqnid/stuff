@@ -12,9 +12,11 @@ import com.google.common.base.Optional;
 import com.google.common.base.Supplier;
 import com.google.inject.Inject;
 
-@Path("hello")
+@Path("hello/{name}")
 public class HelloResource {
 	private final GreetingRepository greetings;
+	@PathParam("name")
+	private String name;
 
 	@Inject
 	public HelloResource(GreetingRepository greetings) {
@@ -22,9 +24,8 @@ public class HelloResource {
 	}
 
 	@GET
-	@Path("{name}")
 	@Produces("text/plain")
-	public String hello(@PathParam("name") final String name) {
+	public String hello() {
 		return Optional.fromNullable(greetings.find(name)).or(new Supplier<String>() {
 			@Override
 			public String get() {
@@ -34,15 +35,13 @@ public class HelloResource {
 	}
 
 	@PUT
-	@Path("{name}")
 	@Consumes("text/plain")
-	public void receiveHello(@PathParam("name") String name, String greeting) {
+	public void receiveHello(String greeting) {
 		greetings.save(name, greeting);
 	}
 
 	@DELETE
-	@Path("{name}")
-	public void deleteHello(@PathParam("name") String name) {
+	public void deleteHello() {
 		greetings.delete(name);
 	}
 }
