@@ -106,6 +106,56 @@ public class ActivityScopeTest {
 				Mockito.eq(eventType.name()), Mockito.eq(eventDescription));
 	}
 
+	@Test
+	public void request_activity_is_not_available_in_a_different_thread() throws Exception {
+		ActivityScope scope = new ActivityScope();
+		final Provider<RequestActivity> provider = scope.scope(Key.get(RequestActivity.class),
+				invalid_provider(RequestActivity.class));
+		scope.createController(mockSink).beginRequest(AppRequestType.HttpRequest, randomString());
+		final List<Object> producedByThread = new ArrayList<>();
+		Thread thread = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					producedByThread.add(provider.get());
+				} catch (Exception e) {
+					producedByThread.add(e);
+				}
+			}
+		});
+		thread.start();
+		thread.join();
+		MatcherAssert.assertThat(producedByThread, Matchers.contains(Matchers.instanceOf(OutOfScopeException.class)));
+	}
+
+	@Test
+	public void different_request_activity_available_in_other_thread() throws Exception {
+		ActivityScope scope = new ActivityScope();
+		final Provider<RequestActivity> provider = scope.scope(Key.get(RequestActivity.class),
+				invalid_provider(RequestActivity.class));
+		final Control controller = scope.createController(mockSink);
+		controller.beginRequest(AppRequestType.HttpRequest, randomString());
+		final RequestActivity ourActivity = provider.get();
+		final List<Object> producedByThread = new ArrayList<>();
+		Thread thread = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					controller.beginRequest(AppRequestType.HttpRequest, randomString());
+					producedByThread.add(provider.get());
+				} catch (Exception e) {
+					producedByThread.add(e);
+				}
+			}
+		});
+		thread.start();
+		thread.join();
+		MatcherAssert.assertThat(
+				producedByThread,
+				Matchers.<Object> contains(Matchers.allOf(Matchers.instanceOf(RequestActivity.class),
+						Matchers.not(Matchers.<Object> sameInstance(ourActivity)))));
+	}
+
 	@Test(expected = OutOfScopeException.class)
 	public void cannot_get_request_activity_without_having_begun_a_request() {
 		ActivityScope scope = new ActivityScope();
