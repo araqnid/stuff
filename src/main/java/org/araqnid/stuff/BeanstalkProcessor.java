@@ -1,5 +1,7 @@
 package org.araqnid.stuff;
 
+import static org.araqnid.stuff.AppRequestType.BeanstalkMessage;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -23,14 +25,14 @@ public class BeanstalkProcessor implements AppService {
 	private static final Logger LOG = LoggerFactory.getLogger(BeanstalkProcessor.class);
 	private final Provider<Client> connectionProvider;
 	private final String tubeName;
-	private final ActivityScope.Control scopeControl;
+	private final ActivityScope.Control<AppRequestType> scopeControl;
 	private final Provider<? extends DeliveryTarget> targetProvider;
 	private final ExecutorService executor;
 	private final int maxThreads;
 	private final Set<TubeConsumer> consumers = new HashSet<>();
 
 	public BeanstalkProcessor(Provider<Client> connectionProvider, String tubeName, int maxThreads,
-			ActivityScope.Control scopeControl, Provider<? extends DeliveryTarget> targetProvider) {
+			ActivityScope.Control<AppRequestType> scopeControl, Provider<? extends DeliveryTarget> targetProvider) {
 		this.connectionProvider = connectionProvider;
 		this.tubeName = tubeName;
 		this.scopeControl = scopeControl;
@@ -74,11 +76,11 @@ public class BeanstalkProcessor implements AppService {
 	}
 
 	private boolean dispatchDelivery(Job job) {
-		scopeControl.beginRequest(null, "BJP", Joiner.on('\t').join(tubeName, job.getJobId()));
+		scopeControl.beginRequest(null, BeanstalkMessage, Joiner.on('\t').join(tubeName, job.getJobId()));
 		try {
 			return targetProvider.get().deliver(job.getData());
 		} finally {
-			scopeControl.finishRequest("BJP");
+			scopeControl.finishRequest(BeanstalkMessage);
 		}
 	}
 

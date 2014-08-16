@@ -8,7 +8,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 import javax.servlet.DispatcherType;
 import javax.servlet.ServletContext;
 
+import org.araqnid.stuff.AppEventType;
 import org.araqnid.stuff.AppLifecycleEvent;
+import org.araqnid.stuff.AppRequestType;
 import org.araqnid.stuff.AppService;
 import org.araqnid.stuff.AppServicesManager;
 import org.araqnid.stuff.AppStateServlet;
@@ -48,6 +50,7 @@ import com.google.inject.Module;
 import com.google.inject.PrivateModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
@@ -61,7 +64,7 @@ public class AppConfig extends AbstractModule {
 	@Override
 	protected void configure() {
 		bindConstant().annotatedWith(Names.named("http_port")).to(port(61000));
-		install(new ActivityScope.Module());
+		install(new ActivityScope.Module<AppRequestType, AppEventType>(AppRequestType.class, AppEventType.class));
 		install(new CoreModule());
 		install(new RawBeanstalkModule());
 		install(new WorkQueueModule());
@@ -79,9 +82,7 @@ public class AppConfig extends AbstractModule {
 	public static final class CoreModule extends AbstractModule {
 		@Override
 		protected void configure() {
-			install(EventCast.eventCastModuleBuilder()
-					.implement(AppLifecycleEvent.class)
-					.build());
+			install(EventCast.eventCastModuleBuilder().implement(AppLifecycleEvent.class).build());
 			Multibinder<AppService> appServices = Multibinder.newSetBinder(binder(), AppService.class);
 			bind(AppServicesManager.class);
 			appServices.addBinding().to(JettyAppService.class);
@@ -109,21 +110,24 @@ public class AppConfig extends AbstractModule {
 
 		@Provides
 		@Singleton
-		public BlockingQueue<AsyncActivityEventSink.Event> activityEventQueue() {
+		public BlockingQueue<AsyncActivityEventSink.Event<AppRequestType, AppEventType>> activityEventQueue() {
 			return new LinkedBlockingQueue<>();
 		}
 
 		@Provides
-		public AsyncActivityEventsProcessor activityEventProcessor(@Named("backend") ActivityEventSink sink,
-				BlockingQueue<AsyncActivityEventSink.Event> queue) {
-			return new AsyncActivityEventsProcessor(sink, queue);
+		public AsyncActivityEventsProcessor<AppRequestType, AppEventType> activityEventProcessor(
+				@Named("backend") ActivityEventSink<AppRequestType, AppEventType> sink,
+				BlockingQueue<AsyncActivityEventSink.Event<AppRequestType, AppEventType>> queue) {
+			return new AsyncActivityEventsProcessor<AppRequestType, AppEventType>(sink, queue);
 		}
 	}
 
 	public static final class SynchronousActivityEventsModule extends AbstractModule {
 		@Override
 		protected void configure() {
-			bind(ActivityEventSink.class).to(LogActivityEvents.class);
+			bind(new TypeLiteral<ActivityEventSink<AppRequestType, AppEventType>>() {
+			}).to(new TypeLiteral<LogActivityEvents<AppRequestType, AppEventType>>() {
+			});
 		}
 	}
 
@@ -152,13 +156,13 @@ public class AppConfig extends AbstractModule {
 
 		@Provides
 		@Named("somequeue")
-		public WorkQueue somequeue(RequestActivity requestActivity) {
+		public WorkQueue somequeue(RequestActivity<AppRequestType, AppEventType> requestActivity) {
 			return new SqlWorkQueue("somequeue", requestActivity);
 		}
 
 		@Provides
 		@Named("otherqueue")
-		public WorkQueue otherqueue(RequestActivity requestActivity) {
+		public WorkQueue otherqueue(RequestActivity<AppRequestType, AppEventType> requestActivity) {
 			return new SqlWorkQueue("otherqueue", requestActivity);
 		}
 	}

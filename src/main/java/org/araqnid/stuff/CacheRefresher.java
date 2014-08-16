@@ -7,10 +7,10 @@ import com.google.inject.Inject;
 
 public class CacheRefresher implements Runnable {
 	private static final Logger LOG = LoggerFactory.getLogger(CacheRefresher.class);
-	private final RequestActivity requestActivity;
+	private final RequestActivity<AppRequestType, AppEventType> requestActivity;
 
 	@Inject
-	public CacheRefresher(RequestActivity requestActivity) {
+	public CacheRefresher(RequestActivity<AppRequestType, AppEventType> requestActivity) {
 		this.requestActivity = requestActivity;
 	}
 

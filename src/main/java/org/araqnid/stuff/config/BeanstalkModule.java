@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
 
+import org.araqnid.stuff.AppRequestType;
 import org.araqnid.stuff.BeanstalkProcessor;
 import org.araqnid.stuff.BeanstalkProcessor.DeliveryTarget;
+import org.araqnid.stuff.config.ActivityScope.Control;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -15,6 +17,7 @@ import com.google.inject.Key;
 import com.google.inject.MembersInjector;
 import com.google.inject.Module;
 import com.google.inject.Provider;
+import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.spi.Dependency;
 import com.google.inject.spi.ProviderWithDependencies;
@@ -101,20 +104,21 @@ public abstract class BeanstalkModule extends AbstractModule {
 		}
 
 		private Provider<BeanstalkProcessor> makeProvider(Binder binder) {
+			Key<Control<AppRequestType>> controlKey = Key.get(new TypeLiteral<ActivityScope.Control<AppRequestType>>(){});
 			Provider<Client> connectionProvider = binder.getProvider(Client.class);
-			Provider<ActivityScope.Control> scopeControlProvider = binder.getProvider(ActivityScope.Control.class);
+			Provider<Control<AppRequestType>> scopeControlProvider = binder.getProvider(controlKey);
 			Provider<BeanstalkProcessor> tubeProcessorProvider;
 			MembersInjector<BeanstalkProcessor> membersInjector = binder.getMembersInjector(BeanstalkProcessor.class);
 			if (targetKey != null) {
 				Set<Dependency<?>> dependencies = ImmutableSet.<Dependency<?>> of(
-						Dependency.get(Key.get(Client.class)), Dependency.get(Key.get(ActivityScope.Control.class)),
+						Dependency.get(Key.get(Client.class)), Dependency.get(controlKey),
 						Dependency.get(targetKey));
 				tubeProcessorProvider = new TubeProcessorProvider(dependencies, membersInjector, connectionProvider,
 						tubeName, maxThreads, scopeControlProvider, binder.getProvider(targetKey));
 			}
 			else if (targetProvider != null) {
 				Set<Dependency<?>> dependencies = Sets.<Dependency<?>> newHashSet(
-						Dependency.get(Key.get(Client.class)), Dependency.get(Key.get(ActivityScope.Control.class)));
+						Dependency.get(Key.get(Client.class)), Dependency.get(controlKey));
 				if (targetProvider instanceof ProviderWithDependencies) {
 					dependencies.addAll(((ProviderWithDependencies<? extends DeliveryTarget>) targetProvider)
 							.getDependencies());
@@ -135,12 +139,12 @@ public abstract class BeanstalkModule extends AbstractModule {
 		private final Provider<Client> connectionProvider;
 		private final String tubeName;
 		private final int maxThreads;
-		private final Provider<ActivityScope.Control> scopeControlProvider;
+		private final Provider<ActivityScope.Control<AppRequestType>> scopeControlProvider;
 		private final Provider<? extends DeliveryTarget> targetProvider;
 
 		public TubeProcessorProvider(Set<Dependency<?>> dependencies,
 				MembersInjector<BeanstalkProcessor> membersInjector, Provider<Client> connectionProvider,
-				String tubeName, int maxThreads, Provider<ActivityScope.Control> scopeControlProvider,
+				String tubeName, int maxThreads, Provider<Control<AppRequestType>> scopeControlProvider,
 				Provider<? extends DeliveryTarget> targetProvider) {
 			this.dependencies = dependencies;
 			this.membersInjector = membersInjector;

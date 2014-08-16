@@ -1,5 +1,7 @@
 package org.araqnid.stuff;
 
+import static org.araqnid.stuff.AppRequestType.HttpRequest;
+
 import java.io.IOException;
 
 import javax.servlet.Filter;
@@ -19,11 +21,11 @@ import com.google.inject.Singleton;
 
 @Singleton
 public class RequestActivityFilter implements Filter {
-	private final Provider<RequestActivity> stateProvider;
-	private final ActivityScope.Control scopeControl;
+	private final Provider<RequestActivity<AppRequestType, AppEventType>> stateProvider;
+	private final ActivityScope.Control<AppRequestType> scopeControl;
 
 	@Inject
-	public RequestActivityFilter(Provider<RequestActivity> stateProvider, ActivityScope.Control scopeControl) {
+	public RequestActivityFilter(Provider<RequestActivity<AppRequestType, AppEventType>> stateProvider, ActivityScope.Control<AppRequestType> scopeControl) {
 		this.stateProvider = stateProvider;
 		this.scopeControl = scopeControl;
 	}
@@ -46,13 +48,13 @@ public class RequestActivityFilter implements Filter {
 	private void doHttpFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
 		String ruid = request.getHeader("X-RUID");
-		scopeControl.beginRequest(ruid, "REQ", request.getServletPath());
+		scopeControl.beginRequest(ruid, HttpRequest, request.getServletPath());
 		try {
-			RequestActivity requestActivity = stateProvider.get();
+			RequestActivity<AppRequestType, AppEventType> requestActivity = stateProvider.get();
 			response.setHeader("X-RUID", requestActivity.getRuid());
 			chain.doFilter(request, response);
 		} finally {
-			scopeControl.finishRequest("REQ");
+			scopeControl.finishRequest(HttpRequest);
 		}
 	}
 

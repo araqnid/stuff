@@ -1,5 +1,7 @@
 package org.araqnid.stuff;
 
+import static org.araqnid.stuff.AppRequestType.ScheduledJob;
+
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -22,18 +24,18 @@ public class ScheduledJobController implements AppService {
 		}
 	};
 
-	private final ActivityScope.Control scopeControl;
+	private final ActivityScope.Control<AppRequestType> scopeControl;
 	private final Set<JobDefinition> jobs;
 	private final Provider<ScheduledExecutorService> executorProvider;
 	private ScheduledExecutorService executorService;
 
 	@Inject
-	public ScheduledJobController(ActivityScope.Control scopeControl, Set<JobDefinition> jobs) {
+	public ScheduledJobController(ActivityScope.Control<AppRequestType> scopeControl, Set<JobDefinition> jobs) {
 		this(EXECUTOR_FACTORY, scopeControl, jobs);
 	}
 
-	public ScheduledJobController(Provider<ScheduledExecutorService> executorProvider, ActivityScope.Control scopeControl,
-			Set<JobDefinition> jobs) {
+	public ScheduledJobController(Provider<ScheduledExecutorService> executorProvider,
+			ActivityScope.Control<AppRequestType> scopeControl, Set<JobDefinition> jobs) {
 		this.executorProvider = executorProvider;
 		this.scopeControl = scopeControl;
 		this.jobs = jobs;
@@ -66,11 +68,11 @@ public class ScheduledJobController implements AppService {
 		return new Runnable() {
 			@Override
 			public void run() {
-				scopeControl.beginRequest(null, "SCH", underlying.toString());
+				scopeControl.beginRequest(null, ScheduledJob, underlying.toString());
 				try {
 					underlying.run();
 				} finally {
-					scopeControl.finishRequest("SCH");
+					scopeControl.finishRequest(ScheduledJob);
 				}
 			}
 		};

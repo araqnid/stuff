@@ -2,7 +2,7 @@ package org.araqnid.stuff.config;
 
 import java.util.Random;
 
-import org.araqnid.stuff.RequestActivity.ActivityEventSink;
+import org.araqnid.stuff.AppRequestType;
 import org.araqnid.stuff.ScheduledJobController;
 import org.araqnid.stuff.ScheduledJobController.JobDefinition;
 import org.araqnid.stuff.config.ScheduledJobsModule.ProvidedJobRunner;
@@ -18,19 +18,20 @@ import org.mockito.Mockito;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.TypeLiteral;
 
 public class ScheduledJobsModuleTest {
 	private Injector baseInjector;
-	private ActivityEventSink activityEventSink = Mockito.mock(ActivityEventSink.class);
-	private ActivityScope.Control scopeControl = Mockito.mock(ActivityScope.Control.class);
+	@SuppressWarnings("unchecked")
+	private ActivityScope.Control<AppRequestType> scopeControl = Mockito.mock(ActivityScope.Control.class);
 
 	@Before
 	public void setup() {
 		baseInjector = Guice.createInjector(new AbstractModule() {
 			@Override
 			protected void configure() {
-				bind(ActivityScope.Control.class).toInstance(scopeControl);
-				bind(ActivityEventSink.class).toInstance(activityEventSink);
+				bind(Key.get(new TypeLiteral<ActivityScope.Control<AppRequestType>>(){})).toInstance(scopeControl);
 			}
 		});
 	}

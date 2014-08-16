@@ -3,6 +3,8 @@ package org.araqnid.stuff.config;
 import java.util.Map;
 import java.util.Set;
 
+import org.araqnid.stuff.AppEventType;
+import org.araqnid.stuff.AppRequestType;
 import org.araqnid.stuff.BeanstalkProcessor;
 import org.araqnid.stuff.RequestActivity;
 import org.araqnid.stuff.workqueue.WorkDispatcher;
@@ -18,6 +20,7 @@ import com.google.inject.Key;
 import com.google.inject.MembersInjector;
 import com.google.inject.Module;
 import com.google.inject.Provider;
+import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
 import com.google.inject.spi.Dependency;
@@ -80,7 +83,8 @@ public abstract class BeanstalkWorkQueueModule extends AbstractModule {
 			final Key<WorkQueue> queueKey = Key.get(WorkQueue.class, Names.named(queueId));
 			final Provider<WorkQueue> queueProvider = binder.getProvider(queueKey);
 			final Provider<WorkProcessor> processorProvider = binder.getProvider(processorKey);
-			final Provider<RequestActivity> requestActivityProvider = binder.getProvider(RequestActivity.class);
+			final Key<RequestActivity<AppRequestType, AppEventType>> key = Key.get(new TypeLiteral<RequestActivity<AppRequestType,AppEventType>>(){});
+			final Provider<RequestActivity<AppRequestType,AppEventType>> requestActivityProvider = binder.getProvider(key);
 			final Set<Dependency<?>> dependencies = ImmutableSet.<Dependency<?>> of(Dependency.get(queueKey),
 					Dependency.get(processorKey), Dependency.get(Key.get(RequestActivity.class)));
 			MembersInjector<WorkDispatcher> dispatcherInjector = binder.getMembersInjector(WorkDispatcher.class);
@@ -133,14 +137,14 @@ public abstract class BeanstalkWorkQueueModule extends AbstractModule {
 	private static final class WorkQueueHandlerProvider implements ProviderWithDependencies<WorkQueueBeanstalkHandler> {
 		private final Provider<WorkProcessor> processorProvider;
 		private final Provider<WorkQueue> queueProvider;
-		private final Provider<RequestActivity> requestActivityProvider;
+		private final Provider<RequestActivity<AppRequestType,AppEventType>> requestActivityProvider;
 		private final Set<Dependency<?>> dependencies;
 		private final String queueId;
 		private final MembersInjector<WorkDispatcher> dispatcherInjector;
 		private final MembersInjector<WorkQueueBeanstalkHandler> handlerInjector;
 
 		private WorkQueueHandlerProvider(Provider<WorkProcessor> processorProvider, Provider<WorkQueue> queueProvider,
-				Provider<RequestActivity> requestActivityProvider, Set<Dependency<?>> dependencies, String queueId,
+				Provider<RequestActivity<AppRequestType,AppEventType>> requestActivityProvider, Set<Dependency<?>> dependencies, String queueId,
 				MembersInjector<WorkDispatcher> dispatcherInjector,
 				MembersInjector<WorkQueueBeanstalkHandler> handlerInjector) {
 			this.processorProvider = processorProvider;

@@ -1,5 +1,7 @@
 package org.araqnid.stuff.config;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -8,20 +10,43 @@ import org.araqnid.stuff.RequestActivity;
 import org.araqnid.stuff.RequestActivity.ActivityEventSink;
 
 import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.OutOfScopeException;
 import com.google.inject.Provider;
 import com.google.inject.Scope;
 
-public final class ActivityScope {
-	private static final ThreadLocal<Context> contexts = new ThreadLocal<>();
+public final class ActivityScope<R extends Enum<R>, E extends Enum<E>> implements Scope {
+	private final ThreadLocal<Context> contexts = new ThreadLocal<>();
+	private final Key<RequestActivity<R, E>> key;
 
-	public static final class Module extends AbstractModule {
+	@SuppressWarnings("unchecked")
+	public ActivityScope(Class<R> requestTypeClass, Class<E> eventTypeClass) {
+		this.key = (Key<RequestActivity<R, E>>) Key.get(type(RequestActivity.class, requestTypeClass, eventTypeClass));
+	}
+
+	public static final class Module<R extends Enum<R>, E extends Enum<E>> extends AbstractModule {
+		private final Class<R> requestTypeClass;
+		private final Class<E> eventTypeClass;
+
+		public Module(Class<R> requestTypeClass, Class<E> eventTypeClass) {
+			this.requestTypeClass = requestTypeClass;
+			this.eventTypeClass = eventTypeClass;
+		}
+
 		@Override
 		protected void configure() {
-			bindScope(ActivityScoped.class, SCOPE);
-			bind(Control.class).to(ControlImpl.class);
+			ActivityScope<R, E> scope = new ActivityScope<>(requestTypeClass, eventTypeClass);
+			bindScope(ActivityScoped.class, scope);
+
+			@SuppressWarnings("unchecked")
+			Key<ActivityEventSink<R, E>> sinkKey = (Key<ActivityEventSink<R, E>>) Key.get(type(ActivityEventSink.class,
+					requestTypeClass, eventTypeClass));
+
+			ParameterizedType controlType = type(Control.class, requestTypeClass);
+			@SuppressWarnings("unchecked")
+			Key<Control<R>> controlKey = (Key<Control<R>>) Key.get(controlType);
+
+			bind(controlKey).toInstance(scope.createController(binder().getProvider(sinkKey)));
 		}
 
 		@Override
@@ -40,46 +65,49 @@ public final class ActivityScope {
 		}
 	}
 
-	public static final Scope SCOPE = new Scope() {
-		@Override
-		public <T> Provider<T> scope(final Key<T> key, final Provider<T> unscoped) {
-			return new Provider<T>() {
-				@Override
-				public T get() {
-					return acquireContext().scope(key, unscoped);
-				}
-			};
-		}
-	};
-
-	public interface Control {
-		void beginRequest(String type, String description);
-		void beginRequest(String ruid, String type, String description);
-		void finishRequest(String type);
+	@Override
+	public <T> Provider<T> scope(final Key<T> key, final Provider<T> unscoped) {
+		return new Provider<T>() {
+			@Override
+			public T get() {
+				return acquireContext().scope(key, unscoped);
+			}
+		};
 	}
 
-	public static final class ControlImpl implements Control {
-		private final Provider<ActivityEventSink> activitySinkProvider;
+	private ControlImpl createController(Provider<ActivityEventSink<R, E>> activitySinkProvider) {
+		return new ControlImpl(activitySinkProvider);
+	}
 
-		@Inject
-		public ControlImpl(Provider<ActivityEventSink> activitySinkProvider) {
+	public interface Control<R extends Enum<R>> {
+		void beginRequest(R type, String description);
+
+		void beginRequest(String ruid, R type, String description);
+
+		void finishRequest(R type);
+	}
+
+	public final class ControlImpl implements Control<R> {
+		private final Provider<ActivityEventSink<R, E>> activitySinkProvider;
+
+		public ControlImpl(Provider<ActivityEventSink<R, E>> activitySinkProvider) {
 			this.activitySinkProvider = activitySinkProvider;
 		}
 
 		@Override
-		public void beginRequest(String type, String description) {
+		public void beginRequest(R type, String description) {
 			beginRequestWithRuid(newRuid(), type, description);
 		}
 
 		@Override
-		public void beginRequest(String ruid, String type, String description) {
+		public void beginRequest(String ruid, R type, String description) {
 			beginRequestWithRuid(ruid == null ? newRuid() : ruid, type, description);
 		}
 
-		private void beginRequestWithRuid(String ruid, String type, String description) {
+		private void beginRequestWithRuid(String ruid, R type, String description) {
 			if (contexts.get() != null) throw new IllegalStateException(
 					"Activity context already attached to this thread");
-			RequestActivity requestActivity = new RequestActivity(ruid, activitySinkProvider.get());
+			RequestActivity<R, E> requestActivity = new RequestActivity<R, E>(ruid, activitySinkProvider.get());
 			Context context = new Context(requestActivity);
 			requestActivity.beginRequest(type, description);
 			contexts.set(context);
@@ -90,31 +118,31 @@ public final class ActivityScope {
 		}
 
 		@Override
-		public void finishRequest(String type) {
+		public void finishRequest(R type) {
 			Context context = acquireContext();
-			RequestActivity requestActivity = context.getRequestActivity();
+			RequestActivity<R, E> requestActivity = context.getRequestActivity();
 			requestActivity.finishRequest(type);
 			contexts.remove();
 		}
 	}
 
-	private static Context acquireContext() {
+	private Context acquireContext() {
 		Context threadContext = contexts.get();
 		if (threadContext == null) throw new OutOfScopeException("No activity context available in this thread");
 		return threadContext;
 	}
 
-	private static class Context {
-		private static final Key<RequestActivity> ACTIVITY_KEY = Key.get(RequestActivity.class);
+	private class Context {
 		private final Map<Key<?>, Object> contents;
 
-		private Context(RequestActivity requestActivity) {
+		private Context(RequestActivity<R, E> requestActivity) {
 			contents = new HashMap<>();
-			contents.put(ACTIVITY_KEY, requestActivity);
+			contents.put(key, requestActivity);
 		}
 
-		public RequestActivity getRequestActivity() {
-			return (RequestActivity) contents.get(ACTIVITY_KEY);
+		@SuppressWarnings("unchecked")
+		public RequestActivity<R, E> getRequestActivity() {
+			return (RequestActivity<R, E>) contents.get(key);
 		}
 
 		public <T> T scope(Key<T> key, Provider<T> unscoped) {
@@ -128,6 +156,23 @@ public final class ActivityScope {
 		}
 	}
 
-	private ActivityScope() {
+	private static final ParameterizedType type(final Class<?> rawType, final Type... paramTypes) {
+		return new ParameterizedType() {
+			@Override
+			public Type getRawType() {
+				return rawType;
+			}
+
+			@Override
+			public Type getOwnerType() {
+				return rawType.getEnclosingClass();
+			}
+
+			@Override
+			public Type[] getActualTypeArguments() {
+				return paramTypes;
+			}
+		};
 	}
+
 }

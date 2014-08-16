@@ -14,10 +14,10 @@ import com.google.inject.Singleton;
 @Singleton
 public class RootServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-	private final Provider<RequestActivity> stateProvider;
+	private final Provider<RequestActivity<AppRequestType, AppEventType>> stateProvider;
 
 	@Inject
-	public RootServlet(Provider<RequestActivity> stateProvider) {
+	public RootServlet(Provider<RequestActivity<AppRequestType, AppEventType>> stateProvider) {
 		this.stateProvider = stateProvider;
 	}
 

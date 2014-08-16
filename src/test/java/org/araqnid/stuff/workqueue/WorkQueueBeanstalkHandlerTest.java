@@ -1,8 +1,11 @@
 package org.araqnid.stuff.workqueue;
 
+import static org.araqnid.stuff.AppEventType.WorkQueueItem;
+
 import java.nio.charset.Charset;
 import java.util.Random;
 
+import org.araqnid.stuff.AppEventType;
 import org.araqnid.stuff.RequestActivity;
 import org.junit.Assert;
 import org.junit.Test;
@@ -10,12 +13,13 @@ import org.mockito.Mockito;
 
 public class WorkQueueBeanstalkHandlerTest {
 	private static final Charset UTF8 = Charset.forName("UTF-8");
+	@SuppressWarnings("unchecked")
+	private final RequestActivity<?, AppEventType> requestActivity = Mockito.mock(RequestActivity.class);
 
 	@Test
 	public void delivers_message_with_just_identifier() {
 		WorkDispatcher dispatcher = Mockito.mock(WorkDispatcher.class);
 		String queueId = randomString();
-		RequestActivity requestActivity = Mockito.mock(RequestActivity.class);
 		WorkQueueBeanstalkHandler handler = new WorkQueueBeanstalkHandler(queueId, dispatcher, requestActivity);
 		String messageId = randomString();
 		handler.deliver(messageId.getBytes(UTF8));
@@ -26,7 +30,6 @@ public class WorkQueueBeanstalkHandlerTest {
 	public void delivers_message_with_identifier_and_empty_payload() {
 		WorkDispatcher dispatcher = Mockito.mock(WorkDispatcher.class);
 		String queueId = randomString();
-		RequestActivity requestActivity = Mockito.mock(RequestActivity.class);
 		WorkQueueBeanstalkHandler handler = new WorkQueueBeanstalkHandler(queueId, dispatcher, requestActivity);
 		String messageId = randomString();
 		handler.deliver((messageId + "\0").getBytes(UTF8));
@@ -37,7 +40,6 @@ public class WorkQueueBeanstalkHandlerTest {
 	public void delivers_message_with_identifier_and_payload() {
 		WorkDispatcher dispatcher = Mockito.mock(WorkDispatcher.class);
 		String queueId = randomString();
-		RequestActivity requestActivity = Mockito.mock(RequestActivity.class);
 		WorkQueueBeanstalkHandler handler = new WorkQueueBeanstalkHandler(queueId, dispatcher, requestActivity);
 		String messageId = randomString();
 		String payload = randomString();
@@ -50,17 +52,15 @@ public class WorkQueueBeanstalkHandlerTest {
 		WorkDispatcher dispatcher = Mockito.mock(WorkDispatcher.class);
 		String queueId = randomString();
 		String messageId = randomString();
-		RequestActivity requestActivity = Mockito.mock(RequestActivity.class);
 		WorkQueueBeanstalkHandler handler = new WorkQueueBeanstalkHandler(queueId, dispatcher, requestActivity);
 		handler.deliver(messageId.getBytes(UTF8));
-		Mockito.verify(requestActivity).beginEvent("WQP", queueId + "\t" + messageId);
-		Mockito.verify(requestActivity).finishEvent("WQP");
+		Mockito.verify(requestActivity).beginEvent(WorkQueueItem, queueId + "\t" + messageId);
+		Mockito.verify(requestActivity).finishEvent(WorkQueueItem);
 	}
 
 	@Test
 	public void event_is_finished_even_if_dispatcher_dies() {
 		WorkDispatcher dispatcher = Mockito.mock(WorkDispatcher.class);
-		RequestActivity requestActivity = Mockito.mock(RequestActivity.class);
 		UnsupportedOperationException exception = new UnsupportedOperationException();
 		Mockito.when(dispatcher.process(Mockito.anyString(), Mockito.any(byte[].class))).thenThrow(exception);
 		WorkQueueBeanstalkHandler handler = new WorkQueueBeanstalkHandler(randomString(), dispatcher, requestActivity);
@@ -70,7 +70,7 @@ public class WorkQueueBeanstalkHandlerTest {
 		} catch (UnsupportedOperationException e) {
 			Assert.assertSame(exception, e);
 		}
-		Mockito.verify(requestActivity).finishEvent("WQP");
+		Mockito.verify(requestActivity).finishEvent(WorkQueueItem);
 	}
 
 	private static String randomString() {

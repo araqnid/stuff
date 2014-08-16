@@ -1,5 +1,9 @@
 package org.araqnid.stuff.workqueue;
 
+import static org.araqnid.stuff.AppEventType.DatabaseStatement;
+import static org.araqnid.stuff.AppEventType.DatabaseTransaction;
+
+import org.araqnid.stuff.AppEventType;
 import org.araqnid.stuff.RequestActivity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -7,9 +11,9 @@ import org.slf4j.LoggerFactory;
 public class SqlWorkQueue implements WorkQueue {
 	private static final Logger LOG = LoggerFactory.getLogger(SqlWorkQueue.class);
 	private final String queueCode;
-	private final RequestActivity requestActivity;
+	private final RequestActivity<?, AppEventType> requestActivity;
 
-	public SqlWorkQueue(String queueCode, RequestActivity requestActivity) {
+	public SqlWorkQueue(String queueCode, RequestActivity<?, AppEventType> requestActivity) {
 		this.queueCode = queueCode;
 		this.requestActivity = requestActivity;
 	}
@@ -47,17 +51,17 @@ public class SqlWorkQueue implements WorkQueue {
 	}
 
 	private void doSql(String caller, String... statements) {
-		requestActivity.beginEvent("DBT", caller);
+		requestActivity.beginEvent(DatabaseTransaction, caller);
 		try {
 			for (String sql : statements) {
-				requestActivity.beginEvent("SQL", sql);
+				requestActivity.beginEvent(DatabaseStatement, sql);
 				try {
 				} finally {
-					requestActivity.finishEvent("SQL");
+					requestActivity.finishEvent(DatabaseStatement);
 				}
 			}
 		} finally {
-			requestActivity.finishEvent("DBT");
+			requestActivity.finishEvent(DatabaseTransaction);
 		}
 	}
 }

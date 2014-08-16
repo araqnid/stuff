@@ -1,7 +1,10 @@
 package org.araqnid.stuff.workqueue;
 
+import static org.araqnid.stuff.AppEventType.WorkQueueItem;
+
 import java.nio.charset.Charset;
 
+import org.araqnid.stuff.AppEventType;
 import org.araqnid.stuff.BeanstalkProcessor.DeliveryTarget;
 import org.araqnid.stuff.RequestActivity;
 
@@ -10,10 +13,10 @@ import com.google.common.base.Joiner;
 public class WorkQueueBeanstalkHandler implements DeliveryTarget {
 	private static final Charset UTF8 = Charset.forName("UTF-8");
 	private final WorkDispatcher dispatcher;
-	private final RequestActivity requestActivity;
+	private final RequestActivity<?, AppEventType> requestActivity;
 	private final String queueId;
 
-	public WorkQueueBeanstalkHandler(String queueId, WorkDispatcher dispatcher, RequestActivity requestActivity) {
+	public WorkQueueBeanstalkHandler(String queueId, WorkDispatcher dispatcher, RequestActivity<?, AppEventType> requestActivity) {
 		this.queueId = queueId;
 		this.dispatcher = dispatcher;
 		this.requestActivity = requestActivity;
@@ -39,11 +42,11 @@ public class WorkQueueBeanstalkHandler implements DeliveryTarget {
 			payload = new byte[data.length - pos - 1];
 			System.arraycopy(data, pos + 1, payload, 0, data.length - pos - 1);
 		}
-		requestActivity.beginEvent("WQP", Joiner.on('\t').join(queueId, id));
+		requestActivity.beginEvent(WorkQueueItem, Joiner.on('\t').join(queueId, id));
 		try {
 			return dispatcher.process(id, payload);
 		} finally {
-			requestActivity.finishEvent("WQP");
+			requestActivity.finishEvent(WorkQueueItem);
 		}
 	}
 }

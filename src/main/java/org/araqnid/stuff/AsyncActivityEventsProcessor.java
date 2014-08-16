@@ -13,14 +13,14 @@ import org.slf4j.LoggerFactory;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 
-public class AsyncActivityEventsProcessor implements AppService {
+public class AsyncActivityEventsProcessor<R extends Enum<R>, E extends Enum<E>> implements AppService {
 	private static final Logger LOG = LoggerFactory.getLogger(AsyncActivityEventsProcessor.class);
-	private final ActivityEventSink sink;
+	private final ActivityEventSink<R, E> sink;
 	private final ExecutorService executor;
-	private final BlockingQueue<Event> queue;
+	private final BlockingQueue<Event<R, E>> queue;
 
 	@Inject
-	public AsyncActivityEventsProcessor(ActivityEventSink sink, BlockingQueue<Event> queue) {
+	public AsyncActivityEventsProcessor(ActivityEventSink<R, E> sink, BlockingQueue<Event<R, E>> queue) {
 		this.sink = sink;
 		this.queue = queue;
 		this.executor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat(
@@ -34,7 +34,7 @@ public class AsyncActivityEventsProcessor implements AppService {
 			public void run() {
 				try {
 					do {
-						Event event = queue.take();
+						Event<R, E> event = queue.take();
 						event.deliver(sink);
 					} while (true);
 				} catch (InterruptedException e) {

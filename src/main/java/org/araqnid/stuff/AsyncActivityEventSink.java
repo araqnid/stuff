@@ -6,20 +6,20 @@ import org.araqnid.stuff.RequestActivity.ActivityEventSink;
 
 import com.google.inject.Inject;
 
-public class AsyncActivityEventSink implements ActivityEventSink {
-	private final BlockingQueue<Event> queue;
+public class AsyncActivityEventSink<R extends Enum<R>, E extends Enum<E>> implements ActivityEventSink<R, E> {
+	private final BlockingQueue<Event<R, E>> queue;
 
 	@Inject
-	public AsyncActivityEventSink(BlockingQueue<Event> queue) {
+	public AsyncActivityEventSink(BlockingQueue<Event<R, E>> queue) {
 		this.queue = queue;
 	}
 
 	
 	@Override
-	public void beginRequest(final String ruid, final long eventId, final String type, final String description) {
-		queue.add(new Event() {
+	public void beginRequest(final String ruid, final long eventId, final R type, final String description) {
+		queue.add(new Event<R, E>() {
 			@Override
-			public void deliver(ActivityEventSink sink) {
+			public void deliver(ActivityEventSink<R, E> sink) {
 				sink.beginRequest(ruid, eventId, type, description);
 			}
 		});
@@ -27,10 +27,10 @@ public class AsyncActivityEventSink implements ActivityEventSink {
 
 
 	@Override
-	public void beginEvent(final String ruid, final long eventId, final long parentEventId, final String type, final String description) {
-		queue.add(new Event() {
+	public void beginEvent(final String ruid, final long eventId, final long parentEventId, final E type, final String description) {
+		queue.add(new Event<R, E>() {
 			@Override
-			public void deliver(ActivityEventSink sink) {
+			public void deliver(ActivityEventSink<R, E> sink) {
 				sink.beginEvent(ruid, eventId, parentEventId, type, description);
 			}
 		});
@@ -38,10 +38,10 @@ public class AsyncActivityEventSink implements ActivityEventSink {
 
 
 	@Override
-	public void finishEvent(final String ruid, final long eventId, final long parentEventId, final String type, final long durationNanos) {
-		queue.add(new Event() {
+	public void finishEvent(final String ruid, final long eventId, final long parentEventId, final E type, final long durationNanos) {
+		queue.add(new Event<R, E>() {
 			@Override
-			public void deliver(ActivityEventSink sink) {
+			public void deliver(ActivityEventSink<R, E> sink) {
 				sink.finishEvent(ruid, eventId, parentEventId, type, durationNanos);
 			}
 		});
@@ -49,16 +49,16 @@ public class AsyncActivityEventSink implements ActivityEventSink {
 
 
 	@Override
-	public void finishRequest(final String ruid, final long eventId, final String type, final long durationNanos) {
-		queue.add(new Event() {
+	public void finishRequest(final String ruid, final long eventId, final R type, final long durationNanos) {
+		queue.add(new Event<R, E>() {
 			@Override
-			public void deliver(ActivityEventSink sink) {
+			public void deliver(ActivityEventSink<R, E> sink) {
 				sink.finishRequest(ruid, eventId, type, durationNanos);
 			}
 		});
 	}
 
-	public interface Event {
-		void deliver(ActivityEventSink sink);
+	public interface Event<R extends Enum<R>, E extends Enum<E>> {
+		void deliver(ActivityEventSink<R, E> sink);
 	}
 }
