@@ -1,5 +1,6 @@
 package org.araqnid.stuff.config;
 
+import java.lang.annotation.Annotation;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -20,18 +21,20 @@ public final class ActivityScope implements Scope {
 
 	public static final class Module extends AbstractModule {
 		private final ActivityScope scope;
-
-		public Module(ActivityScope scope) {
-			this.scope = scope;
-		}
+		private final Class<? extends Annotation> scopeAnnotation;
 
 		public Module() {
-			this(new ActivityScope());
+			this(new ActivityScope(), ActivityScoped.class);
+		}
+		
+		public Module(ActivityScope scope, Class<? extends Annotation> scopeAnnotation) {
+			this.scope = scope;
+			this.scopeAnnotation = scopeAnnotation;
 		}
 
 		@Override
 		protected void configure() {
-			bindScope(ActivityScoped.class, scope);
+			bindScope(scopeAnnotation, scope);
 			bind(Control.class).toInstance(scope.createController(binder().getProvider(ActivityEventSink.class)));
 		}
 
