@@ -43,7 +43,7 @@ public class RequestActivity {
 		activityEventSink.beginEvent(ruid, event.id, parent.id, type, description);
 	}
 
-	public EventNode finishEvent(String type) {
+	public void finishEvent(String type) {
 		if (event == null) throw new IllegalStateException("Event stack is empty");
 		type = type.intern();
 		if (event.type != type) throw new IllegalStateException("Top event on stack '" + event.type
@@ -51,23 +51,17 @@ public class RequestActivity {
 		event.stopwatch.stop();
 		EventNode parent = event.parent;
 		activityEventSink.finishEvent(ruid, event.id, parent != null ? parent.id : -1, type, event.stopwatch.elapsed(TimeUnit.NANOSECONDS));
-		return unstack();
+		event = event.parent;
 	}
 
-	public EventNode finishRequest(String type) {
+	public void finishRequest(String type) {
 		if (event == null) throw new IllegalStateException("Event stack is empty");
 		type = type.intern();
 		if (event.type != type) throw new IllegalStateException("Top event on stack '" + event.type
 				+ "' does not match this type: " + type);
 		event.stopwatch.stop();
 		activityEventSink.finishRequest(ruid, event.id, type, event.stopwatch.elapsed(TimeUnit.NANOSECONDS));
-		return unstack();
-	}
-
-	private EventNode unstack() {
-		EventNode finished = event;
 		event = event.parent;
-		return finished;
 	}
 
 	public static class EventNode {
