@@ -1,7 +1,5 @@
 package org.araqnid.stuff;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -15,7 +13,7 @@ public class RequestActivity {
 	private static final AtomicLong idGenerator = new AtomicLong();
 	private final ActivityEventSink activityEventSink;
 	private final String ruid;
-	private final List<EventNode> eventStack = new ArrayList<>();
+	private EventNode event;
 	private boolean used;
 
 	@Inject
@@ -29,47 +27,47 @@ public class RequestActivity {
 	}
 
 	public void beginRequest(String type, String description) {
-		if (!eventStack.isEmpty()) throw new IllegalStateException("Event stack is not empty");
+		if (event != null) throw new IllegalStateException("Event stack is not empty");
 		if (used) throw new IllegalStateException("RequestActivity should be not reused");
 		type = type.intern();
-		EventNode node = new EventNode(idGenerator.incrementAndGet(), type, description);
-		eventStack.add(node);
-		activityEventSink.beginRequest(ruid, node.id, type, description);
+		event = new EventNode(idGenerator.incrementAndGet(), type, description, null);
+		activityEventSink.beginRequest(ruid, event.id, type, description);
 		used = true;
 	}
 
 	public void beginEvent(String type, String description) {
-		if (eventStack.isEmpty()) throw new IllegalStateException("Event stack is empty");
+		if (event == null) throw new IllegalStateException("Event stack is empty");
 		type = type.intern();
-		EventNode node = new EventNode(idGenerator.incrementAndGet(), type, description);
-		EventNode parent = eventStack.get(eventStack.size() - 1);
-		eventStack.add(node);
-		activityEventSink.beginEvent(ruid, node.id, parent.id, type, description);
+		EventNode parent = event;
+		event = new EventNode(idGenerator.incrementAndGet(), type, description, parent);
+		activityEventSink.beginEvent(ruid, event.id, parent.id, type, description);
 	}
 
 	public EventNode finishEvent(String type) {
-		if (eventStack.isEmpty()) throw new IllegalStateException("Event stack is empty");
-		EventNode node = eventStack.get(eventStack.size() - 1);
+		if (event == null) throw new IllegalStateException("Event stack is empty");
 		type = type.intern();
-		if (node.type != type) throw new IllegalStateException("Top event on stack '" + node.type
+		if (event.type != type) throw new IllegalStateException("Top event on stack '" + event.type
 				+ "' does not match this type: " + type);
-		eventStack.remove(eventStack.size() - 1);
-		node.stopwatch.stop();
-		EventNode parent = eventStack.isEmpty() ? null : eventStack.get(eventStack.size() - 1);
-		activityEventSink.finishEvent(ruid, node.id, parent != null ? parent.id : -1, type, node.stopwatch.elapsed(TimeUnit.NANOSECONDS));
-		return node;
+		event.stopwatch.stop();
+		EventNode parent = event.parent;
+		activityEventSink.finishEvent(ruid, event.id, parent != null ? parent.id : -1, type, event.stopwatch.elapsed(TimeUnit.NANOSECONDS));
+		return unstack();
 	}
 
 	public EventNode finishRequest(String type) {
-		if (eventStack.isEmpty()) throw new IllegalStateException("Event stack is empty");
-		EventNode node = eventStack.get(eventStack.size() - 1);
+		if (event == null) throw new IllegalStateException("Event stack is empty");
 		type = type.intern();
-		if (node.type != type) throw new IllegalStateException("Top event on stack '" + node.type
+		if (event.type != type) throw new IllegalStateException("Top event on stack '" + event.type
 				+ "' does not match this type: " + type);
-		eventStack.remove(eventStack.size() - 1);
-		node.stopwatch.stop();
-		activityEventSink.finishRequest(ruid, node.id, type, node.stopwatch.elapsed(TimeUnit.NANOSECONDS));
-		return node;
+		event.stopwatch.stop();
+		activityEventSink.finishRequest(ruid, event.id, type, event.stopwatch.elapsed(TimeUnit.NANOSECONDS));
+		return unstack();
+	}
+
+	private EventNode unstack() {
+		EventNode finished = event;
+		event = event.parent;
+		return finished;
 	}
 
 	public static class EventNode {
@@ -77,11 +75,13 @@ public class RequestActivity {
 		public final String type;
 		public final String description;
 		public final Stopwatch stopwatch = Stopwatch.createStarted();
+		public final EventNode parent;
 
-		public EventNode(long id, String type, String description) {
+		public EventNode(long id, String type, String description, EventNode parent) {
 			this.id = id;
 			this.type = type;
 			this.description = description;
+			this.parent = parent;
 		}
 	}
 
