@@ -74,11 +74,11 @@ public class BeanstalkProcessor implements AppService {
 	}
 
 	private boolean dispatchDelivery(Job job) {
-		scopeControl.beginRequest(null, "BJP", Joiner.on('\t').join(tubeName, job.getJobId()));
+		scopeControl.beginRequest(null, AppRequestType.BeanstalkMessage, Joiner.on('\t').join(tubeName, job.getJobId()));
 		try {
 			return targetProvider.get().deliver(job.getData());
 		} finally {
-			scopeControl.finishRequest("BJP");
+			scopeControl.finishRequest(AppRequestType.BeanstalkMessage);
 		}
 	}
 

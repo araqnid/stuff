@@ -65,19 +65,19 @@ public class ScheduledJobControllerTest {
 	private final ActivityScope.Control mockScopeControl = Mockito.mock(ActivityScope.Control.class);
 	private final ActivityScope.Control scopeControl = new ActivityScope.Control() {
 		@Override
-		public void beginRequest(String ruid, String type, String description) {
+		public void beginRequest(String ruid, AppRequestType type, String description) {
 			inScope = true;
 			mockScopeControl.beginRequest(ruid, type, description);
 		}
 		
 		@Override
-		public void beginRequest(String type, String description) {
+		public void beginRequest(AppRequestType type, String description) {
 			inScope = true;
 			mockScopeControl.beginRequest(type, description);
 		}
 
 		@Override
-		public void finishRequest(String type) {
+		public void finishRequest(AppRequestType type) {
 			inScope = false;
 			mockScopeControl.finishRequest(type);
 		}
@@ -193,9 +193,9 @@ public class ScheduledJobControllerTest {
 		captureSubmittedJobs();
 		controller.start();
 		scheduledJobBodies.get(0).run();
-		Mockito.verify(mockScopeControl).beginRequest(Mockito.isNull(String.class), Mockito.eq("SCH"),
+		Mockito.verify(mockScopeControl).beginRequest(Mockito.isNull(String.class), Mockito.eq(AppRequestType.ScheduledJob),
 				Mockito.argThat(Matchers.stringContainsInOrder(ImmutableList.of(jobString))));
-		Mockito.verify(mockScopeControl).finishRequest("SCH");
+		Mockito.verify(mockScopeControl).finishRequest(AppRequestType.ScheduledJob);
 		Mockito.verifyNoMoreInteractions(mockScopeControl);
 	}
 

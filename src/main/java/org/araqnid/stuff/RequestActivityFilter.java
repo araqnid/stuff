@@ -46,13 +46,13 @@ public class RequestActivityFilter implements Filter {
 	private void doHttpFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
 		String ruid = request.getHeader("X-RUID");
-		scopeControl.beginRequest(ruid, "REQ", request.getServletPath());
+		scopeControl.beginRequest(ruid, AppRequestType.HttpRequest, request.getServletPath());
 		try {
 			RequestActivity requestActivity = stateProvider.get();
 			response.setHeader("X-RUID", requestActivity.getRuid());
 			chain.doFilter(request, response);
 		} finally {
-			scopeControl.finishRequest("REQ");
+			scopeControl.finishRequest(AppRequestType.HttpRequest);
 		}
 	}
 
