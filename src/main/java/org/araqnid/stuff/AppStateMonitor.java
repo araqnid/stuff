@@ -1,13 +1,9 @@
 package org.araqnid.stuff;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.inject.Singleton;
 
 @Singleton
 public class AppStateMonitor implements AppLifecycleEvent {
-	private static final Logger LOG = LoggerFactory.getLogger(AppStateMonitor.class);
 	private AppState state = AppState.CREATED;
 
 	@Override
@@ -17,7 +13,6 @@ public class AppStateMonitor implements AppLifecycleEvent {
 
 	@Override
 	public void started() {
-		LOG.info("state monitor recieved started() event");
 		setState(AppState.STARTED);
 	}
 
