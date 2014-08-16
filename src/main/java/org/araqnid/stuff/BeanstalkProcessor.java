@@ -74,7 +74,7 @@ public class BeanstalkProcessor implements AppService {
 	}
 
 	private boolean dispatchDelivery(Job job) {
-		scopeControl.beginRequest(null, AppRequestType.BeanstalkMessage, Joiner.on('\t').join(tubeName, job.getJobId()));
+		scopeControl.beginRequest(AppRequestType.BeanstalkMessage, Joiner.on('\t').join(tubeName, job.getJobId()));
 		try {
 			return targetProvider.get().deliver(job.getData());
 		} finally {

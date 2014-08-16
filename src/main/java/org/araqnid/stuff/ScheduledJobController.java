@@ -66,7 +66,7 @@ public class ScheduledJobController implements AppService {
 		return new Runnable() {
 			@Override
 			public void run() {
-				scopeControl.beginRequest(null, AppRequestType.ScheduledJob, underlying.toString());
+				scopeControl.beginRequest(AppRequestType.ScheduledJob, underlying.toString());
 				try {
 					underlying.run();
 				} finally {
