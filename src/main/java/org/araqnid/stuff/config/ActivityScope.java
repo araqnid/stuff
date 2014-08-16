@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.araqnid.stuff.AppRequestType;
 import org.araqnid.stuff.RequestActivity;
 import org.araqnid.stuff.RequestActivity.ActivityEventSink;
 
@@ -53,9 +54,9 @@ public final class ActivityScope {
 	};
 
 	public interface Control {
-		void beginRequest(String type, String description);
-		void beginRequest(String ruid, String type, String description);
-		void finishRequest(String type);
+		void beginRequest(AppRequestType type, String description);
+		void beginRequest(String ruid, AppRequestType type, String description);
+		void finishRequest(AppRequestType type);
 	}
 
 	public static final class ControlImpl implements Control {
@@ -67,16 +68,16 @@ public final class ActivityScope {
 		}
 
 		@Override
-		public void beginRequest(String type, String description) {
+		public void beginRequest(AppRequestType type, String description) {
 			beginRequestWithRuid(newRuid(), type, description);
 		}
 
 		@Override
-		public void beginRequest(String ruid, String type, String description) {
+		public void beginRequest(String ruid, AppRequestType type, String description) {
 			beginRequestWithRuid(ruid == null ? newRuid() : ruid, type, description);
 		}
 
-		private void beginRequestWithRuid(String ruid, String type, String description) {
+		private void beginRequestWithRuid(String ruid, AppRequestType type, String description) {
 			if (contexts.get() != null) throw new IllegalStateException(
 					"Activity context already attached to this thread");
 			RequestActivity requestActivity = new RequestActivity(ruid, activitySinkProvider.get());
@@ -90,7 +91,7 @@ public final class ActivityScope {
 		}
 
 		@Override
-		public void finishRequest(String type) {
+		public void finishRequest(AppRequestType type) {
 			Context context = acquireContext();
 			RequestActivity requestActivity = context.getRequestActivity();
 			requestActivity.finishRequest(type);

@@ -1,8 +1,10 @@
 package org.araqnid.stuff;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -27,7 +29,7 @@ public class RequestActivityTest {
 	@Test
 	public void can_begin_a_request() {
 		RequestActivity activity = new RequestActivity(ruid, activityEventSink);
-		String type = randomString();
+		AppRequestType type = randomRequestType();
 		String description = randomString();
 		activity.beginRequest(type, description);
 		MatcherAssert.assertThat(activityEventsOutput, events(
@@ -41,8 +43,8 @@ public class RequestActivityTest {
 	@Test
 	public void can_add_an_event_to_a_request() {
 		RequestActivity activity = new RequestActivity(ruid, activityEventSink);
-		activity.beginRequest(randomString(), randomString());
-		String eventType = randomString();
+		activity.beginRequest(randomRequestType(), randomString());
+		AppEventType eventType = randomEventType();
 		String eventDescription = randomString();
 		activity.beginEvent(eventType, eventDescription);
 		MatcherAssert.assertThat(activityEventsOutput, events(
@@ -58,9 +60,9 @@ public class RequestActivityTest {
 	@Test
 	public void adding_a_second_event_links_to_the_first() {
 		RequestActivity activity = new RequestActivity(ruid, activityEventSink);
-		activity.beginRequest(randomString(), randomString());
-		activity.beginEvent(randomString(), randomString());
-		activity.beginEvent(randomString(), randomString());
+		activity.beginRequest(randomRequestType(), randomString());
+		activity.beginEvent(randomEventType(), randomString());
+		activity.beginEvent(randomEventType(), randomString());
 		MatcherAssert.assertThat(activityEventsOutput, events(
 				a_begin_request(),
 				a_begin_event(),
@@ -72,8 +74,8 @@ public class RequestActivityTest {
 	@Test
 	public void can_finish_an_event() {
 		RequestActivity activity = new RequestActivity(ruid, activityEventSink);
-		activity.beginRequest(randomString(), randomString());
-		String eventType = randomString();
+		activity.beginRequest(randomRequestType(), randomString());
+		AppEventType eventType = randomEventType();
 		String eventDescription = randomString();
 		activity.beginEvent(eventType, eventDescription);
 		activity.finishEvent(eventType);
@@ -91,7 +93,7 @@ public class RequestActivityTest {
 	@Test
 	public void can_finish_a_request() {
 		RequestActivity activity = new RequestActivity(ruid, activityEventSink);
-		String requestType = randomString();
+		AppRequestType requestType = randomRequestType();
 		String requestDescription = randomString();
 		activity.beginRequest(requestType, requestDescription);
 		activity.finishRequest(requestType);
@@ -107,17 +109,17 @@ public class RequestActivityTest {
 	@Test(expected = IllegalStateException.class)
 	public void cannot_finish_a_request_specifying_a_mismatching_type() {
 		RequestActivity activity = new RequestActivity(ruid, activityEventSink);
-		String requestType = randomString();
+		AppRequestType requestType = randomRequestType();
 		activity.beginRequest(requestType, randomString());
-		activity.finishRequest("!" + requestType);
+		activity.finishRequest(notThis(requestType));
 	}
 
 	@Test(expected = IllegalStateException.class)
 	public void cannot_finish_a_request_with_an_outstanding_event() {
 		RequestActivity activity = new RequestActivity(ruid, activityEventSink);
-		String requestType = randomString();
+		AppRequestType requestType = randomRequestType();
 		activity.beginRequest(requestType, randomString());
-		String eventType = randomString();
+		AppEventType eventType = randomEventType();
 		activity.beginEvent(eventType, randomString());
 		activity.finishRequest(requestType);
 	}
@@ -125,50 +127,50 @@ public class RequestActivityTest {
 	@Test(expected = IllegalStateException.class)
 	public void cannot_finish_a_request_with_no_request_started() {
 		RequestActivity activity = new RequestActivity(ruid, activityEventSink);
-		activity.finishRequest(randomString());
+		activity.finishRequest(randomRequestType());
 	}
 
 	@Test(expected = IllegalStateException.class)
 	public void cannot_finish_an_event_specifying_a_mismatching_type() {
 		RequestActivity activity = new RequestActivity(ruid, activityEventSink);
-		activity.beginRequest(randomString(), randomString());
-		String eventType = randomString();
+		activity.beginRequest(randomRequestType(), randomString());
+		AppEventType eventType = randomEventType();
 		activity.beginEvent(eventType, randomString());
-		activity.finishEvent("!" + eventType);
+		activity.finishEvent(notThis(eventType));
 	}
 
 	@Test(expected = IllegalStateException.class)
 	public void cannot_finish_an_event_with_no_event_started() {
 		RequestActivity activity = new RequestActivity(ruid, activityEventSink);
-		activity.beginRequest(randomString(), randomString());
-		activity.finishEvent(randomString());
+		activity.beginRequest(randomRequestType(), randomString());
+		activity.finishEvent(randomEventType());
 	}
 
 	@Test(expected = IllegalStateException.class)
 	public void cannot_begin_an_event_before_beginning_a_request() {
 		RequestActivity activity = new RequestActivity(ruid, activityEventSink);
-		activity.beginEvent(randomString(), randomString());
+		activity.beginEvent(randomEventType(), randomString());
 	}
 
 	@Test(expected = IllegalStateException.class)
 	public void cannot_end_an_event_before_beginning_a_request() {
 		RequestActivity activity = new RequestActivity(ruid, activityEventSink);
-		activity.finishEvent(randomString());
+		activity.finishEvent(randomEventType());
 	}
 
 	@Test(expected = IllegalStateException.class)
 	public void cannot_end_a_request_before_beginning_a_request() {
 		RequestActivity activity = new RequestActivity(ruid, activityEventSink);
-		activity.finishRequest(randomString());
+		activity.finishRequest(randomRequestType());
 	}
 
 	@Test(expected = IllegalStateException.class)
 	public void cannot_begin_another_request_after_ending_a_request() {
 		RequestActivity activity = new RequestActivity(ruid, activityEventSink);
-		String requestType = randomString();
+		AppRequestType requestType = randomRequestType();
 		activity.beginRequest(requestType, randomString());
 		activity.finishRequest(requestType);
-		activity.beginRequest(randomString(), randomString());
+		activity.beginRequest(randomRequestType(), randomString());
 	}
 
 	private static String randomString() {
@@ -180,6 +182,39 @@ public class RequestActivityTest {
 			builder.append(alphabet.charAt(random.nextInt(alphabet.length())));
 		}
 		return builder.toString();
+	}
+
+	private static AppRequestType randomRequestType() {
+		return randomEnumInstance(AppRequestType.class);
+	}
+
+	private static AppEventType randomEventType() {
+		return randomEnumInstance(AppEventType.class);
+	}
+
+	private static AppRequestType notThis(AppRequestType value) {
+		return randomOtherInstanceOfEnum(AppRequestType.class, value);
+	}
+
+	private static AppEventType notThis(AppEventType value) {
+		return randomOtherInstanceOfEnum(AppEventType.class, value);
+	}
+
+	private static <T extends Enum<T>> T randomEnumInstance(Class<T> enumClass) {
+		return pickOne(EnumSet.allOf(enumClass));
+	}
+
+	private static <T extends Enum<T>> T randomOtherInstanceOfEnum(Class<T> enumClass, T excludedValue) {
+		return pickOne(EnumSet.complementOf(EnumSet.of(excludedValue)));
+	}
+
+	private static <T> T pickOne(Set<T> values) {
+		int index = new Random().nextInt(values.size());
+		Iterator<T> iter = values.iterator();
+		while (index-- > 0) {
+			iter.next();
+		}
+		return iter.next();
 	}
 
 	@SafeVarargs
@@ -273,8 +308,8 @@ public class RequestActivityTest {
 			return this;
 		}
 
-		public BeginRequestMatcher with_type(String value) {
-			attributesMatcher.match("type", Matchers.equalTo(value));
+		public BeginRequestMatcher with_type(AppRequestType value) {
+			attributesMatcher.match("type", Matchers.equalTo(value.name()));
 			return this;
 		}
 
@@ -329,8 +364,8 @@ public class RequestActivityTest {
 			return this;
 		}
 
-		public BeginEventMatcher with_type(String value) {
-			attributesMatcher.match("type", Matchers.equalTo(value));
+		public BeginEventMatcher with_type(AppEventType value) {
+			attributesMatcher.match("type", Matchers.equalTo(value.name()));
 			return this;
 		}
 
@@ -385,8 +420,8 @@ public class RequestActivityTest {
 			return this;
 		}
 
-		public FinishEventMatcher with_type(String value) {
-			attributesMatcher.match("type", Matchers.equalTo(value));
+		public FinishEventMatcher with_type(AppEventType value) {
+			attributesMatcher.match("type", Matchers.equalTo(value.name()));
 			return this;
 		}
 
@@ -431,8 +466,8 @@ public class RequestActivityTest {
 			return this;
 		}
 
-		public FinishRequestMatcher with_type(String value) {
-			attributesMatcher.match("type", Matchers.equalTo(value));
+		public FinishRequestMatcher with_type(AppRequestType value) {
+			attributesMatcher.match("type", Matchers.equalTo(value.name()));
 			return this;
 		}
 

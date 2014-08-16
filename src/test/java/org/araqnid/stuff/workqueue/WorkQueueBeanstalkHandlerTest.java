@@ -3,6 +3,7 @@ package org.araqnid.stuff.workqueue;
 import java.nio.charset.Charset;
 import java.util.Random;
 
+import org.araqnid.stuff.AppEventType;
 import org.araqnid.stuff.RequestActivity;
 import org.junit.Assert;
 import org.junit.Test;
@@ -53,8 +54,8 @@ public class WorkQueueBeanstalkHandlerTest {
 		RequestActivity requestActivity = Mockito.mock(RequestActivity.class);
 		WorkQueueBeanstalkHandler handler = new WorkQueueBeanstalkHandler(queueId, dispatcher, requestActivity);
 		handler.deliver(messageId.getBytes(UTF8));
-		Mockito.verify(requestActivity).beginEvent("WQP", queueId + "\t" + messageId);
-		Mockito.verify(requestActivity).finishEvent("WQP");
+		Mockito.verify(requestActivity).beginEvent(AppEventType.WorkQueueItem, queueId + "\t" + messageId);
+		Mockito.verify(requestActivity).finishEvent(AppEventType.WorkQueueItem);
 	}
 
 	@Test
@@ -70,7 +71,7 @@ public class WorkQueueBeanstalkHandlerTest {
 		} catch (UnsupportedOperationException e) {
 			Assert.assertSame(exception, e);
 		}
-		Mockito.verify(requestActivity).finishEvent("WQP");
+		Mockito.verify(requestActivity).finishEvent(AppEventType.WorkQueueItem);
 	}
 
 	private static String randomString() {

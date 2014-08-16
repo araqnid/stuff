@@ -1,5 +1,6 @@
 package org.araqnid.stuff.workqueue;
 
+import org.araqnid.stuff.AppEventType;
 import org.araqnid.stuff.RequestActivity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,17 +48,17 @@ public class SqlWorkQueue implements WorkQueue {
 	}
 
 	private void doSql(String caller, String... statements) {
-		requestActivity.beginEvent("DBT", caller);
+		requestActivity.beginEvent(AppEventType.DatabaseTransaction, caller);
 		try {
 			for (String sql : statements) {
-				requestActivity.beginEvent("SQL", sql);
+				requestActivity.beginEvent(AppEventType.DatabaseStatement, sql);
 				try {
 				} finally {
-					requestActivity.finishEvent("SQL");
+					requestActivity.finishEvent(AppEventType.DatabaseStatement);
 				}
 			}
 		} finally {
-			requestActivity.finishEvent("DBT");
+			requestActivity.finishEvent(AppEventType.DatabaseTransaction);
 		}
 	}
 }

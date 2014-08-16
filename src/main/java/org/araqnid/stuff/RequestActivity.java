@@ -26,41 +26,37 @@ public class RequestActivity {
 		return ruid;
 	}
 
-	public void beginRequest(String type, String description) {
+	public void beginRequest(AppRequestType type, String description) {
 		if (event != null) throw new IllegalStateException("Event stack is not empty");
 		if (used) throw new IllegalStateException("RequestActivity should be not reused");
-		type = type.intern();
-		event = new EventNode(idGenerator.incrementAndGet(), type, description, null);
-		activityEventSink.beginRequest(ruid, event.id, type, description);
+		event = new EventNode(idGenerator.incrementAndGet(), type.name(), description, null);
+		activityEventSink.beginRequest(ruid, event.id, type.name(), description);
 		used = true;
 	}
 
-	public void beginEvent(String type, String description) {
+	public void beginEvent(AppEventType type, String description) {
 		if (event == null) throw new IllegalStateException("Event stack is empty");
-		type = type.intern();
 		EventNode parent = event;
-		event = new EventNode(idGenerator.incrementAndGet(), type, description, parent);
-		activityEventSink.beginEvent(ruid, event.id, parent.id, type, description);
+		event = new EventNode(idGenerator.incrementAndGet(), type.name(), description, parent);
+		activityEventSink.beginEvent(ruid, event.id, parent.id, type.name(), description);
 	}
 
-	public void finishEvent(String type) {
+	public void finishEvent(AppEventType type) {
 		if (event == null) throw new IllegalStateException("Event stack is empty");
-		type = type.intern();
-		if (event.type != type) throw new IllegalStateException("Top event on stack '" + event.type
+		if (event.type != type.name()) throw new IllegalStateException("Top event on stack '" + event.type
 				+ "' does not match this type: " + type);
 		event.stopwatch.stop();
 		EventNode parent = event.parent;
-		activityEventSink.finishEvent(ruid, event.id, parent != null ? parent.id : -1, type, event.stopwatch.elapsed(TimeUnit.NANOSECONDS));
+		activityEventSink.finishEvent(ruid, event.id, parent != null ? parent.id : -1, type.name(), event.stopwatch.elapsed(TimeUnit.NANOSECONDS));
 		event = event.parent;
 	}
 
-	public void finishRequest(String type) {
+	public void finishRequest(AppRequestType type) {
 		if (event == null) throw new IllegalStateException("Event stack is empty");
-		type = type.intern();
-		if (event.type != type) throw new IllegalStateException("Top event on stack '" + event.type
+		if (event.type != type.name()) throw new IllegalStateException("Top event on stack '" + event.type
 				+ "' does not match this type: " + type);
 		event.stopwatch.stop();
-		activityEventSink.finishRequest(ruid, event.id, type, event.stopwatch.elapsed(TimeUnit.NANOSECONDS));
+		activityEventSink.finishRequest(ruid, event.id, type.name(), event.stopwatch.elapsed(TimeUnit.NANOSECONDS));
 		event = event.parent;
 	}
 
