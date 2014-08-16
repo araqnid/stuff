@@ -1,4 +1,4 @@
-package org.araqnid.stuff.config;
+package org.araqnid.stuff.activity;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

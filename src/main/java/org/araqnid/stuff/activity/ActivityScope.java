@@ -1,4 +1,4 @@
-package org.araqnid.stuff.config;
+package org.araqnid.stuff.activity;
 
 import java.lang.annotation.Annotation;
 import java.util.HashMap;
@@ -6,9 +6,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import org.araqnid.stuff.AppRequestType;
-import org.araqnid.stuff.RequestActivity;
-import org.araqnid.stuff.RequestActivity.ActivityEventSink;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
@@ -41,7 +38,7 @@ public final class ActivityScope implements Scope {
 		@Override
 		protected void configure() {
 			bindScope(scopeAnnotation, scope);
-			bind(Control.class).toProvider(new ProviderWithDependencies<Control>() {
+			bind(ActivityScopeControl.class).toProvider(new ProviderWithDependencies<ActivityScopeControl>() {
 				private final Provider<ActivityEventSink> sinkProvider = binder().getProvider(eventSink);
 				private final Set<Dependency<?>> dependencies = ImmutableSet.<Dependency<?>> of(Dependency.get(eventSink));
 
@@ -51,25 +48,10 @@ public final class ActivityScope implements Scope {
 				}
 
 				@Override
-				public Control get() {
+				public ActivityScopeControl get() {
 					return scope.createController(sinkProvider.get());
 				}
 			});
-		}
-
-		@Override
-		public int hashCode() {
-			return getClass().hashCode();
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			return obj instanceof Module;
-		}
-
-		@Override
-		public String toString() {
-			return getClass().getName();
 		}
 	}
 
@@ -83,19 +65,11 @@ public final class ActivityScope implements Scope {
 		};
 	}
 
-	public Control createController(ActivityEventSink activityEventSink) {
+	public ActivityScopeControl createController(ActivityEventSink activityEventSink) {
 		return new ControlImpl(activityEventSink);
 	}
 
-	public interface Control {
-		void beginRequest(AppRequestType type, String description);
-
-		void beginRequest(String ruid, AppRequestType type, String description);
-
-		void finishRequest(AppRequestType type);
-	}
-
-	private final class ControlImpl implements Control {
+	private final class ControlImpl implements ActivityScopeControl {
 		private final ActivityEventSink activityEventSink;
 
 		@Inject

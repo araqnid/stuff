@@ -1,15 +1,10 @@
-package org.araqnid.stuff.config;
+package org.araqnid.stuff.activity;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.regex.Pattern;
 
-import org.araqnid.stuff.AppEventType;
-import org.araqnid.stuff.AppRequestType;
-import org.araqnid.stuff.RequestActivity;
-import org.araqnid.stuff.RequestActivity.ActivityEventSink;
-import org.araqnid.stuff.config.ActivityScope.Control;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
@@ -29,7 +24,7 @@ public class ActivityScopeTest {
 	@Test
 	public void passes_request_details_to_sink_and_generates_ruid() {
 		ActivityScope scope = new ActivityScope();
-		Control scopeControl = scope.createController(mockSink);
+		ActivityScopeControl scopeControl = scope.createController(mockSink);
 		AppRequestType type = AppRequestType.HttpRequest;
 		String description = randomString();
 		scopeControl.beginRequest(type, description);
@@ -40,7 +35,7 @@ public class ActivityScopeTest {
 	@Test
 	public void passes_ruid_and_request_details_to_sink() {
 		ActivityScope scope = new ActivityScope();
-		Control scopeControl = scope.createController(mockSink);
+		ActivityScopeControl scopeControl = scope.createController(mockSink);
 		String ruid = randomString();
 		AppRequestType type = AppRequestType.HttpRequest;
 		String description = randomString();
@@ -52,7 +47,7 @@ public class ActivityScopeTest {
 	@Test
 	public void remembers_ruid_when_finishing_event() {
 		ActivityScope scope = new ActivityScope();
-		Control scopeControl = scope.createController(mockSink);
+		ActivityScopeControl scopeControl = scope.createController(mockSink);
 		String ruid = randomString();
 		AppRequestType type = AppRequestType.HttpRequest;
 		scopeControl.beginRequest(ruid, type, randomString());
@@ -133,7 +128,7 @@ public class ActivityScopeTest {
 		ActivityScope scope = new ActivityScope();
 		final Provider<RequestActivity> provider = scope.scope(Key.get(RequestActivity.class),
 				invalid_provider(RequestActivity.class));
-		final Control controller = scope.createController(mockSink);
+		final ActivityScopeControl controller = scope.createController(mockSink);
 		controller.beginRequest(AppRequestType.HttpRequest, randomString());
 		final RequestActivity ourActivity = provider.get();
 		final List<Object> producedByThread = new ArrayList<>();
@@ -167,14 +162,14 @@ public class ActivityScopeTest {
 	@Test(expected = OutOfScopeException.class)
 	public void cannot_finish_request_without_having_begun_one() {
 		ActivityScope scope = new ActivityScope();
-		Control scopeControl = scope.createController(mockSink);
+		ActivityScopeControl scopeControl = scope.createController(mockSink);
 		scopeControl.finishRequest(AppRequestType.HttpRequest);
 	}
 
 	@Test(expected = IllegalStateException.class)
 	public void cannot_finish_request_with_mismatching_type() {
 		ActivityScope scope = new ActivityScope();
-		Control scopeControl = scope.createController(mockSink);
+		ActivityScopeControl scopeControl = scope.createController(mockSink);
 		scopeControl.beginRequest(AppRequestType.HttpRequest, randomString());
 		scopeControl.finishRequest(AppRequestType.ScheduledJob);
 	}

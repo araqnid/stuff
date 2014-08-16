@@ -1,12 +1,12 @@
-package org.araqnid.stuff;
+package org.araqnid.stuff.activity;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.araqnid.stuff.AsyncActivityEventSink.Event;
-import org.araqnid.stuff.RequestActivity.ActivityEventSink;
+import org.araqnid.stuff.AppService;
+import org.araqnid.stuff.activity.AsyncActivityEventSink.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

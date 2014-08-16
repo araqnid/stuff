@@ -1,8 +1,7 @@
-package org.araqnid.stuff;
+package org.araqnid.stuff.activity;
 
 import java.util.concurrent.BlockingQueue;
 
-import org.araqnid.stuff.RequestActivity.ActivityEventSink;
 
 import com.google.inject.Inject;
 

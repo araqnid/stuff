@@ -3,8 +3,8 @@ package org.araqnid.stuff.workqueue;
 import java.nio.charset.Charset;
 
 import org.araqnid.stuff.BeanstalkProcessor.DeliveryTarget;
-import org.araqnid.stuff.AppEventType;
-import org.araqnid.stuff.RequestActivity;
+import org.araqnid.stuff.activity.AppEventType;
+import org.araqnid.stuff.activity.RequestActivity;
 
 import com.google.common.base.Joiner;
 

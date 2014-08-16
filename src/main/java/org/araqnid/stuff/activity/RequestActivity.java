@@ -1,9 +1,8 @@
-package org.araqnid.stuff;
+package org.araqnid.stuff.activity;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.araqnid.stuff.config.ActivityScoped;
 
 import com.google.common.base.Stopwatch;
 import com.google.inject.Inject;
@@ -73,15 +72,5 @@ public class RequestActivity {
 			this.description = description;
 			this.parent = parent;
 		}
-	}
-
-	public interface ActivityEventSink {
-		void beginRequest(String ruid, long eventId, String type, String description);
-
-		void beginEvent(String ruid, long eventId, long parentEventId, String type, String description);
-
-		void finishEvent(String ruid, long eventId, long parentEventId, String type, long durationNanos);
-
-		void finishRequest(String ruid, long eventId, String type, long durationNanos);
 	}
 }

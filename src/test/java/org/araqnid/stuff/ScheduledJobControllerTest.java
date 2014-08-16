@@ -11,8 +11,9 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.araqnid.stuff.ScheduledJobController.JobDefinition;
-import org.araqnid.stuff.config.ActivityScope;
-import org.araqnid.stuff.config.ActivityScoped;
+import org.araqnid.stuff.activity.ActivityScoped;
+import org.araqnid.stuff.activity.ActivityScopeControl;
+import org.araqnid.stuff.activity.AppRequestType;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
@@ -62,8 +63,8 @@ public class ScheduledJobControllerTest {
 			};
 		}
 	};
-	private final ActivityScope.Control mockScopeControl = Mockito.mock(ActivityScope.Control.class);
-	private final ActivityScope.Control scopeControl = new ActivityScope.Control() {
+	private final ActivityScopeControl mockScopeControl = Mockito.mock(ActivityScopeControl.class);
+	private final ActivityScopeControl scopeControl = new ActivityScopeControl() {
 		@Override
 		public void beginRequest(String ruid, AppRequestType type, String description) {
 			inScope = true;

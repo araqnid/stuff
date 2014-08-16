@@ -1,4 +1,4 @@
-package org.araqnid.stuff;
+package org.araqnid.stuff.activity;
 
 import java.io.IOException;
 
@@ -11,7 +11,6 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.araqnid.stuff.config.ActivityScope;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
@@ -20,10 +19,10 @@ import com.google.inject.Singleton;
 @Singleton
 public class RequestActivityFilter implements Filter {
 	private final Provider<RequestActivity> stateProvider;
-	private final ActivityScope.Control scopeControl;
+	private final ActivityScopeControl scopeControl;
 
 	@Inject
-	public RequestActivityFilter(Provider<RequestActivity> stateProvider, ActivityScope.Control scopeControl) {
+	public RequestActivityFilter(Provider<RequestActivity> stateProvider, ActivityScopeControl scopeControl) {
 		this.stateProvider = stateProvider;
 		this.scopeControl = scopeControl;
 	}

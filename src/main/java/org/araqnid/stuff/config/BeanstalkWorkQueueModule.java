@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.araqnid.stuff.BeanstalkProcessor;
-import org.araqnid.stuff.RequestActivity;
+import org.araqnid.stuff.activity.RequestActivity;
 import org.araqnid.stuff.workqueue.WorkDispatcher;
 import org.araqnid.stuff.workqueue.WorkProcessor;
 import org.araqnid.stuff.workqueue.WorkQueue;

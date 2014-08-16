@@ -1,4 +1,4 @@
-package org.araqnid.stuff;
+package org.araqnid.stuff.activity;
 
 public enum AppRequestType {
 	HttpRequest, BeanstalkMessage, ScheduledJob;

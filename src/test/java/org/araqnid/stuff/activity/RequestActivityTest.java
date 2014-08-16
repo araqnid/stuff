@@ -1,4 +1,4 @@
-package org.araqnid.stuff;
+package org.araqnid.stuff.activity;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-import org.araqnid.stuff.RequestActivity.ActivityEventSink;
+import org.araqnid.stuff.activity.RequestActivity;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;

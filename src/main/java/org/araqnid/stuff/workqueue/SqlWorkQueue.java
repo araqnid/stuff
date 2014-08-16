@@ -1,7 +1,7 @@
 package org.araqnid.stuff.workqueue;
 
-import org.araqnid.stuff.AppEventType;
-import org.araqnid.stuff.RequestActivity;
+import org.araqnid.stuff.activity.AppEventType;
+import org.araqnid.stuff.activity.RequestActivity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

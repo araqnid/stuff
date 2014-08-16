@@ -7,7 +7,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.araqnid.stuff.config.ActivityScope;
+import org.araqnid.stuff.activity.ActivityScopeControl;
+import org.araqnid.stuff.activity.AppRequestType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -23,14 +24,14 @@ public class BeanstalkProcessor implements AppService {
 	private static final Logger LOG = LoggerFactory.getLogger(BeanstalkProcessor.class);
 	private final Provider<Client> connectionProvider;
 	private final String tubeName;
-	private final ActivityScope.Control scopeControl;
+	private final ActivityScopeControl scopeControl;
 	private final Provider<? extends DeliveryTarget> targetProvider;
 	private final ExecutorService executor;
 	private final int maxThreads;
 	private final Set<TubeConsumer> consumers = new HashSet<>();
 
 	public BeanstalkProcessor(Provider<Client> connectionProvider, String tubeName, int maxThreads,
-			ActivityScope.Control scopeControl, Provider<? extends DeliveryTarget> targetProvider) {
+			ActivityScopeControl scopeControl, Provider<? extends DeliveryTarget> targetProvider) {
 		this.connectionProvider = connectionProvider;
 		this.tubeName = tubeName;
 		this.scopeControl = scopeControl;

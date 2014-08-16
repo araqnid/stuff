@@ -5,7 +5,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import org.araqnid.stuff.config.ActivityScope;
+import org.araqnid.stuff.activity.ActivityScopeControl;
+import org.araqnid.stuff.activity.AppRequestType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,17 +23,17 @@ public class ScheduledJobController implements AppService {
 		}
 	};
 
-	private final ActivityScope.Control scopeControl;
+	private final ActivityScopeControl scopeControl;
 	private final Set<JobDefinition> jobs;
 	private final Provider<ScheduledExecutorService> executorProvider;
 	private ScheduledExecutorService executorService;
 
 	@Inject
-	public ScheduledJobController(ActivityScope.Control scopeControl, Set<JobDefinition> jobs) {
+	public ScheduledJobController(ActivityScopeControl scopeControl, Set<JobDefinition> jobs) {
 		this(EXECUTOR_FACTORY, scopeControl, jobs);
 	}
 
-	public ScheduledJobController(Provider<ScheduledExecutorService> executorProvider, ActivityScope.Control scopeControl,
+	public ScheduledJobController(Provider<ScheduledExecutorService> executorProvider, ActivityScopeControl scopeControl,
 			Set<JobDefinition> jobs) {
 		this.executorProvider = executorProvider;
 		this.scopeControl = scopeControl;

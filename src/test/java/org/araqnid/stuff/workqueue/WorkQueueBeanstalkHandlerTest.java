@@ -3,8 +3,8 @@ package org.araqnid.stuff.workqueue;
 import java.nio.charset.Charset;
 import java.util.Random;
 
-import org.araqnid.stuff.AppEventType;
-import org.araqnid.stuff.RequestActivity;
+import org.araqnid.stuff.activity.AppEventType;
+import org.araqnid.stuff.activity.RequestActivity;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
