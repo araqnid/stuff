@@ -56,9 +56,6 @@ public final class ActivityScope implements Scope {
 		}
 	}
 
-	private ActivityScope() {
-	}
-
 	@Override
 	public <T> Provider<T> scope(final Key<T> key, final Provider<T> unscoped) {
 		return new Provider<T>() {
