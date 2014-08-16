@@ -19,6 +19,10 @@ import org.araqnid.stuff.CacheRefresher;
 import org.araqnid.stuff.HelloResource;
 import org.araqnid.stuff.InfoResources;
 import org.araqnid.stuff.JettyAppService;
+import org.araqnid.stuff.RootServlet;
+import org.araqnid.stuff.ScheduledJobController;
+import org.araqnid.stuff.SomeQueueProcessor;
+import org.araqnid.stuff.SometubeHandler;
 import org.araqnid.stuff.activity.ActivityEventSink;
 import org.araqnid.stuff.activity.ActivityScope;
 import org.araqnid.stuff.activity.AsyncActivityEventSink;
@@ -26,10 +30,6 @@ import org.araqnid.stuff.activity.AsyncActivityEventsProcessor;
 import org.araqnid.stuff.activity.LogActivityEvents;
 import org.araqnid.stuff.activity.RequestActivity;
 import org.araqnid.stuff.activity.RequestActivityFilter;
-import org.araqnid.stuff.RootServlet;
-import org.araqnid.stuff.ScheduledJobController;
-import org.araqnid.stuff.SomeQueueProcessor;
-import org.araqnid.stuff.SometubeHandler;
 import org.araqnid.stuff.workqueue.SqlWorkQueue;
 import org.araqnid.stuff.workqueue.WorkQueue;
 import org.eclipse.jetty.server.Connector;
@@ -41,8 +41,10 @@ import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.util.resource.Resource;
+import org.jboss.resteasy.core.Dispatcher;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
 import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
+import org.jboss.resteasy.spi.Registry;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -238,6 +240,18 @@ public class AppConfig extends AbstractModule {
 			@Override
 			protected void configure() {
 				install(new WebModule());
+			}
+
+			@Provides
+			@Exposed
+			public Dispatcher dispatcher(HttpServletDispatcher servlet) {
+				return servlet.getDispatcher();
+			}
+
+			@Provides
+			@Exposed
+			public Registry dispatcher(Dispatcher dispatcher) {
+				return dispatcher.getRegistry();
 			}
 
 			public static final class WebModule extends ServletModule {
