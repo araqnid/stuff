@@ -3,18 +3,22 @@ package org.araqnid.stuff.config;
 import java.lang.annotation.Annotation;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.araqnid.stuff.AppRequestType;
 import org.araqnid.stuff.RequestActivity;
 import org.araqnid.stuff.RequestActivity.ActivityEventSink;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.OutOfScopeException;
 import com.google.inject.Provider;
 import com.google.inject.Scope;
+import com.google.inject.spi.Dependency;
+import com.google.inject.spi.ProviderWithDependencies;
 
 public final class ActivityScope implements Scope {
 	private final ThreadLocal<Context> contexts = new ThreadLocal<>();
@@ -37,7 +41,20 @@ public final class ActivityScope implements Scope {
 		@Override
 		protected void configure() {
 			bindScope(scopeAnnotation, scope);
-			bind(Control.class).toInstance(scope.createController(binder().getProvider(eventSink)));
+			bind(Control.class).toProvider(new ProviderWithDependencies<Control>() {
+				private final Provider<ActivityEventSink> sinkProvider = binder().getProvider(eventSink);
+				private final Set<Dependency<?>> dependencies = ImmutableSet.<Dependency<?>> of(Dependency.get(eventSink));
+
+				@Override
+				public Set<Dependency<?>> getDependencies() {
+					return dependencies;
+				}
+
+				@Override
+				public Control get() {
+					return scope.createController(sinkProvider.get());
+				}
+			});
 		}
 
 		@Override
@@ -66,22 +83,24 @@ public final class ActivityScope implements Scope {
 		};
 	}
 
-	public Control createController(Provider<ActivityEventSink> sinkProvider) {
-		return new ControlImpl(sinkProvider);
+	public Control createController(ActivityEventSink activityEventSink) {
+		return new ControlImpl(activityEventSink);
 	}
 
 	public interface Control {
 		void beginRequest(AppRequestType type, String description);
+
 		void beginRequest(String ruid, AppRequestType type, String description);
+
 		void finishRequest(AppRequestType type);
 	}
 
 	private final class ControlImpl implements Control {
-		private final Provider<ActivityEventSink> activitySinkProvider;
+		private final ActivityEventSink activityEventSink;
 
 		@Inject
-		public ControlImpl(Provider<ActivityEventSink> activitySinkProvider) {
-			this.activitySinkProvider = activitySinkProvider;
+		public ControlImpl(ActivityEventSink activityEventSink) {
+			this.activityEventSink = activityEventSink;
 		}
 
 		@Override
@@ -97,7 +116,7 @@ public final class ActivityScope implements Scope {
 		private void beginRequestWithRuid(String ruid, AppRequestType type, String description) {
 			if (contexts.get() != null) throw new IllegalStateException(
 					"Activity context already attached to this thread");
-			RequestActivity requestActivity = new RequestActivity(ruid, activitySinkProvider.get());
+			RequestActivity requestActivity = new RequestActivity(ruid, activityEventSink);
 			Context context = new Context(requestActivity);
 			requestActivity.beginRequest(type, description);
 			contexts.set(context);

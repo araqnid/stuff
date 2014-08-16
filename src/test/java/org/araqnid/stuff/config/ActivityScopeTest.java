@@ -25,17 +25,11 @@ import com.google.inject.Provider;
 
 public class ActivityScopeTest {
 	private ActivityEventSink mockSink = Mockito.mock(ActivityEventSink.class);
-	private Provider<ActivityEventSink> sinkProvider = new Provider<ActivityEventSink>() {
-		@Override
-		public ActivityEventSink get() {
-			return mockSink;
-		}
-	};
 
 	@Test
 	public void passes_request_details_to_sink_and_generates_ruid() {
 		ActivityScope scope = new ActivityScope();
-		Control scopeControl = scope.createController(sinkProvider);
+		Control scopeControl = scope.createController(mockSink);
 		AppRequestType type = AppRequestType.HttpRequest;
 		String description = randomString();
 		scopeControl.beginRequest(type, description);
@@ -46,7 +40,7 @@ public class ActivityScopeTest {
 	@Test
 	public void passes_ruid_and_request_details_to_sink() {
 		ActivityScope scope = new ActivityScope();
-		Control scopeControl = scope.createController(sinkProvider);
+		Control scopeControl = scope.createController(mockSink);
 		String ruid = randomString();
 		AppRequestType type = AppRequestType.HttpRequest;
 		String description = randomString();
@@ -58,7 +52,7 @@ public class ActivityScopeTest {
 	@Test
 	public void remembers_ruid_when_finishing_event() {
 		ActivityScope scope = new ActivityScope();
-		Control scopeControl = scope.createController(sinkProvider);
+		Control scopeControl = scope.createController(mockSink);
 		String ruid = randomString();
 		AppRequestType type = AppRequestType.HttpRequest;
 		scopeControl.beginRequest(ruid, type, randomString());
@@ -72,7 +66,7 @@ public class ActivityScopeTest {
 		ActivityScope scope = new ActivityScope();
 		Provider<RequestActivity> provider = scope.scope(Key.get(RequestActivity.class),
 				invalid_provider(RequestActivity.class));
-		scope.createController(sinkProvider).beginRequest(AppRequestType.HttpRequest, randomString());
+		scope.createController(mockSink).beginRequest(AppRequestType.HttpRequest, randomString());
 		provider.get();
 	}
 
@@ -81,7 +75,7 @@ public class ActivityScopeTest {
 		StringGeneratingProvider unscoped = new StringGeneratingProvider();
 		ActivityScope scope = new ActivityScope();
 		Provider<String> provider = scope.scope(Key.get(String.class), unscoped);
-		scope.createController(sinkProvider).beginRequest(AppRequestType.HttpRequest, randomString());
+		scope.createController(mockSink).beginRequest(AppRequestType.HttpRequest, randomString());
 		String providedFirst = provider.get();
 		MatcherAssert.assertThat(unscoped.generated, Matchers.contains(providedFirst));
 	}
@@ -91,7 +85,7 @@ public class ActivityScopeTest {
 		StringGeneratingProvider unscoped = new StringGeneratingProvider();
 		ActivityScope scope = new ActivityScope();
 		Provider<String> provider = scope.scope(Key.get(String.class), unscoped);
-		scope.createController(sinkProvider).beginRequest(AppRequestType.HttpRequest, randomString());
+		scope.createController(mockSink).beginRequest(AppRequestType.HttpRequest, randomString());
 		String providedFirst = provider.get();
 		String providedSecond = provider.get();
 		Assert.assertSame(providedFirst, providedSecond);
@@ -103,7 +97,7 @@ public class ActivityScopeTest {
 		ActivityScope scope = new ActivityScope();
 		Provider<RequestActivity> provider = scope.scope(Key.get(RequestActivity.class),
 				invalid_provider(RequestActivity.class));
-		scope.createController(sinkProvider).beginRequest(AppRequestType.HttpRequest, randomString());
+		scope.createController(mockSink).beginRequest(AppRequestType.HttpRequest, randomString());
 		RequestActivity requestActivity = provider.get();
 		AppEventType eventType = AppEventType.WorkQueueItem;
 		String eventDescription = randomString();
@@ -123,14 +117,14 @@ public class ActivityScopeTest {
 	@Test(expected = OutOfScopeException.class)
 	public void cannot_finish_request_without_having_begun_one() {
 		ActivityScope scope = new ActivityScope();
-		Control scopeControl = scope.createController(sinkProvider);
+		Control scopeControl = scope.createController(mockSink);
 		scopeControl.finishRequest(AppRequestType.HttpRequest);
 	}
 
 	@Test(expected = IllegalStateException.class)
 	public void cannot_finish_request_with_mismatching_type() {
 		ActivityScope scope = new ActivityScope();
-		Control scopeControl = scope.createController(sinkProvider);
+		Control scopeControl = scope.createController(mockSink);
 		scopeControl.beginRequest(AppRequestType.HttpRequest, randomString());
 		scopeControl.finishRequest(AppRequestType.ScheduledJob);
 	}
