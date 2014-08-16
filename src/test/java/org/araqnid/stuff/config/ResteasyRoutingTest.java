@@ -21,7 +21,7 @@ import org.jboss.resteasy.core.ResourceInvoker;
 import org.jboss.resteasy.mock.MockDispatcherFactory;
 import org.jboss.resteasy.mock.MockHttpRequest;
 import org.jboss.resteasy.plugins.guice.ModuleProcessor;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.experimental.theories.DataPoint;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
@@ -34,7 +34,13 @@ import com.google.inject.Guice;
 
 @RunWith(Theories.class)
 public class ResteasyRoutingTest {
-	private Dispatcher dispatcher = MockDispatcherFactory.createDispatcher();
+	private static Dispatcher dispatcher = MockDispatcherFactory.createDispatcher();
+
+	@BeforeClass
+	public static void setupDispatcher() {
+		new ModuleProcessor(dispatcher.getRegistry(), dispatcher.getProviderFactory()).processInjector(Guice
+				.createInjector(new AppConfig()).createChildInjector(new AppConfig.ResteasyModule()));
+	}
 
 	@DataPoint
 	public static Routing get_hello = new Routing("/hello/kitty", HelloResource.class, "hello") {{
@@ -93,12 +99,6 @@ public class ResteasyRoutingTest {
 		public MockHttpRequest theRequest() {
 			return request;
 		}
-	}
-
-	@Before
-	public void setupDispatcher() {
-		new ModuleProcessor(dispatcher.getRegistry(), dispatcher.getProviderFactory()).processInjector(Guice
-				.createInjector(new AppConfig()).createChildInjector(new AppConfig.ResteasyModule()));
 	}
 
 	@Theory
