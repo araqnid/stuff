@@ -1,6 +1,7 @@
 package org.araqnid.stuff.activity;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -11,7 +12,9 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-
+import com.google.common.base.Joiner;
+import com.google.common.base.Predicates;
+import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
@@ -45,7 +48,15 @@ public class RequestActivityFilter implements Filter {
 	private void doHttpFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
 		String ruid = request.getHeader("X-RUID");
-		scopeControl.beginRequest(ruid, AppRequestType.HttpRequest, request.getServletPath());
+		scopeControl.beginRequest(
+				ruid,
+				AppRequestType.HttpRequest,
+				Joiner.on('\t').join(
+						request.getMethod(),
+						Joiner.on("").join(
+								Iterables.filter(
+										Arrays.asList(request.getContextPath(), request.getServletPath(),
+												request.getPathInfo()), Predicates.notNull()))));
 		try {
 			RequestActivity requestActivity = stateProvider.get();
 			response.setHeader("X-RUID", requestActivity.getRuid());
