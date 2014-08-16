@@ -23,7 +23,7 @@ public final class ActivityScope implements Scope {
 		protected void configure() {
 			ActivityScope scope = new ActivityScope();
 			bindScope(ActivityScoped.class, scope);
-			bind(Control.class).toInstance(scope.new ControlImpl(binder().getProvider(ActivityEventSink.class)));
+			bind(Control.class).toInstance(scope.createController(binder().getProvider(ActivityEventSink.class)));
 		}
 
 		@Override
@@ -53,6 +53,10 @@ public final class ActivityScope implements Scope {
 				return acquireContext().scope(key, unscoped);
 			}
 		};
+	}
+
+	public Control createController(Provider<ActivityEventSink> sinkProvider) {
+		return new ControlImpl(sinkProvider);
 	}
 
 	public interface Control {
