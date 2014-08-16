@@ -1,18 +1,18 @@
 package org.araqnid.stuff.workqueue;
 
 import org.araqnid.stuff.AppEventType;
-import org.araqnid.stuff.RequestActivity;
+import org.araqnid.stuff.RequestActivityEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SqlWorkQueue implements WorkQueue {
 	private static final Logger LOG = LoggerFactory.getLogger(SqlWorkQueue.class);
 	private final String queueCode;
-	private final RequestActivity requestActivity;
+	private final RequestActivityEvent.Factory eventFactory;
 
-	public SqlWorkQueue(String queueCode, RequestActivity requestActivity) {
+	public SqlWorkQueue(String queueCode, RequestActivityEvent.Factory eventFactory) {
 		this.queueCode = queueCode;
-		this.requestActivity = requestActivity;
+		this.eventFactory = eventFactory;
 	}
 
 	public void create(String entryId, byte[] payload) {
@@ -48,17 +48,17 @@ public class SqlWorkQueue implements WorkQueue {
 	}
 
 	private void doSql(String caller, String... statements) {
-		requestActivity.beginEvent(AppEventType.DatabaseTransaction, caller);
+		RequestActivityEvent transactionEvent = eventFactory.beginEvent(AppEventType.DatabaseTransaction, caller);
 		try {
 			for (String sql : statements) {
-				requestActivity.beginEvent(AppEventType.DatabaseStatement, sql);
+				RequestActivityEvent statementEvent = eventFactory.beginEvent(AppEventType.DatabaseStatement, sql);
 				try {
 				} finally {
-					requestActivity.finishEvent(AppEventType.DatabaseStatement);
+					statementEvent.finish();
 				}
 			}
 		} finally {
-			requestActivity.finishEvent(AppEventType.DatabaseTransaction);
+			transactionEvent.finish();
 		}
 	}
 }

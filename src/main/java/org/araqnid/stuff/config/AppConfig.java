@@ -21,8 +21,8 @@ import org.araqnid.stuff.CacheRefresher;
 import org.araqnid.stuff.HelloResource;
 import org.araqnid.stuff.JettyAppService;
 import org.araqnid.stuff.LogActivityEvents;
-import org.araqnid.stuff.RequestActivity;
 import org.araqnid.stuff.RequestActivity.ActivityEventSink;
+import org.araqnid.stuff.RequestActivityEvent;
 import org.araqnid.stuff.RequestActivityFilter;
 import org.araqnid.stuff.RootServlet;
 import org.araqnid.stuff.ScheduledJobController;
@@ -165,14 +165,14 @@ public class AppConfig extends AbstractModule {
 
 		@Provides
 		@Named("somequeue")
-		public WorkQueue somequeue(RequestActivity requestActivity) {
-			return new SqlWorkQueue("somequeue", requestActivity);
+		public WorkQueue somequeue(RequestActivityEvent.Factory eventFactory) {
+			return new SqlWorkQueue("somequeue", eventFactory);
 		}
 
 		@Provides
 		@Named("otherqueue")
-		public WorkQueue otherqueue(RequestActivity requestActivity) {
-			return new SqlWorkQueue("otherqueue", requestActivity);
+		public WorkQueue otherqueue(RequestActivityEvent.Factory eventFactory) {
+			return new SqlWorkQueue("otherqueue", eventFactory);
 		}
 	}
 
