@@ -77,6 +77,16 @@ public class ResteasyRoutingTest {
 			} catch (URISyntaxException e) {
 				throw new IllegalArgumentException(e);
 			}
+			List<Method> methods = new ArrayList<>();
+			for (Method method : resourceClass.getMethods()) {
+				if (method.getName().equals(methodName)) {
+					methods.add(method);
+				}
+			}
+			if (methods.isEmpty())
+				throw new IllegalArgumentException("No such method \"" + methodName + "\" on " + resourceClass.getName());
+			if (methods.size() > 1)
+				throw new IllegalArgumentException("Multiple methods called \"" + methodName + "\" on " + resourceClass.getName());
 			this.resourceClass = resourceClass;
 			this.methodName = methodName;
 		}
