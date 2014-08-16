@@ -17,6 +17,7 @@ import org.araqnid.stuff.AppVersion;
 import org.araqnid.stuff.AppVersionServlet;
 import org.araqnid.stuff.CacheRefresher;
 import org.araqnid.stuff.HelloResource;
+import org.araqnid.stuff.InfoResources;
 import org.araqnid.stuff.JettyAppService;
 import org.araqnid.stuff.activity.ActivityEventSink;
 import org.araqnid.stuff.activity.ActivityScope;
@@ -289,6 +290,7 @@ public class AppConfig extends AbstractModule {
 		@Override
 		protected void configure() {
 			bind(HelloResource.class);
+			bind(InfoResources.class);
 		}
 	}
 }
