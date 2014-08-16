@@ -119,7 +119,8 @@ public class AppConfig extends AbstractModule {
 		@Override
 		protected void configure() {
 			Multibinder<AppService> appServices = Multibinder.newSetBinder(binder(), AppService.class);
-			bind(ActivityEventSink.class).to(AsyncActivityEventSink.class);
+			bind(ActivityEventSink.class).to(MDCPopulatingEventSink.class);
+			bind(ActivityEventSink.class).annotatedWith(Names.named("logger")).to(AsyncActivityEventSink.class);
 			bind(ActivityEventSink.class).annotatedWith(Names.named("backend")).to(LogActivityEvents.class);
 			appServices.addBinding().to(AsyncActivityEventsProcessor.class);
 		}
@@ -140,7 +141,8 @@ public class AppConfig extends AbstractModule {
 	public static final class SynchronousActivityEventsModule extends AbstractModule {
 		@Override
 		protected void configure() {
-			bind(ActivityEventSink.class).to(LogActivityEvents.class);
+			bind(ActivityEventSink.class).to(MDCPopulatingEventSink.class);
+			bind(ActivityEventSink.class).annotatedWith(Names.named("logger")).to(LogActivityEvents.class);
 		}
 	}
 
