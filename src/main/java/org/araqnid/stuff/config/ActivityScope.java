@@ -19,9 +19,18 @@ public final class ActivityScope implements Scope {
 	private final ThreadLocal<Context> contexts = new ThreadLocal<>();
 
 	public static final class Module extends AbstractModule {
+		private final ActivityScope scope;
+
+		public Module(ActivityScope scope) {
+			this.scope = scope;
+		}
+
+		public Module() {
+			this(new ActivityScope());
+		}
+
 		@Override
 		protected void configure() {
-			ActivityScope scope = new ActivityScope();
 			bindScope(ActivityScoped.class, scope);
 			bind(Control.class).toInstance(scope.createController(binder().getProvider(ActivityEventSink.class)));
 		}
