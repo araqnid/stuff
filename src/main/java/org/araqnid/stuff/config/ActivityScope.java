@@ -22,20 +22,22 @@ public final class ActivityScope implements Scope {
 	public static final class Module extends AbstractModule {
 		private final ActivityScope scope;
 		private final Class<? extends Annotation> scopeAnnotation;
+		private final Key<ActivityEventSink> eventSink;
 
 		public Module() {
-			this(new ActivityScope(), ActivityScoped.class);
+			this(new ActivityScope(), ActivityScoped.class, Key.get(ActivityEventSink.class));
 		}
-		
-		public Module(ActivityScope scope, Class<? extends Annotation> scopeAnnotation) {
+
+		public Module(ActivityScope scope, Class<? extends Annotation> scopeAnnotation, Key<ActivityEventSink> eventSink) {
 			this.scope = scope;
 			this.scopeAnnotation = scopeAnnotation;
+			this.eventSink = eventSink;
 		}
 
 		@Override
 		protected void configure() {
 			bindScope(scopeAnnotation, scope);
-			bind(Control.class).toInstance(scope.createController(binder().getProvider(ActivityEventSink.class)));
+			bind(Control.class).toInstance(scope.createController(binder().getProvider(eventSink)));
 		}
 
 		@Override
