@@ -1,6 +1,7 @@
 package org.araqnid.stuff.config;
 
 import java.lang.reflect.Method;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -36,8 +37,20 @@ public class ResteasyRoutingTest {
 	private Dispatcher dispatcher = MockDispatcherFactory.createDispatcher();
 
 	@DataPoint
-	public static Routing hello = new Routing("/hello/kitty", HelloResource.class, "hello")
-			.withPathParameters(parameters("name", "kitty"));
+	public static Routing get_hello = new Routing("/hello/kitty", HelloResource.class, "hello") {{
+			withPathParameters(parameters("name", "kitty"));
+	}};
+	@DataPoint
+	public static Routing put_hello = new Routing("/hello/kitty", HelloResource.class, "receiveHello") {{
+			withPathParameters(parameters("name", "kitty"));
+			whenUsing("PUT");
+			whenBodyContentType("text/plain");
+	}};
+	@DataPoint
+	public static Routing delete_hello = new Routing("/hello/kitty", HelloResource.class, "deleteHello") {{
+			withPathParameters(parameters("name", "kitty"));
+			whenUsing("DELETE");
+	}};
 
 	@DataPoint
 	public static Routing info_version = new Routing("/info/version", InfoResources.class, "getVersion");
@@ -47,13 +60,17 @@ public class ResteasyRoutingTest {
 	public static Routing info_routing = new Routing("/info/routing", InfoResources.class, "getRouting");
 
 	public static class Routing {
-		public final String path;
+		public final MockHttpRequest request;
 		public final Class<?> resourceClass;
 		public final String methodName;
 		public Multimap<String, String> pathParameters = newParametersMultimap();
 
 		public Routing(String path, Class<?> resourceClass, String methodName) {
-			this.path = path;
+			try {
+				this.request = MockHttpRequest.get(path);
+			} catch (URISyntaxException e) {
+				throw new IllegalArgumentException(e);
+			}
 			this.resourceClass = resourceClass;
 			this.methodName = methodName;
 		}
@@ -61,6 +78,20 @@ public class ResteasyRoutingTest {
 		public Routing withPathParameters(Multimap<String, String> pathParameters) {
 			this.pathParameters = pathParameters;
 			return this;
+		}
+
+		public Routing whenUsing(String httpMethod) {
+			request.setHttpMethod(httpMethod);
+			return this;
+		}
+
+		public Routing whenBodyContentType(String contentType) {
+			request.contentType(contentType);
+			return this;
+		}
+
+		public MockHttpRequest theRequest() {
+			return request;
 		}
 	}
 
@@ -72,14 +103,14 @@ public class ResteasyRoutingTest {
 
 	@Theory
 	public void path_is_mapped_to_resource(Routing routing) throws Exception {
-		MockHttpRequest request = MockHttpRequest.get(routing.path);
+		MockHttpRequest request = routing.theRequest();
 		ResourceInvoker resourceInvoker = dispatcher.getRegistry().getResourceInvoker(request);
 		MatcherAssert.assertThat(resourceInvoker, is_to_method(routing.resourceClass, routing.methodName));
 	}
 
 	@Theory
 	public void path_parameters_are_captured(Routing routing) throws Exception {
-		MockHttpRequest request = MockHttpRequest.get(routing.path);
+		MockHttpRequest request = routing.theRequest();
 		dispatcher.getRegistry().getResourceInvoker(request);
 		MatcherAssert.assertThat(request.getUri().getPathParameters(), is_like(routing.pathParameters));
 	}
