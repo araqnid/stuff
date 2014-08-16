@@ -2,6 +2,7 @@ package org.araqnid.stuff.config;
 
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -41,6 +42,7 @@ import org.eclipse.jetty.util.resource.Resource;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
 import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Exposed;
@@ -58,6 +60,17 @@ import com.surftools.BeanstalkClient.Client;
 import com.surftools.BeanstalkClientImpl.ClientImpl;
 
 public class AppConfig extends AbstractModule {
+	private Map<String, String> environment;
+
+	public AppConfig() {
+		this(System.getenv());
+	}
+
+	@VisibleForTesting
+	AppConfig(Map<String, String> environment) {
+		this.environment = environment;
+	}
+
 	@Override
 	protected void configure() {
 		bindConstant().annotatedWith(Names.named("http_port")).to(port(61000));
@@ -71,7 +84,7 @@ public class AppConfig extends AbstractModule {
 	}
 
 	private int port(int defaultPort) {
-		String envValue = System.getenv("PORT");
+		String envValue = environment.get("PORT");
 		if (envValue == null) return defaultPort;
 		return Integer.valueOf(envValue);
 	}
