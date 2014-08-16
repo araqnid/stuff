@@ -193,7 +193,7 @@ public class ScheduledJobControllerTest {
 		captureSubmittedJobs();
 		controller.start();
 		scheduledJobBodies.get(0).run();
-		Mockito.verify(mockScopeControl).beginRequest(Mockito.isNull(String.class), Mockito.eq(AppRequestType.ScheduledJob),
+		Mockito.verify(mockScopeControl).beginRequest(Mockito.eq(AppRequestType.ScheduledJob),
 				Mockito.argThat(Matchers.stringContainsInOrder(ImmutableList.of(jobString))));
 		Mockito.verify(mockScopeControl).finishRequest(AppRequestType.ScheduledJob);
 		Mockito.verifyNoMoreInteractions(mockScopeControl);
