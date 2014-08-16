@@ -162,6 +162,15 @@ public class RequestActivityTest {
 		activity.finishRequest(randomString());
 	}
 
+	@Test(expected = IllegalStateException.class)
+	public void cannot_begin_another_request_after_ending_a_request() {
+		RequestActivity activity = new RequestActivity(ruid, activityEventSink);
+		String requestType = randomString();
+		activity.beginRequest(requestType, randomString());
+		activity.finishRequest(requestType);
+		activity.beginRequest(randomString(), randomString());
+	}
+
 	private static String randomString() {
 		Random random = new Random();
 		String alphabet = "abcdefghijklmnopqrstuvwxyz";
