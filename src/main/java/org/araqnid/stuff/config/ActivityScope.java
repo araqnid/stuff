@@ -15,14 +15,15 @@ import com.google.inject.OutOfScopeException;
 import com.google.inject.Provider;
 import com.google.inject.Scope;
 
-public final class ActivityScope {
-	private static final ThreadLocal<Context> contexts = new ThreadLocal<>();
+public final class ActivityScope implements Scope {
+	private final ThreadLocal<Context> contexts = new ThreadLocal<>();
 
 	public static final class Module extends AbstractModule {
 		@Override
 		protected void configure() {
-			bindScope(ActivityScoped.class, SCOPE);
-			bind(Control.class).to(ControlImpl.class);
+			ActivityScope scope = new ActivityScope();
+			bindScope(ActivityScoped.class, scope);
+			bind(Control.class).toInstance(scope.new ControlImpl(binder().getProvider(ActivityEventSink.class)));
 		}
 
 		@Override
@@ -41,17 +42,18 @@ public final class ActivityScope {
 		}
 	}
 
-	public static final Scope SCOPE = new Scope() {
-		@Override
-		public <T> Provider<T> scope(final Key<T> key, final Provider<T> unscoped) {
-			return new Provider<T>() {
-				@Override
-				public T get() {
-					return acquireContext().scope(key, unscoped);
-				}
-			};
-		}
-	};
+	private ActivityScope() {
+	}
+
+	@Override
+	public <T> Provider<T> scope(final Key<T> key, final Provider<T> unscoped) {
+		return new Provider<T>() {
+			@Override
+			public T get() {
+				return acquireContext().scope(key, unscoped);
+			}
+		};
+	}
 
 	public interface Control {
 		void beginRequest(AppRequestType type, String description);
@@ -59,7 +61,7 @@ public final class ActivityScope {
 		void finishRequest(AppRequestType type);
 	}
 
-	public static final class ControlImpl implements Control {
+	private final class ControlImpl implements Control {
 		private final Provider<ActivityEventSink> activitySinkProvider;
 
 		@Inject
@@ -99,23 +101,23 @@ public final class ActivityScope {
 		}
 	}
 
-	private static Context acquireContext() {
+	private Context acquireContext() {
 		Context threadContext = contexts.get();
 		if (threadContext == null) throw new OutOfScopeException("No activity context available in this thread");
 		return threadContext;
 	}
 
-	private static class Context {
-		private static final Key<RequestActivity> ACTIVITY_KEY = Key.get(RequestActivity.class);
+	private final class Context {
+		private final Key<RequestActivity> activityKey = Key.get(RequestActivity.class);
 		private final Map<Key<?>, Object> contents;
 
 		private Context(RequestActivity requestActivity) {
 			contents = new HashMap<>();
-			contents.put(ACTIVITY_KEY, requestActivity);
+			contents.put(activityKey, requestActivity);
 		}
 
 		public RequestActivity getRequestActivity() {
-			return (RequestActivity) contents.get(ACTIVITY_KEY);
+			return (RequestActivity) contents.get(activityKey);
 		}
 
 		public <T> T scope(Key<T> key, Provider<T> unscoped) {
@@ -127,8 +129,5 @@ public final class ActivityScope {
 			}
 			return value;
 		}
-	}
-
-	private ActivityScope() {
 	}
 }
