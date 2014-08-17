@@ -12,9 +12,7 @@ import javax.servlet.ServletContext;
 import org.araqnid.stuff.AppLifecycleEvent;
 import org.araqnid.stuff.AppService;
 import org.araqnid.stuff.AppServicesManager;
-import org.araqnid.stuff.AppStateServlet;
 import org.araqnid.stuff.AppVersion;
-import org.araqnid.stuff.AppVersionServlet;
 import org.araqnid.stuff.CacheRefresher;
 import org.araqnid.stuff.HelloResource;
 import org.araqnid.stuff.InfoResources;
@@ -214,8 +212,6 @@ public class AppConfig extends AbstractModule {
 				@Override
 				protected void configureServlets() {
 					serve("/").with(RootServlet.class);
-					serve("/_info/state").with(AppStateServlet.class);
-					serve("/_info/version").with(AppVersionServlet.class);
 					filter("/*").through(RequestActivityFilter.class);
 				}
 			}

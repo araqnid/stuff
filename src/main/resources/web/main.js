@@ -13,7 +13,7 @@ define("jquery-noconflict", ["jquery"], function(jQuery) {
 });
 require(["jquery"], function($) {
 	$.ajax({
-		url: "_info/state",
+		url: "_api/info/state",
 		success: function(data) {
 			$("#info .info-state").html("App state is <b>" + data + "</b>").addClass("loaded");
 		},
@@ -22,7 +22,7 @@ require(["jquery"], function($) {
 		},
 	});
 	$.ajax({
-		url: "_info/version",
+		url: "_api/info/version",
 		success: function(data) {
 			$("#info .info-version").html("App version is <b>" + data.version + "</b>").addClass("loaded");
 		},
