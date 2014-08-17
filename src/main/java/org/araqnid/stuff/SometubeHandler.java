@@ -4,16 +4,20 @@ import java.io.IOException;
 
 import org.araqnid.stuff.BeanstalkProcessor.DeliveryTarget;
 import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.MappingJsonFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.inject.Inject;
+
 public class SometubeHandler implements DeliveryTarget {
 	private static final Logger LOG = LoggerFactory.getLogger(SometubeHandler.class);
-	private final JsonFactory jsonFactory = new MappingJsonFactory();
+	private final JsonFactory jsonFactory;
+
+	@Inject
+	public SometubeHandler(JsonFactory jsonFactory) {
+		this.jsonFactory = jsonFactory;
+	}
 
 	@Override
 	public boolean deliver(byte[] data) {

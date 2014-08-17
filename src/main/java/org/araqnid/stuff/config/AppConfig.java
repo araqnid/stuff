@@ -32,6 +32,8 @@ import org.araqnid.stuff.activity.RequestActivity;
 import org.araqnid.stuff.activity.RequestActivityFilter;
 import org.araqnid.stuff.workqueue.SqlWorkQueue;
 import org.araqnid.stuff.workqueue.WorkQueue;
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.map.MappingJsonFactory;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
@@ -107,6 +109,7 @@ public class AppConfig extends AbstractModule {
 			bind(AppVersion.class).toInstance(appVersion());
 			bind(AppStateMonitor.class);
 			bind(AppStartupBanner.class);
+			bind(JsonFactory.class).to(MappingJsonFactory.class).in(Singleton.class);
 		}
 
 		private AppVersion appVersion() {
