@@ -2,9 +2,10 @@ package org.araqnid.stuff;
 
 import java.nio.charset.Charset;
 
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.map.MappingJsonFactory;
 import org.junit.Test;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.databind.MappingJsonFactory;
 
 public class SometubeHandlerTest {
 	private static final Charset UTF8 = Charset.forName("UTF-8");
