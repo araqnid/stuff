@@ -12,6 +12,7 @@ import javax.servlet.ServletContext;
 import org.araqnid.stuff.AppLifecycleEvent;
 import org.araqnid.stuff.AppService;
 import org.araqnid.stuff.AppServicesManager;
+import org.araqnid.stuff.AppStartupBanner;
 import org.araqnid.stuff.AppStateMonitor;
 import org.araqnid.stuff.AppVersion;
 import org.araqnid.stuff.CacheRefresher;
@@ -105,6 +106,7 @@ public class AppConfig extends AbstractModule {
 			appServices.addBinding().to(ScheduledJobController.class);
 			bind(AppVersion.class).toInstance(appVersion());
 			bind(AppStateMonitor.class);
+			bind(AppStartupBanner.class);
 		}
 
 		private AppVersion appVersion() {
