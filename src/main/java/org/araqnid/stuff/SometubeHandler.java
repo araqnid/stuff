@@ -1,15 +1,15 @@
 package org.araqnid.stuff;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.Charset;
+import java.io.IOException;
 
 import org.araqnid.stuff.BeanstalkProcessor.DeliveryTarget;
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonParseException;
+import org.codehaus.jackson.JsonParser;
+import org.codehaus.jackson.JsonProcessingException;
+import org.codehaus.jackson.map.MappingJsonFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 public class SometubeHandler implements DeliveryTarget {
 	private static final Logger LOG = LoggerFactory.getLogger(SometubeHandler.class);
@@ -22,11 +22,15 @@ public class SometubeHandler implements DeliveryTarget {
 	}
 
 	private Payload parse(byte[] data) {
-		Gson gson = new GsonBuilder().create();
-		ByteArrayInputStream bais = new ByteArrayInputStream(data);
-		InputStreamReader reader = new InputStreamReader(bais, Charset.forName("UTF-8"));
-		Payload payload = gson.fromJson(reader, Payload.class);
-		return payload;
+		try {
+			JsonFactory jsonFactory = new MappingJsonFactory();
+			JsonParser parser = jsonFactory.createJsonParser(data);
+			return parser.readValueAs(Payload.class);
+		} catch (JsonProcessingException e) {
+			throw new RuntimeException(e);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	public static class Payload {
