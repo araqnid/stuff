@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 public class SometubeHandler implements DeliveryTarget {
 	private static final Logger LOG = LoggerFactory.getLogger(SometubeHandler.class);
+	private final JsonFactory jsonFactory = new MappingJsonFactory();
 
 	@Override
 	public boolean deliver(byte[] data) {
@@ -23,9 +24,7 @@ public class SometubeHandler implements DeliveryTarget {
 
 	private Payload parse(byte[] data) {
 		try {
-			JsonFactory jsonFactory = new MappingJsonFactory();
-			JsonParser parser = jsonFactory.createJsonParser(data);
-			return parser.readValueAs(Payload.class);
+			return jsonFactory.createJsonParser(data).readValueAs(Payload.class);
 		} catch (JsonProcessingException e) {
 			throw new RuntimeException(e);
 		} catch (IOException e) {
