@@ -14,6 +14,7 @@ public class RequestActivity {
 	private final String ruid;
 	private EventNode event;
 	private boolean used;
+	private EventNode rootEvent;
 
 	@Inject
 	public RequestActivity(String ruid, ActivityEventSink activityEventSink) {
@@ -31,6 +32,7 @@ public class RequestActivity {
 		event = new EventNode(idGenerator.incrementAndGet(), type.name(), description, null);
 		activityEventSink.beginRequest(ruid, event.id, type.name(), description);
 		used = true;
+		rootEvent = event;
 	}
 
 	public void beginEvent(AppEventType type, String description) {
@@ -56,7 +58,12 @@ public class RequestActivity {
 				+ "' does not match this type: " + type);
 		event.stopwatch.stop();
 		activityEventSink.finishRequest(ruid, event.id, type.name(), event.stopwatch.elapsed(TimeUnit.NANOSECONDS));
-		event = event.parent;
+		event = null;
+		rootEvent = null;
+	}
+
+	public EventNode getRootEvent() {
+		return rootEvent;
 	}
 
 	public static class EventNode {
