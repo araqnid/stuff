@@ -1,5 +1,8 @@
 package org.araqnid.stuff;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -7,6 +10,7 @@ import org.junit.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.ExpectedCondition;
+
 
 public class DefaultPageTest {
 	private static BrowserTestFrame browser;
@@ -29,6 +33,7 @@ public class DefaultPageTest {
 
 		waitForElementPresent("#info.completed");
 		assertElementPresent("#info .info-version.loaded");
+		assertThat(textAt("#info .info-version"), containsString("App version is"));
 	}
 
 	@Test
@@ -37,6 +42,7 @@ public class DefaultPageTest {
 
 		waitForElementPresent("#info.completed");
 		assertElementPresent("#info .info-state.loaded");
+		assertThat(textAt("#info .info-state"), containsString("App state is"));
 	}
 
 	private void waitForElementPresent(final String cssSelector) {
@@ -50,5 +56,9 @@ public class DefaultPageTest {
 
 	private void assertElementPresent(final String cssSelector) {
 		Assert.assertTrue(cssSelector, !browser.driver.findElements(By.cssSelector(cssSelector)).isEmpty());
+	}
+
+	private String textAt(final String cssSelector) {
+		return browser.driver.findElement(By.cssSelector(cssSelector)).getText();
 	}
 }
