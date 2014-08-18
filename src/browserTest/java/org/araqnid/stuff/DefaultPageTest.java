@@ -27,7 +27,7 @@ public class DefaultPageTest {
 	public void shows_main_page_with_application_version() {
 		browser.driver.get(browser.baseUri);
 
-		waitForElementPresent("#info .info-version.loaded");
+		waitForElementPresent("#info.completed");
 		assertElementPresent("#info .info-version.loaded");
 	}
 
@@ -35,7 +35,7 @@ public class DefaultPageTest {
 	public void shows_main_page_with_application_state() {
 		browser.driver.get(browser.baseUri);
 
-		waitForElementPresent("#info .info-state.loaded");
+		waitForElementPresent("#info.completed");
 		assertElementPresent("#info .info-state.loaded");
 	}
 

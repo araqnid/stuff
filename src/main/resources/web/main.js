@@ -12,6 +12,12 @@ define("jquery-noconflict", ["jquery"], function(jQuery) {
 	return jQuery;
 });
 require(["jquery"], function($) {
+	var completed = { state: false, version: false };
+	function markCompleted(key) {
+		delete completed[key];
+		if (Object.keys(completed).length == 0)
+			$("#info").addClass("completed");
+	}
 	$.ajax({
 		url: "_api/info/state",
 		success: function(data) {
@@ -19,6 +25,9 @@ require(["jquery"], function($) {
 		},
 		error: function() {
 			$("#info .info-state").html("Failed to get app state").addClass("error");
+		},
+		complete: function() {
+			markCompleted('state');
 		},
 	});
 	$.ajax({
@@ -28,6 +37,9 @@ require(["jquery"], function($) {
 		},
 		error: function() {
 			$("#info .info-version").html("Failed to get app version").addClass("error");
+		},
+		complete: function() {
+			markCompleted('version');
 		},
 	});
 });
