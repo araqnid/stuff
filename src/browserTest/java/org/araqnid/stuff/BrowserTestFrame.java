@@ -6,6 +6,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -45,6 +46,10 @@ public class BrowserTestFrame {
 	public void tearDown() throws Exception {
 		if (server != null) server.stop();
 		if (driver != null) driver.quit();
+	}
+
+	public WebDriverWait waitFor(int timeout) {
+		return new WebDriverWait(driver, timeout);
 	}
 }
 

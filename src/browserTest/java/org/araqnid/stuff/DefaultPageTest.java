@@ -1,16 +1,16 @@
 package org.araqnid.stuff;
 
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedCondition;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
 public class DefaultPageTest {
 	private static BrowserTestFrame browser;
+	private int timeout = 2;
 
 	@BeforeClass
 	public static void setUp() throws Exception {
@@ -27,25 +27,28 @@ public class DefaultPageTest {
 	public void shows_main_page_with_application_version() {
 		browser.driver.get(browser.baseUri);
 
-		(new WebDriverWait(browser.driver, 10)).until(new ExpectedCondition<Boolean>() {
-			@Override
-			public Boolean apply(WebDriver input) {
-				WebElement elt = input.findElement(By.cssSelector("#info .info-version"));
-				return !elt.getText().matches("App version is");
-			}
-		});
+		waitForElementPresent("#info .info-version.loaded");
+		assertElementPresent("#info .info-version.loaded");
 	}
 
 	@Test
 	public void shows_main_page_with_application_state() {
 		browser.driver.get(browser.baseUri);
 
-		(new WebDriverWait(browser.driver, 10)).until(new ExpectedCondition<Boolean>() {
+		waitForElementPresent("#info .info-state.loaded");
+		assertElementPresent("#info .info-state.loaded");
+	}
+
+	private void waitForElementPresent(final String cssSelector) {
+		browser.waitFor(timeout).until(new ExpectedCondition<Boolean>() {
 			@Override
 			public Boolean apply(WebDriver input) {
-				WebElement elt = input.findElement(By.cssSelector("#info .info-version"));
-				return !elt.getText().matches("App state is.*RUNNING");
+				return !input.findElements(By.cssSelector(cssSelector)).isEmpty();
 			}
 		});
+	}
+
+	private void assertElementPresent(final String cssSelector) {
+		Assert.assertTrue(cssSelector, !browser.driver.findElements(By.cssSelector(cssSelector)).isEmpty());
 	}
 }
