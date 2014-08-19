@@ -22,30 +22,27 @@ import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
 
 public class ServerIntegrationTest {
 	private CloseableHttpClient httpClient;
-	private static ServerRunner server = new ServerRunner();
+	private ServerRunner server = new ServerRunner();
 
-	@BeforeClass
-	public static void startServer() throws Exception {
+	@Before
+	public void startServer() throws Exception {
 		server.start();
 	}
 
-	@AfterClass
-	public static void stopServer() throws Exception {
+	@After
+	public void stopServer() throws Exception {
 		server.stop();
 	}
 
 	@Before
 	public void setUp() throws Exception {
-		server.reset();
 		httpClient = HttpClientBuilder.create().build();
 	}
 
