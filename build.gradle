@@ -14,6 +14,10 @@ jar {
 }
 
 sourceSets {
+    integrationTest {
+        compileClasspath += main.output;
+        runtimeClasspath += main.output;
+    }
     browserTest {
         compileClasspath += main.output;
         runtimeClasspath += main.output;
@@ -21,6 +25,8 @@ sourceSets {
 }
 
 configurations {
+    integrationTestCompile.extendsFrom testCompile
+    integrationTestRuntime.extendsFrom testRuntime
     browserTestCompile.extendsFrom testCompile
     browserTestRuntime.extendsFrom testRuntime
 }
@@ -52,7 +58,6 @@ dependencies {
     testCompile 'org.hamcrest:hamcrest-library:1.3'
     testCompile 'org.hamcrest:hamcrest-integration:1.3'
     testCompile 'org.mockito:mockito-core:1.9.5'
-    browserTestCompile 'junit:junit:4.11'
     browserTestCompile ('org.seleniumhq.selenium:selenium-java:2.42.2') {
         exclude module: 'httpclient'
     }
@@ -70,15 +75,21 @@ task runtimeDeps(dependsOn: 'processResources') << {
 
 jar.dependsOn(runtimeDeps)
 
+task integrationTest(type: Test) {
+    testClassesDir = sourceSets.integrationTest.output.classesDir
+    classpath = sourceSets.integrationTest.runtimeClasspath
+}
+
 task browserTest(type: Test) {
     testClassesDir = sourceSets.browserTest.output.classesDir
     classpath = sourceSets.browserTest.runtimeClasspath
 }
 
-build.dependsOn(browserTestClasses)
+build.dependsOn(integrationTestClasses, browserTestClasses)
 
 eclipse {
     classpath {
+        plusConfigurations += configurations.integrationTestCompile;
         plusConfigurations += configurations.browserTestCompile;
     }
 }
