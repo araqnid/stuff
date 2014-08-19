@@ -18,7 +18,7 @@ public class DefaultPageTest {
 
 	@BeforeClass
 	public static void setUp() throws Exception {
-		browser = new BrowserTestFrame();
+		browser = BrowserTestFrame.asInEnvironment();
 		browser.setUp();
 	}
 
