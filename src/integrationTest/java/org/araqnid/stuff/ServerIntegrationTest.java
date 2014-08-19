@@ -88,7 +88,7 @@ public class ServerIntegrationTest {
 		return doGet(path, Collections.<String, String> emptyMap());
 	}
 
-	public Matcher<Header> headerWithValue(final Matcher<String> valueMatcher) {
+	public static Matcher<Header> headerWithValue(final Matcher<String> valueMatcher) {
 		return new TypeSafeDiagnosingMatcher<Header>() {
 			@Override
 			protected boolean matchesSafely(Header item, Description mismatchDescription) {
@@ -108,7 +108,7 @@ public class ServerIntegrationTest {
 		};
 	}
 
-	public Matcher<String> likeAUUID() {
+	public static Matcher<String> likeAUUID() {
 		return new TypeSafeDiagnosingMatcher<String>() {
 			private final Pattern pattern = Pattern
 					.compile("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
