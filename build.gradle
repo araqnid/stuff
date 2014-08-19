@@ -75,7 +75,7 @@ task runtimeDeps(dependsOn: 'processResources') << {
 
 jar.dependsOn(runtimeDeps)
 
-task integrationTest(type: Test) {
+task integrationTest(type: Test, dependsOn: 'test') {
     testClassesDir = sourceSets.integrationTest.output.classesDir
     classpath = sourceSets.integrationTest.runtimeClasspath
 }
@@ -86,6 +86,7 @@ task browserTest(type: Test) {
 }
 
 build.dependsOn(integrationTestClasses, browserTestClasses)
+check.dependsOn(integrationTest)
 
 eclipse {
     classpath {
