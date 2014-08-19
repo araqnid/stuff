@@ -2,14 +2,12 @@ package org.araqnid.stuff.activity;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 
 public class LogActivityEvents implements ActivityEventSink {
 	private static final Logger LOG = LoggerFactory.getLogger(LogActivityEvents.class);
 
 	@Override
 	public void beginRequest(String ruid, long eventId, String type, String description) {
-		MDC.put("ruid", ruid);
 		LOG.info("begin " + ruid + " " + type + " " + eventId + " " + description);
 	}
 
@@ -28,6 +26,5 @@ public class LogActivityEvents implements ActivityEventSink {
 	public void finishRequest(String ruid, long eventId, String type, long durationNanos) {
 		LOG.info("end   " + ruid + " " + type + " " + eventId + " "
 				+ String.format("%.1fms", (double) durationNanos / 1E6));
-		MDC.remove("ruid");
 	}
 }
