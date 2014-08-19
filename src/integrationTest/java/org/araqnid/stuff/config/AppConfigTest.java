@@ -2,6 +2,7 @@ package org.araqnid.stuff.config;
 
 import java.util.Random;
 
+import org.araqnid.stuff.config.AppConfig;
 import org.eclipse.jetty.server.Connector;
 import org.junit.Assert;
 import org.junit.Test;

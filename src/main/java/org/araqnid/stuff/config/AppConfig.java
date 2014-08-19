@@ -74,7 +74,7 @@ public class AppConfig extends AbstractModule {
 	}
 
 	@VisibleForTesting
-	AppConfig(Map<String, String> environment) {
+	public AppConfig(Map<String, String> environment) {
 		this.environment = environment;
 	}
 
