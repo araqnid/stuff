@@ -1,4 +1,4 @@
-package org.araqnid.stuff;
+package org.araqnid.stuff.test.browser;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;

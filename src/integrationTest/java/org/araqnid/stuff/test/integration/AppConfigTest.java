@@ -1,4 +1,4 @@
-package org.araqnid.stuff.config;
+package org.araqnid.stuff.test.integration;
 
 import java.util.Random;
 

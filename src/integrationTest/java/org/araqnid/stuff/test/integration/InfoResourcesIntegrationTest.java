@@ -1,6 +1,6 @@
-package org.araqnid.stuff;
+package org.araqnid.stuff.test.integration;
 
-import static org.araqnid.stuff.ServerIntegrationTest.headerWithValue;
+import static org.araqnid.stuff.test.integration.ServerIntegrationTest.headerWithValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.any;
 import static org.hamcrest.Matchers.equalTo;

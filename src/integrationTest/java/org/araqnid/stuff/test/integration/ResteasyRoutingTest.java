@@ -1,4 +1,4 @@
-package org.araqnid.stuff;
+package org.araqnid.stuff.test.integration;
 
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
@@ -10,6 +10,8 @@ import java.util.Map;
 
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.araqnid.stuff.HelloResource;
+import org.araqnid.stuff.InfoResources;
 import org.araqnid.stuff.config.AppConfig;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;

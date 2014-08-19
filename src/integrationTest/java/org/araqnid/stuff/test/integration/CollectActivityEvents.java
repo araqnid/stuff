@@ -1,4 +1,4 @@
-package org.araqnid.stuff;
+package org.araqnid.stuff.test.integration;
 
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;

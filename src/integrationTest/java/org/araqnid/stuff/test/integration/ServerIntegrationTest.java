@@ -1,4 +1,4 @@
-package org.araqnid.stuff;
+package org.araqnid.stuff.test.integration;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
@@ -16,7 +16,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.araqnid.stuff.CollectActivityEvents.ActivityEventRecord;
+import org.araqnid.stuff.test.integration.CollectActivityEvents.ActivityEventRecord;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;

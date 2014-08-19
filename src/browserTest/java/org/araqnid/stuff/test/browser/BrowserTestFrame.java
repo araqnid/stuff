@@ -1,4 +1,4 @@
-package org.araqnid.stuff;
+package org.araqnid.stuff.test.browser;
 
 import java.net.MalformedURLException;
 import java.net.URL;

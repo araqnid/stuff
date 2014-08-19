@@ -1,4 +1,4 @@
-package org.araqnid.stuff;
+package org.araqnid.stuff.test.integration;
 
 import org.araqnid.stuff.activity.ActivityEventSink;
 import org.araqnid.stuff.config.AppConfig;
