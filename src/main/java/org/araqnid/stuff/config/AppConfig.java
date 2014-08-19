@@ -1,8 +1,11 @@
 package org.araqnid.stuff.config;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -21,6 +24,7 @@ import org.araqnid.stuff.InfoResources;
 import org.araqnid.stuff.JettyAppService;
 import org.araqnid.stuff.RootServlet;
 import org.araqnid.stuff.ScheduledJobController;
+import org.araqnid.stuff.ServerIdentityFilter;
 import org.araqnid.stuff.SomeQueueProcessor;
 import org.araqnid.stuff.SometubeHandler;
 import org.araqnid.stuff.activity.ActivityEventSink;
@@ -69,6 +73,14 @@ import com.surftools.BeanstalkClientImpl.ClientImpl;
 public class AppConfig extends AbstractModule {
 	private Map<String, String> environment;
 
+	private static String gethostname() {
+		try {
+			return InetAddress.getLocalHost().getHostName();
+		} catch (UnknownHostException e) {
+			return "localhost";
+		}
+	}
+
 	public AppConfig() {
 		this(System.getenv());
 	}
@@ -81,6 +93,8 @@ public class AppConfig extends AbstractModule {
 	@Override
 	protected void configure() {
 		bindConstant().annotatedWith(Names.named("http_port")).to(port(61000));
+		bindConstant().annotatedWith(ServerIdentity.class).to(gethostname());
+		bind(UUID.class).annotatedWith(ServerIdentity.class).toInstance(UUID.randomUUID());
 		install(new ActivityScope.Module());
 		install(new CoreModule());
 		install(new RawBeanstalkModule());
@@ -220,6 +234,7 @@ public class AppConfig extends AbstractModule {
 				protected void configureServlets() {
 					serve("/").with(RootServlet.class);
 					filter("/*").through(RequestActivityFilter.class);
+					filter("/*").through(ServerIdentityFilter.class);
 				}
 			}
 
@@ -296,6 +311,7 @@ public class AppConfig extends AbstractModule {
 					bind(HttpServletDispatcher.class).in(Singleton.class);
 					serve("/*").with(HttpServletDispatcher.class);
 					filter("/*").through(RequestActivityFilter.class);
+					filter("/*").through(ServerIdentityFilter.class);
 				}
 			}
 

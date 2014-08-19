@@ -1,11 +1,13 @@
 package org.araqnid.stuff.test.integration;
 
+import static org.hamcrest.Matchers.any;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -25,6 +27,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 
 public class ServerIntegrationTest {
@@ -56,6 +59,14 @@ public class ServerIntegrationTest {
 		CloseableHttpResponse response = doGet("/");
 		Header ruidHeader = response.getFirstHeader("X-RUID");
 		MatcherAssert.assertThat(ruidHeader, is(headerWithValue(likeAUUID())));
+		response.close();
+	}
+
+	@Test
+	public void server_identity_in_http_response() throws Exception {
+		CloseableHttpResponse response = doGet("/");
+		Header ruidHeader = response.getFirstHeader("X-Server-Identity");
+		MatcherAssert.assertThat(ruidHeader, is(headerWithValue(twoParts(any(String.class), likeAUUID()))));
 		response.close();
 	}
 
@@ -171,6 +182,42 @@ public class ServerIntegrationTest {
 			@Override
 			public void describeTo(Description description) {
 				description.appendText("finishRequest with type ").appendDescriptionOf(requestType);
+			}
+		};
+	}
+
+	public static Matcher<String> twoParts(final Matcher<String> first, final Matcher<String> second) {
+		return new TypeSafeDiagnosingMatcher<String>() {
+			@Override
+			protected boolean matchesSafely(String item, Description mismatchDescription) {
+				Iterator<String> iterator = Splitter.on(' ').split(item).iterator();
+				if (!iterator.hasNext()) {
+					mismatchDescription.appendText("No parts in string");
+					return false;
+				}
+				String firstPart = iterator.next();
+				if (!first.matches(firstPart)) {
+					mismatchDescription.appendText("first part ");
+					first.describeMismatch(firstPart, mismatchDescription);
+					return false;
+				}
+				String secondPart = iterator.next();
+				if (!second.matches(secondPart)) {
+					mismatchDescription.appendText("second part ");
+					second.describeMismatch(secondPart, mismatchDescription);
+					return false;
+				}
+				if (iterator.hasNext()) {
+					mismatchDescription.appendText("Found more than two parts");
+					return false;
+				}
+				return true;
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendText("two parts: ").appendDescriptionOf(first).appendText(", ")
+						.appendDescriptionOf(second);
 			}
 		};
 	}
