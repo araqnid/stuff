@@ -1,21 +1,22 @@
 require.config({
 	map: {
 		'*': { jquery: "jquery-noconflict" },
-		'jquery-noconflict': { jquery: "jquery" },
+		'jquery-noconflict': { jquery: "jquery" }
 	},
 	paths: {
-		jquery: "http://code.jquery.com/jquery-2.1.1.min",
-	},
+		jquery: "http://code.jquery.com/jquery-1.11.1.min",
+		lodash: "//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.compat.min"
+	}
 });
 define("jquery-noconflict", ["jquery"], function(jQuery) {
 	jQuery.noConflict(true);
 	return jQuery;
 });
-require(["jquery"], function($) {
+require(["jquery", "lodash"], function($, _) {
 	var completed = { state: false, version: false };
 	function markCompleted(key) {
 		delete completed[key];
-		if (Object.keys(completed).length == 0)
+		if (_.keys(completed).length == 0)
 			$("#info").addClass("completed");
 	}
 	$.ajax({
@@ -28,7 +29,7 @@ require(["jquery"], function($) {
 		},
 		complete: function() {
 			markCompleted('state');
-		},
+		}
 	});
 	$.ajax({
 		url: "_api/info/version",
@@ -40,6 +41,6 @@ require(["jquery"], function($) {
 		},
 		complete: function() {
 			markCompleted('version');
-		},
+		}
 	});
 });
