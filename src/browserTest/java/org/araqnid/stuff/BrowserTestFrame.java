@@ -11,7 +11,6 @@ import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.openqa.selenium.Capabilities;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
@@ -29,8 +28,8 @@ import com.google.inject.util.Modules;
 
 public class BrowserTestFrame {
 	private final String ourHostName;
-	private final Provider<WebDriver> driverProvider;
-	public WebDriver driver;
+	private final Provider<RemoteWebDriver> driverProvider;
+	public RemoteWebDriver driver;
 	public Injector injector;
 	public Server server;
 	public int localPort;
@@ -63,9 +62,9 @@ public class BrowserTestFrame {
 	}
 
 	public BrowserTestFrame() {
-		driverProvider = new Provider<WebDriver>() {
+		driverProvider = new Provider<RemoteWebDriver>() {
 			@Override
-			public WebDriver get() {
+			public RemoteWebDriver get() {
 				return new FirefoxDriver();
 			}
 		};
@@ -80,9 +79,9 @@ public class BrowserTestFrame {
 		} catch (MalformedURLException e) {
 			throw new IllegalArgumentException("Unable to make ip/port into URL", e);
 		}
-		driverProvider = new Provider<WebDriver>() {
+		driverProvider = new Provider<RemoteWebDriver>() {
 			@Override
-			public WebDriver get() {
+			public RemoteWebDriver get() {
 				return new RemoteWebDriver(url, capabilities);
 			}
 		};

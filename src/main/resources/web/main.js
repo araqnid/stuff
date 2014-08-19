@@ -1,12 +1,17 @@
 require.config({
 	map: {
-		'*': { jquery: "jquery-noconflict" },
-		'jquery-noconflict': { jquery: "jquery" }
+		'*': { jquery: "jquery-noconflict", lodash: "lodash-noconflict", underscore: "lodash-noconflict" },
+		'jquery-noconflict': { jquery: "jquery" },
+		'lodash-noconflict': { lodash: "lodash" }
 	},
 	paths: {
 		jquery: "http://code.jquery.com/jquery-1.11.1.min",
 		lodash: "//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.compat.min"
 	}
+});
+define("lodash-noconflict", ["lodash"], function(lodash) {
+	lodash.noConflict(true);
+	return lodash;
 });
 define("jquery-noconflict", ["jquery"], function(jQuery) {
 	jQuery.noConflict(true);
