@@ -51,6 +51,6 @@ if [ -z "$JAVA_OPTS" -a -f "java_options" ]; then
     JAVA_OPTS=$(cat java_options)
 fi
 
-mainclass=$( unzip -qc $distfile META-INF/MANIFEST.MF | awk '$1 == "X-Service-Class:" { print $2 }' )
+mainclass=$( unzip -qc $distfile META-INF/MANIFEST.MF | awk '$1 == "X-Service-Class:" { print $2 }' | sed -e 's/\r//' )
 
 exec ${JAVA-java} ${JAVA_OPTS} -classpath "$distfile$(while read file; do echo -n ":$file"; done < $tmpdir/files)" "$mainclass"
