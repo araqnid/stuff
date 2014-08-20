@@ -16,13 +16,10 @@ latestlink="$apprepo/$appname-latest.jar"
 [ -L "$latestlink" ] || die "Not a symlink: $latestlink"
 latestjar=$(readlink -f "$latestlink")
 [ -f "$latestjar" ] || die "Failed to resolve $latestlink to a usable filename (got $latestjar)"
-distfile="stuff-current.jar"
-ln -sfn "$latestjar" "$distfile"
 cache_dir="$HOME/packages/artifact-cache"
 [ -d "$cache_dir" ] || mkdir -p "$cache_dir"
-[ -f "$distfile" ] || die "Distfile not found: $distfile"
 
-unzip -qc "$distfile" "META-INF/$appname.deps.txt" > $tmpdir/deps
+unzip -qc "$latestjar" "META-INF/$appname.deps.txt" > $tmpdir/deps
 
 while read id type; do
     set -- $(echo $id | tr ':' ' ')
@@ -52,7 +49,7 @@ if [ -z "$JAVA_OPTS" -a -f "java_options" ]; then
     JAVA_OPTS=$(cat java_options)
 fi
 
-mainclass=$( unzip -qc $distfile META-INF/MANIFEST.MF | awk '$1 == "X-Service-Class:" { print $2 }' | sed -e 's/\r//' )
+mainclass=$( unzip -qc $latestjar META-INF/MANIFEST.MF | awk '$1 == "X-Service-Class:" { print $2 }' | sed -e 's/\r//' )
 
 if [ -z "$PORT" -a -f "port" ]; then
     PORT=$(cat port)
@@ -65,4 +62,4 @@ else
     appuser=$(id -un)
 fi
 
-exec sudo -u $appuser ${JAVA-java} ${JAVA_OPTS} -classpath "$distfile$(while read file; do echo -n ":$file"; done < $tmpdir/files)" "$mainclass"
+exec ${JAVA-java} ${JAVA_OPTS} -classpath "$latestjar$(while read file; do echo -n ":$file"; done < $tmpdir/files)" "$mainclass"
