@@ -54,4 +54,9 @@ fi
 
 mainclass=$( unzip -qc $distfile META-INF/MANIFEST.MF | awk '$1 == "X-Service-Class:" { print $2 }' | sed -e 's/\r//' )
 
+if [ -z "$PORT" -a -f "port" ]; then
+    PORT=$(cat port)
+    export PORT
+fi
+
 exec ${JAVA-java} ${JAVA_OPTS} -classpath "$distfile$(while read file; do echo -n ":$file"; done < $tmpdir/files)" "$mainclass"
