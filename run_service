@@ -59,4 +59,10 @@ if [ -z "$PORT" -a -f "port" ]; then
     export PORT
 fi
 
-exec ${JAVA-java} ${JAVA_OPTS} -classpath "$distfile$(while read file; do echo -n ":$file"; done < $tmpdir/files)" "$mainclass"
+if [ -f "appuser" ]; then
+    appuser=$(cat appuser)
+else
+    appuser=$(id -un)
+fi
+
+exec setuidgid $appuser ${JAVA-java} ${JAVA_OPTS} -classpath "$distfile$(while read file; do echo -n ":$file"; done < $tmpdir/files)" "$mainclass"
