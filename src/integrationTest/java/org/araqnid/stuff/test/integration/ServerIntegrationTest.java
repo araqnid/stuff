@@ -1,10 +1,5 @@
 package org.araqnid.stuff.test.integration;
 
-import static org.hamcrest.Matchers.any;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
@@ -28,7 +23,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+
+import static org.hamcrest.Matchers.any;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 
 public class ServerIntegrationTest {
 	private CloseableHttpClient httpClient;
@@ -70,12 +70,11 @@ public class ServerIntegrationTest {
 		response.close();
 	}
 
-	@SuppressWarnings("unchecked")
 	@Test
 	public void request_activity_emitted() throws Exception {
 		doGet("/").close();
 		MatcherAssert.assertThat(server.activityEvents(),
-				contains(beginRequestRecord(equalTo("HttpRequest")), finishRequestRecord(equalTo("HttpRequest"))));
+				includesSubsequence(beginRequestRecord(equalTo("HttpRequest")), finishRequestRecord(equalTo("HttpRequest"))));
 	}
 
 	@Test
@@ -218,6 +217,46 @@ public class ServerIntegrationTest {
 			public void describeTo(Description description) {
 				description.appendText("two parts: ").appendDescriptionOf(first).appendText(", ")
 						.appendDescriptionOf(second);
+			}
+		};
+	}
+
+	@SafeVarargs
+	public static <T> Matcher<Iterable<T>> includesSubsequence(Matcher<? super T>... matchers) {
+		return includesSubsequence(ImmutableList.copyOf(matchers));
+	}
+
+	public static <T> Matcher<Iterable<T>> includesSubsequence(final Iterable<Matcher<? super T>> matchers) {
+		return new TypeSafeDiagnosingMatcher<Iterable<T>>() {
+			@Override
+			protected boolean matchesSafely(Iterable<T> item, Description mismatchDescription) {
+				Iterator<T> valueIterator = item.iterator();
+				Iterator<Matcher<? super T>> matchIterator = matchers.iterator();
+				Matcher<? super T> currentMatcher = matchIterator.next();
+				while (true) {
+					if (!valueIterator.hasNext()) {
+						mismatchDescription.appendText("No match for: ").appendDescriptionOf(currentMatcher);
+						return false;
+					}
+					T value = valueIterator.next();
+					if (currentMatcher.matches(value)) {
+						if (!matchIterator.hasNext()) {
+							return true;
+						}
+						currentMatcher = matchIterator.next();
+					}
+				}
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendText("an iterable including ");
+				for (Iterator<Matcher<? super T>> iter = matchers.iterator(); iter.hasNext(); ) {
+					description.appendDescriptionOf(iter.next());
+					if (iter.hasNext()) {
+						description.appendText(", ");
+					}
+				}
 			}
 		};
 	}
