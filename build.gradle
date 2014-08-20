@@ -9,7 +9,8 @@ version = '0.0.' + (System.getenv("BUILD_NUMBER") ?: "0")
 jar {
     manifest {
         attributes 'Implementation-Title': 'Stuff',
-                   'Implementation-Version': version
+                   'Implementation-Version': version,
+		   'X-Service-Class': mainClassName
     }
 }
 

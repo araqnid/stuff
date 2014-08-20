@@ -11,7 +11,6 @@ tmpdir=$(mktemp -d)
 trap 'rm -rf "$tmpdir"' EXIT
 
 appname="stuff"
-mainclass="org.araqnid.stuff.Main"
 apprepo="$HOME"
 latestlink="$apprepo/$appname-latest.jar"
 [ -L "$latestlink" ] || die "Not a symlink: $latestlink"
@@ -51,5 +50,7 @@ fi
 if [ -z "$JAVA_OPTS" -a -f "java_options" ]; then
     JAVA_OPTS=$(cat java_options)
 fi
+
+mainclass=$( unzip -qc $distfile META-INF/MANIFEST.MF | awk '$1 == "X-Service-Class:" { print $2 }' )
 
 exec ${JAVA-java} ${JAVA_OPTS} -classpath "$distfile$(while read file; do echo -n ":$file"; done < $tmpdir/files)" "$mainclass"
