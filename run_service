@@ -65,4 +65,4 @@ else
     appuser=$(id -un)
 fi
 
-exec setuidgid $appuser ${JAVA-java} ${JAVA_OPTS} -classpath "$distfile$(while read file; do echo -n ":$file"; done < $tmpdir/files)" "$mainclass"
+exec sudo -u $appuser ${JAVA-java} ${JAVA_OPTS} -classpath "$distfile$(while read file; do echo -n ":$file"; done < $tmpdir/files)" "$mainclass"
