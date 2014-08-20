@@ -1,0 +1,16 @@
+#!/bin/sh
+
+set -e
+
+cd "$(dirname $0)"
+if [ -f .build_number ]; then
+    BUILD_NUMBER=$(expr $(cat .build_number) + 1)
+else
+    BUILD_NUMBER=1
+fi
+echo $BUILD_NUMBER > .build_number
+export BUILD_NUMBER
+
+gradle clean build
+
+cat build/libs/stuff-0.0.$BUILD_NUMBER.jar | ssh harvestman "cat > stuff-0.0.$BUILD_NUMBER.jar && ln -sfvn stuff-0.0.$BUILD_NUMBER.jar stuff-latest.jar && svc -t stuff_service"
