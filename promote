@@ -3,15 +3,18 @@
 set -e
 
 cd "$(dirname $0)"
-if [ -f .build_number ]; then
-    BUILD_NUMBER=$(expr $(cat .build_number) + 1)
+if [ -z "$NO_REBUILD" ]; then
+    if [ -f .build_number ]; then
+	BUILD_NUMBER=$(expr $(cat .build_number) + 1)
+    else
+	BUILD_NUMBER=1
+    fi
+    echo $BUILD_NUMBER > .build_number
+    export BUILD_NUMBER
+    gradle clean build
 else
-    BUILD_NUMBER=1
+    BUILD_NUMBER=$(cat .build_number)
 fi
-echo $BUILD_NUMBER > .build_number
-export BUILD_NUMBER
-
-gradle clean build
 
 tmpdir=$(mktemp -d)
 trap 'rm -rf "$tmpdir"' EXIT
