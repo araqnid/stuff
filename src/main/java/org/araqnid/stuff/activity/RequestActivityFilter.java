@@ -66,7 +66,7 @@ public class RequestActivityFilter implements Filter {
 						eventPath));
 		try {
 			RequestActivity requestActivity = stateProvider.get();
-			RequestActivity.EventNode rootEvent = requestActivity.getRootEvent();
+			ActivityEventNode rootEvent = requestActivity.getRootEvent();
 			response.setHeader("X-RUID", requestActivity.getRuid());
 			try {
 				chain.doFilter(request, response);
@@ -78,7 +78,7 @@ public class RequestActivityFilter implements Filter {
 		}
 	}
 
-	private void logRequest(HttpServletRequest request, HttpServletResponse response, String eventPath, RequestActivity.EventNode event) {
+	private void logRequest(HttpServletRequest request, HttpServletResponse response, String eventPath, ActivityEventNode event) {
 		long elapsedMillis = event.stopwatch.elapsed(TimeUnit.MILLISECONDS);
 		NumberFormat nfmt = NumberFormat.getInstance();
 		nfmt.setMaximumFractionDigits(1);
