@@ -6,6 +6,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.araqnid.stuff.activity.ActivityEventSink;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
+import org.hamcrest.Matchers;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 import com.google.common.base.Optional;
@@ -76,47 +77,57 @@ public class CollectActivityEvents implements ActivityEventSink {
 		}
 	}
 
-	public static Matcher<ActivityEventRecord> finishRequestRecord(final Matcher<String> requestType) {
-		return new TypeSafeDiagnosingMatcher<ActivityEventRecord>() {
-			@Override
-			protected boolean matchesSafely(ActivityEventRecord item, Description mismatchDescription) {
-				if (!item.method.equals("finishRequest")) {
-					mismatchDescription.appendText("record class is ").appendValue(item.method);
-					return false;
-				}
-				if (!requestType.matches(item.type)) {
-					mismatchDescription.appendText("type is ").appendValue(item.type);
-					return false;
-				}
-				return true;
-			}
-
-			@Override
-			public void describeTo(Description description) {
-				description.appendText("finishRequest with type ").appendDescriptionOf(requestType);
-			}
-		};
+	public static ActivityRecordMatcher finishRequestRecord(final Matcher<String> requestType) {
+		return new ActivityRecordMatcher("finishRequest", requestType);
 	}
 
-	public static Matcher<ActivityEventRecord> beginRequestRecord(final Matcher<String> requestType) {
-		return new TypeSafeDiagnosingMatcher<ActivityEventRecord>() {
-			@Override
-			protected boolean matchesSafely(ActivityEventRecord item, Description mismatchDescription) {
-				if (!item.method.equals("beginRequest")) {
-					mismatchDescription.appendText("record class is ").appendValue(item.method);
-					return false;
-				}
-				if (!requestType.matches(item.type)) {
-					mismatchDescription.appendText("type is ").appendValue(item.type);
-					return false;
-				}
-				return true;
-			}
+	public static ActivityRecordMatcher beginRequestRecord(final Matcher<String> requestType) {
+		return new ActivityRecordMatcher("beginRequest", requestType);
+	}
 
-			@Override
-			public void describeTo(Description description) {
-				description.appendText("beginRequest with type ").appendDescriptionOf(requestType);
+	public static class ActivityRecordMatcher extends TypeSafeDiagnosingMatcher<ActivityEventRecord> {
+		private final String method;
+		private final Matcher<String> requestType;
+		private Matcher<String> ruid;
+
+		public ActivityRecordMatcher(String method, Matcher<String> requestType) {
+			this.method = method;
+			this.requestType = requestType;
+		}
+
+		@Override
+		protected boolean matchesSafely(ActivityEventRecord item, Description mismatchDescription) {
+			if (!item.method.equals(method)) {
+				mismatchDescription.appendText("method is ").appendValue(item.method);
+				return false;
 			}
-		};
+			if (!requestType.matches(item.type)) {
+				mismatchDescription.appendText("type is ").appendValue(item.type);
+				return false;
+			}
+			if (ruid != null && !ruid.matches(item.ruid)) {
+				mismatchDescription.appendText("ruid is ").appendValue(item.ruid);
+				return false;
+			}
+			return true;
+		}
+
+		@Override
+		public void describeTo(Description description) {
+			description.appendValue(method).appendText(" with type ").appendDescriptionOf(requestType);
+			if (ruid != null) {
+				description.appendText(", ruid ").appendDescriptionOf(ruid);
+			}
+		}
+
+		public ActivityRecordMatcher withRuid(String ruid) {
+			this.ruid = Matchers.equalTo(ruid);
+			return this;
+		}
+
+		public ActivityRecordMatcher withRuid(Matcher<String> ruid) {
+			this.ruid = ruid;
+			return this;
+		}
 	}
 }
