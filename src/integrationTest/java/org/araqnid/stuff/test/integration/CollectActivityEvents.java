@@ -4,6 +4,9 @@ import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.araqnid.stuff.activity.ActivityEventSink;
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 import com.google.common.base.Optional;
 
@@ -71,5 +74,49 @@ public class CollectActivityEvents implements ActivityEventSink {
 			return new ActivityEventRecord("finishEvent", ruid, eventId, Optional.of(parentEventId), type,
 					Optional.<String> absent(), Optional.of(durationNanos));
 		}
+	}
+
+	public static Matcher<ActivityEventRecord> finishRequestRecord(final Matcher<String> requestType) {
+		return new TypeSafeDiagnosingMatcher<ActivityEventRecord>() {
+			@Override
+			protected boolean matchesSafely(ActivityEventRecord item, Description mismatchDescription) {
+				if (!item.method.equals("finishRequest")) {
+					mismatchDescription.appendText("record class is ").appendValue(item.method);
+					return false;
+				}
+				if (!requestType.matches(item.type)) {
+					mismatchDescription.appendText("type is ").appendValue(item.type);
+					return false;
+				}
+				return true;
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendText("finishRequest with type ").appendDescriptionOf(requestType);
+			}
+		};
+	}
+
+	public static Matcher<ActivityEventRecord> beginRequestRecord(final Matcher<String> requestType) {
+		return new TypeSafeDiagnosingMatcher<ActivityEventRecord>() {
+			@Override
+			protected boolean matchesSafely(ActivityEventRecord item, Description mismatchDescription) {
+				if (!item.method.equals("beginRequest")) {
+					mismatchDescription.appendText("record class is ").appendValue(item.method);
+					return false;
+				}
+				if (!requestType.matches(item.type)) {
+					mismatchDescription.appendText("type is ").appendValue(item.type);
+					return false;
+				}
+				return true;
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendText("beginRequest with type ").appendDescriptionOf(requestType);
+			}
+		};
 	}
 }

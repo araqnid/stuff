@@ -13,7 +13,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.araqnid.stuff.test.integration.CollectActivityEvents.ActivityEventRecord;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
@@ -26,6 +25,9 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
+import static org.araqnid.stuff.test.integration.CollectActivityEvents.finishRequestRecord;
+
+import static org.araqnid.stuff.test.integration.CollectActivityEvents.beginRequestRecord;
 import static org.hamcrest.Matchers.any;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -135,52 +137,6 @@ public class ServerIntegrationTest {
 			@Override
 			public void describeTo(Description description) {
 				description.appendText("like a UUID");
-			}
-		};
-	}
-
-	public static Matcher<CollectActivityEvents.ActivityEventRecord> beginRequestRecord(
-			final Matcher<String> requestType) {
-		return new TypeSafeDiagnosingMatcher<CollectActivityEvents.ActivityEventRecord>() {
-			@Override
-			protected boolean matchesSafely(ActivityEventRecord item, Description mismatchDescription) {
-				if (!item.method.equals("beginRequest")) {
-					mismatchDescription.appendText("record class is ").appendValue(item.method);
-					return false;
-				}
-				if (!requestType.matches(item.type)) {
-					mismatchDescription.appendText("type is ").appendValue(item.type);
-					return false;
-				}
-				return true;
-			}
-
-			@Override
-			public void describeTo(Description description) {
-				description.appendText("beginRequest with type ").appendDescriptionOf(requestType);
-			}
-		};
-	}
-
-	public static Matcher<CollectActivityEvents.ActivityEventRecord> finishRequestRecord(
-			final Matcher<String> requestType) {
-		return new TypeSafeDiagnosingMatcher<CollectActivityEvents.ActivityEventRecord>() {
-			@Override
-			protected boolean matchesSafely(ActivityEventRecord item, Description mismatchDescription) {
-				if (!item.method.equals("finishRequest")) {
-					mismatchDescription.appendText("record class is ").appendValue(item.method);
-					return false;
-				}
-				if (!requestType.matches(item.type)) {
-					mismatchDescription.appendText("type is ").appendValue(item.type);
-					return false;
-				}
-				return true;
-			}
-
-			@Override
-			public void describeTo(Description description) {
-				description.appendText("finishRequest with type ").appendDescriptionOf(requestType);
 			}
 		};
 	}
