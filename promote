@@ -16,8 +16,10 @@ gradle clean build
 tmpdir=$(mktemp -d)
 trap 'rm -rf "$tmpdir"' EXIT
 
-ln -sfn $PWD/build/libs/stuff-0.0.$BUILD_NUMBER.jar $tmpdir/stuff-0.0.$BUILD_NUMBER.jar
-mkdir $tmpdir/stuff_service
-ln -sfn $PWD/run_service $tmpdir/stuff_service/run
+artifact=stuff
 
-tar --dereference -C $tmpdir -c -f - . | ssh harvestman "tar -x -v -f - && ln -sfvn stuff-0.0.$BUILD_NUMBER.jar stuff-latest.jar && svc -t stuff_service"
+ln -sfn $PWD/build/libs/$artifact-0.0.$BUILD_NUMBER.jar $tmpdir/$artifact-0.0.$BUILD_NUMBER.jar
+mkdir $tmpdir/${artifact}_service
+ln -sfn $PWD/run_service $tmpdir/${artifact}_service/run
+
+tar --dereference -C $tmpdir -c -f - . | ssh harvestman "tar -x -v -f - && ln -sfvn $artifact-0.0.$BUILD_NUMBER.jar $artifact-latest.jar && svc -t ${artifact}_service"
