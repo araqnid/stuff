@@ -13,4 +13,10 @@ export BUILD_NUMBER
 
 gradle clean build
 
-cat build/libs/stuff-0.0.$BUILD_NUMBER.jar | ssh harvestman "cat > stuff-0.0.$BUILD_NUMBER.jar && ln -sfvn stuff-0.0.$BUILD_NUMBER.jar stuff-latest.jar && svc -t stuff_service"
+tmpdir=$(mktemp -d)
+trap 'rm -rf "$tmpdir"' EXIT
+
+ln -sfn $PWD/build/libs/stuff-0.0.$BUILD_NUMBER.jar $tmpdir/stuff-0.0.$BUILD_NUMBER.jar
+ln -sfn $PWD/run_service $tmpdir/stuff-run_service-$BUILD_NUMBER.sh
+
+tar --dereference -C $tmpdir -c -f - . | ssh harvestman "tar -x -f - && ln -sfvn stuff-0.0.$BUILD_NUMBER.jar stuff-latest.jar && cp stuff-run_service-$BUILD_NUMBER.sh stuff_service/run && svc -t stuff_service"

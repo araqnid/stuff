@@ -1,0 +1,55 @@
+#!/bin/sh
+
+set -e
+
+die() {
+    echo "$0: $@" >&2
+    exit 1
+}
+
+tmpdir=$(mktemp -d)
+trap 'rm -rf "$tmpdir"' EXIT
+
+appname="stuff"
+mainclass="org.araqnid.stuff.Main"
+apprepo="$HOME"
+latestlink="$apprepo/$appname-latest.jar"
+[ -L "$latestlink" ] || die "Not a symlink: $latestlink"
+latestjar=$(readlink -f "$latestlink")
+[ -f "$latestjar" ] || die "Failed to resolve $latestlink to a usable filename (got $latestjar)"
+distfile="stuff-current.jar"
+ln -sfn "$latestjar" "$distfile"
+cache_dir="$HOME/.artifact-cache"
+[ -f "$distfile" ] || die "Distfile not found: $distfile"
+
+unzip -qc "$distfile" "META-INF/$appname.deps.txt" > $tmpdir/deps
+
+while read id type; do
+    set -- $(echo $id | tr ':' ' ')
+    group="$1"
+    name="$2"
+    version="$3"
+    url="http://central.maven.org/maven2/$(echo $group | tr '.' '/')/$name/$version/$name-$version.jar"
+    file="$name-$version.jar"
+    [ -f "$cache_dir/$file" ] || echo $url >> $tmpdir/urls
+    echo "$cache_dir/$file" >> $tmpdir/files
+done < $tmpdir/deps
+
+if [ -f $tmpdir/urls ]; then
+    wget -P "$cache_dir" -c -nd $(cat $tmpdir/urls)
+fi
+
+if [ -z "$JAVA" ]; then
+    if [ -z "$JAVA_HOME" -a -f "java_home" ]; then
+	JAVA_HOME=$(cat java_home)
+    fi
+    if [ -n "$JAVA_HOME" ]; then
+	JAVA=$JAVA_HOME/bin/java
+    fi
+fi
+
+if [ -z "$JAVA_OPTS" -a -f "java_options" ]; then
+    JAVA_OPTS=$(cat java_options)
+fi
+
+exec ${JAVA-java} ${JAVA_OPTS} -classpath "$distfile$(while read file; do echo -n ":$file"; done < $tmpdir/files)" "$mainclass"
