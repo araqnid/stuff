@@ -62,6 +62,8 @@ else
     appuser=$(id -un)
 fi
 
+classpath="$latestjar$(while read file; do echo -n ":$file"; done < $tmpdir/files)"
+
 rm -rf "$tmpdir"
 
-exec ${JAVA-java} ${JAVA_OPTS} -classpath "$latestjar$(while read file; do echo -n ":$file"; done < $tmpdir/files)" "$mainclass"
+exec ${JAVA-java} ${JAVA_OPTS} -classpath "$classpath" "$mainclass"
