@@ -1,0 +1,37 @@
+#!/bin/sh
+
+set -e
+
+die() {
+    echo "$0: $@" >&2
+    exit 1
+}
+
+tmpdir=$(mktemp -d)
+trap 'rm -rf "$tmpdir"' EXIT
+
+apprepo="$HOME/packages"
+
+cache_dir="$apprepo/artifact-cache"
+[ -d "$cache_dir" ] || mkdir -p "$cache_dir"
+latestjar="packages/$artifact-0.0.$BUILD_NUMBER.jar"
+
+unzip -qc "$latestjar" "META-INF/$artifact.deps.txt" > $tmpdir/deps
+
+while read id type; do
+    set -- $(echo $id | tr ':' ' ')
+    group="$1"
+    name="$2"
+    version="$3"
+    url="http://central.maven.org/maven2/$(echo $group | tr '.' '/')/$name/$version/$name-$version.jar"
+    file="$name-$version.jar"
+    [ -f "$cache_dir/$file" ] || echo $url >> $tmpdir/urls
+    echo "$cache_dir/$file" >> $tmpdir/files
+done < $tmpdir/deps
+
+if [ -f $tmpdir/urls ]; then
+    wget -P "$cache_dir" -c -nd $(cat $tmpdir/urls)
+fi
+
+cp $tmpdir/files packages/$artifact-0.0.$BUILD_NUMBER.deps
+ln -sfvn $artifact-0.0.$BUILD_NUMBER.jar packages/$artifact-latest.jar

@@ -7,34 +7,14 @@ die() {
     exit 1
 }
 
-tmpdir=$(mktemp -d)
-trap 'rm -rf "$tmpdir"' EXIT
-
-appname="stuff"
+artifact="stuff"
 apprepo="$HOME/packages"
-latestlink="$apprepo/$appname-latest.jar"
+latestlink="$apprepo/$artifact-latest.jar"
 [ -L "$latestlink" ] || die "Not a symlink: $latestlink"
 latestjar=$(readlink -f "$latestlink")
 [ -f "$latestjar" ] || die "Failed to resolve $latestlink to a usable filename (got $latestjar)"
-cache_dir="$HOME/data/artifact-cache"
-[ -d "$cache_dir" ] || mkdir -p "$cache_dir"
-
-unzip -qc "$latestjar" "META-INF/$appname.deps.txt" > $tmpdir/deps
-
-while read id type; do
-    set -- $(echo $id | tr ':' ' ')
-    group="$1"
-    name="$2"
-    version="$3"
-    url="http://central.maven.org/maven2/$(echo $group | tr '.' '/')/$name/$version/$name-$version.jar"
-    file="$name-$version.jar"
-    [ -f "$cache_dir/$file" ] || echo $url >> $tmpdir/urls
-    echo "$cache_dir/$file" >> $tmpdir/files
-done < $tmpdir/deps
-
-if [ -f $tmpdir/urls ]; then
-    wget -P "$cache_dir" -c -nd $(cat $tmpdir/urls)
-fi
+depsfile=$(dirname $latestjar)/$(basename $latestjar .jar).deps
+[ -f "$depsfile" ] || die "No dependencies file for $latestjar"
 
 if [ -z "$JAVA" ]; then
     if [ -z "$JAVA_HOME" -a -f "java_home" ]; then
@@ -62,8 +42,6 @@ else
     appuser=$(id -un)
 fi
 
-classpath="$latestjar$(while read file; do echo -n ":$file"; done < $tmpdir/files)"
-
-rm -rf "$tmpdir"
+classpath="$latestjar$(while read file; do echo -n ":$file"; done < $depsfile)"
 
 exec ${JAVA-java} ${JAVA_OPTS} -classpath "$classpath" "$mainclass"

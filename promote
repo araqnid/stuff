@@ -23,6 +23,7 @@ artifact=stuff
 
 mkdir $tmpdir/packages $tmpdir/service
 ln -sfn $PWD/build/libs/$artifact-0.0.$BUILD_NUMBER.jar $tmpdir/packages/$artifact-0.0.$BUILD_NUMBER.jar
+ln -sfn $PWD/mount_service $tmpdir/packages/$artifact-0.0.$BUILD_NUMBER.sh
 ln -sfn $PWD/run_service $tmpdir/service/run
 
-tar --dereference -C $tmpdir -c -f - packages service | ssh harvestman "sudo -u $artifact-jadm sh -c 'cd /srv/$artifact-japp && tar -x -v -f - && ln -sfvn $artifact-0.0.$BUILD_NUMBER.jar packages/$artifact-latest.jar && sudo -u $artifact-jusr svc -t service'"
+tar --dereference -C $tmpdir -c -f - packages service | ssh harvestman "sudo -u $artifact-jadm sh -c 'cd /srv/$artifact-japp && tar -x -v -f - && artifact=$artifact BUILD_NUMBER=$BUILD_NUMBER packages/$artifact-0.0.$BUILD_NUMBER.sh && sudo -u $artifact-jusr svc -t service'"
