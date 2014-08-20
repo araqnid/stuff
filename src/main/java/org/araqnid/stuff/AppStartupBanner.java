@@ -11,10 +11,12 @@ import com.google.inject.name.Named;
 public class AppStartupBanner implements AppLifecycleEvent {
 	private static final Logger LOG = LoggerFactory.getLogger(AppStartupBanner.class);
 	private final int httpPort;
+	private final AppVersion appVersion;
 
 	@Inject
-	public AppStartupBanner(@Named("http_port") int httpPort) {
+	public AppStartupBanner(@Named("http_port") int httpPort, AppVersion appVersion) {
 		this.httpPort = httpPort;
+		this.appVersion = appVersion;
 	}
 
 	@Override
@@ -23,7 +25,7 @@ public class AppStartupBanner implements AppLifecycleEvent {
 
 	@Override
 	public void started() {
-		LOG.info("Started; listening for HTTP on {}", httpPort);
+		LOG.info("Started version {}; listening for HTTP on {}", appVersion.version, httpPort);
 	}
 
 	@Override
