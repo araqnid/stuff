@@ -63,4 +63,8 @@ public class RequestActivity {
 	public ActivityEventNode getRootEvent() {
 		return rootEvent;
 	}
+
+	public ActivityEventNode getCurrentEvent() {
+		return event;
+	}
 }
