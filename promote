@@ -18,8 +18,8 @@ trap 'rm -rf "$tmpdir"' EXIT
 
 artifact=stuff
 
-ln -sfn $PWD/build/libs/$artifact-0.0.$BUILD_NUMBER.jar $tmpdir/$artifact-0.0.$BUILD_NUMBER.jar
-mkdir $tmpdir/${artifact}_service
-ln -sfn $PWD/run_service $tmpdir/${artifact}_service/run
+mkdir $tmpdir/packages $tmpdir/service
+ln -sfn $PWD/build/libs/$artifact-0.0.$BUILD_NUMBER.jar $tmpdir/packages/$artifact-0.0.$BUILD_NUMBER.jar
+ln -sfn $PWD/run_service $tmpdir/service/run
 
-tar --dereference -C $tmpdir -c -f - . | ssh harvestman "tar -x -v -f - && ln -sfvn $artifact-0.0.$BUILD_NUMBER.jar $artifact-latest.jar && svc -t ${artifact}_service"
+tar --dereference -C $tmpdir -c -f - packages service | ssh harvestman "sudo -u $artifact-jadm sh -c 'cd /srv/$artifact-japp && tar -x -v -f - && ln -sfvn $artifact-0.0.$BUILD_NUMBER.jar packages/$artifact-latest.jar && svc -t service'"
