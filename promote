@@ -22,4 +22,4 @@ mkdir $tmpdir/packages $tmpdir/service
 ln -sfn $PWD/build/libs/$artifact-0.0.$BUILD_NUMBER.jar $tmpdir/packages/$artifact-0.0.$BUILD_NUMBER.jar
 ln -sfn $PWD/run_service $tmpdir/service/run
 
-tar --dereference -C $tmpdir -c -f - packages service | ssh harvestman "sudo -u $artifact-jadm sh -c 'cd /srv/$artifact-japp && tar -x -v -f - && ln -sfvn $artifact-0.0.$BUILD_NUMBER.jar packages/$artifact-latest.jar && if [ -p service/supervise/control ]; then svstat service && svc -t service; else echo no supervise; fi'"
+tar --dereference -C $tmpdir -c -f - packages service | ssh harvestman "sudo -u $artifact-jadm sh -c 'cd /srv/$artifact-japp && tar -x -v -f - && ln -sfvn $artifact-0.0.$BUILD_NUMBER.jar packages/$artifact-latest.jar && svc -t service'"
