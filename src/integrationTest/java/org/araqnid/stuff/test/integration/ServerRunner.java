@@ -2,11 +2,14 @@ package org.araqnid.stuff.test.integration;
 
 import org.araqnid.stuff.activity.ActivityEventSink;
 import org.araqnid.stuff.config.AppConfig;
+import org.araqnid.stuff.test.integration.CollectActivityEvents.ActivityEventRecord;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -55,5 +58,14 @@ public class ServerRunner {
 
 	public Iterable<CollectActivityEvents.ActivityEventRecord> activityEvents() {
 		return collectActivityEvents.events;
+	}
+
+	public Iterable<CollectActivityEvents.ActivityEventRecord> activityEventsForRuid(final String ruid) {
+		return Iterables.filter(collectActivityEvents.events, new Predicate<CollectActivityEvents.ActivityEventRecord>() {
+			@Override
+			public boolean apply(ActivityEventRecord input) {
+				return input.ruid.equals(ruid);
+			}
+		});
 	}
 }

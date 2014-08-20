@@ -77,10 +77,8 @@ public class ServerIntegrationTest {
 		CloseableHttpResponse response = doGet("/");
 		String ruid = response.getFirstHeader("X-RUID").getValue();
 		response.close();
-		MatcherAssert.assertThat(
-				server.activityEvents(),
-				includesSubsequence(beginRequestRecord(equalTo("HttpRequest")).withRuid(ruid),
-						finishRequestRecord(equalTo("HttpRequest")).withRuid(ruid)));
+		MatcherAssert.assertThat(server.activityEventsForRuid(ruid),
+				includesSubsequence(beginRequestRecord(equalTo("HttpRequest")), finishRequestRecord(equalTo("HttpRequest"))));
 	}
 
 	@Test
