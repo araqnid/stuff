@@ -2,7 +2,7 @@
 
 set -e
 
-cd "$(dirname $0)"
+cd "$(dirname $0)/../.."
 if [ -z "$NO_REBUILD" ]; then
     if [ -f .build_number ]; then
 	BUILD_NUMBER=$(expr $(cat .build_number) + 1)
