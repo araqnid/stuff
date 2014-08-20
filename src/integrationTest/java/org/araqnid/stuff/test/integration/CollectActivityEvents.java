@@ -81,8 +81,8 @@ public class CollectActivityEvents implements ActivityEventSink {
 		return new ActivityRecordMatcher("finishRequest", requestType);
 	}
 
-	public static ActivityRecordMatcher beginRequestRecord(final Matcher<String> requestType) {
-		return new ActivityRecordMatcher("beginRequest", requestType);
+	public static BeginRequestRecordMatcher beginRequestRecord(final Matcher<String> requestType) {
+		return new BeginRequestRecordMatcher(requestType);
 	}
 
 	public static class ActivityRecordMatcher extends TypeSafeDiagnosingMatcher<ActivityEventRecord> {
@@ -129,5 +129,82 @@ public class CollectActivityEvents implements ActivityEventSink {
 			this.ruid = ruid;
 			return this;
 		}
+	}
+
+	public static class BeginRequestRecordMatcher extends ActivityRecordMatcher {
+		private Matcher<Optional<String>> descriptionMatcher;
+
+		public BeginRequestRecordMatcher(Matcher<String> requestType) {
+			super("beginRequest", requestType);
+		}
+
+		@Override
+		protected boolean matchesSafely(ActivityEventRecord item, Description mismatchDescription) {
+			if (!super.matchesSafely(item, mismatchDescription)) return false;
+			if (descriptionMatcher != null && !descriptionMatcher.matches(item.description)) {
+				mismatchDescription.appendText("description is ").appendValue(item.description);
+				return false;
+			}
+			return true;
+		}
+
+		@Override
+		public void describeTo(Description description) {
+			super.describeTo(description);
+			if (description != null) {
+				description.appendText(", description ").appendDescriptionOf(descriptionMatcher);
+			}
+		}
+
+		public BeginRequestRecordMatcher withDescription(String description) {
+			this.descriptionMatcher = isSome(Matchers.equalTo(description));
+			return this;
+		}
+
+		public BeginRequestRecordMatcher withDescription(Matcher<String> descriptionMatcher) {
+			this.descriptionMatcher = isSome(descriptionMatcher);
+			return this;
+		}
+
+		public BeginRequestRecordMatcher withoutDescription() {
+			this.descriptionMatcher = isNone(String.class);
+			return this;
+		}
+	}
+
+	public static <T> Matcher<Optional<T>> isNone(Class<T> clazz) {
+		return new TypeSafeDiagnosingMatcher<Optional<T>>() {
+			@Override
+			protected boolean matchesSafely(Optional<T> item, Description mismatchDescription) {
+				if (item.isPresent()) {
+					mismatchDescription.appendText("value is present: ").appendValue(item.get());
+					return false;
+				}
+				return true;
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendText("absent");
+			}
+		};
+	}
+
+	public static <T> Matcher<Optional<T>> isSome(final Matcher<? super T> matcher) {
+		return new TypeSafeDiagnosingMatcher<Optional<T>>() {
+			@Override
+			protected boolean matchesSafely(Optional<T> item, Description mismatchDescription) {
+				if (!item.isPresent()) {
+					mismatchDescription.appendText("value is absent");
+					return false;
+				}
+				return true;
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendDescriptionOf(matcher);
+			}
+		};
 	}
 }

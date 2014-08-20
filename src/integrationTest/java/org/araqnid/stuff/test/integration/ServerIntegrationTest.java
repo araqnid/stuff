@@ -25,12 +25,12 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
-import static org.araqnid.stuff.test.integration.CollectActivityEvents.finishRequestRecord;
-
 import static org.araqnid.stuff.test.integration.CollectActivityEvents.beginRequestRecord;
+import static org.araqnid.stuff.test.integration.CollectActivityEvents.finishRequestRecord;
 import static org.hamcrest.Matchers.any;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.stringContainsInOrder;
 
 public class ServerIntegrationTest {
 	private CloseableHttpClient httpClient;
@@ -77,8 +77,10 @@ public class ServerIntegrationTest {
 		CloseableHttpResponse response = doGet("/");
 		String ruid = response.getFirstHeader("X-RUID").getValue();
 		response.close();
-		MatcherAssert.assertThat(server.activityEventsForRuid(ruid),
-				includesSubsequence(beginRequestRecord(equalTo("HttpRequest")), finishRequestRecord(equalTo("HttpRequest"))));
+		MatcherAssert.assertThat(
+				server.activityEventsForRuid(ruid),
+				includesSubsequence(beginRequestRecord(equalTo("HttpRequest")).withDescription(stringContainsInOrder(ImmutableList.of("GET", "/"))),
+						finishRequestRecord(equalTo("HttpRequest"))));
 	}
 
 	@Test
