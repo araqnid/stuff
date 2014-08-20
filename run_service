@@ -16,7 +16,7 @@ latestlink="$apprepo/$appname-latest.jar"
 [ -L "$latestlink" ] || die "Not a symlink: $latestlink"
 latestjar=$(readlink -f "$latestlink")
 [ -f "$latestjar" ] || die "Failed to resolve $latestlink to a usable filename (got $latestjar)"
-cache_dir="$HOME/packages/artifact-cache"
+cache_dir="$HOME/data/artifact-cache"
 [ -d "$cache_dir" ] || mkdir -p "$cache_dir"
 
 unzip -qc "$latestjar" "META-INF/$appname.deps.txt" > $tmpdir/deps
