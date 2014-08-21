@@ -18,10 +18,6 @@ mkdir -p $tmpdir/conf
 
 cat <<EOF >$tmpdir/conf/server.xml
 <Server port="$SHUTDOWN_PORT" shutdown="SHUTDOWN">
-  <Listener className="org.apache.catalina.core.JasperListener" />
-  <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
-  <Listener className="org.apache.catalina.mbeans.ServerLifecycleListener" />
-  <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
   <Service name="Catalina">
     <Connector port="$PORT" protocol="HTTP/1.1"
                connectionTimeout="20000"
@@ -131,4 +127,22 @@ mkdir -p $tmpdir/temp
 JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64
 export JAVA_HOME
 
-$CATALINA_HOME/bin/catalina.sh run
+if [ -x $CATALINA_HOME/bin/catalina.sh ]; then
+    $CATALINA_HOME/bin/catalina.sh run
+else
+    CLASSPATH=$(while read jar; do echo -n ":$jar"; done <<EOF | sed -e 's/^://'
+$CATALINA_HOME/lib/annotations-api.jar
+$CATALINA_HOME/lib/catalina.jar
+$CATALINA_HOME/lib/catalina-ha.jar
+$CATALINA_HOME/lib/catalina-tribes.jar
+$CATALINA_HOME/lib/tomcat-util.jar
+$CATALINA_HOME/lib/tomcat-jdbc.jar
+$CATALINA_HOME/lib/tomcat-api.jar
+$CATALINA_HOME/lib/tomcat-coyote.jar
+/usr/share/java/tomcat-juli.jar
+/usr/share/java/commons-digester.jar
+/usr/share/java/servlet-api-3.0.jar
+EOF
+)
+    $JAVA_HOME/bin/java -classpath "$CLASSPATH" -Dcatalina.base="$CATALINA_BASE" -Dcatalina.home="$CATALINA_HOME" -Djava.io.tmpdir="$tmpdir/temp" org.apache.catalina.startup.Bootstrap start
+fi
