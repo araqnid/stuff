@@ -1,6 +1,7 @@
 package org.araqnid.stuff.test.integration;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -8,16 +9,21 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.http.Header;
 import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
 import org.apache.http.StatusLine;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicNameValuePair;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
@@ -82,7 +88,7 @@ public class MerlotResourcesIntegrationTest {
 		String userId = UUID.randomUUID().toString();
 		String userCN = randomString("User");
 		String username = randomEmailAddress();
-		// TODO init db with user data
+		setupUser(userId, userCN, username, randomString());
 		CloseableHttpResponse response = doGet("/_api/merlot/", ImmutableMap.of("Cookie", "ATKT=" + authTicket(userId)));
 		assertThat(response.getStatusLine(), is(ok()));
 		assertThat(
@@ -101,11 +107,64 @@ public class MerlotResourcesIntegrationTest {
 		response.close();
 	}
 
+	@Ignore
+	@Test
+	public void sign_in_creates_auth_ticket() throws Exception {
+		String userId = UUID.randomUUID().toString();
+		String userCN = randomString("User");
+		String username = randomEmailAddress();
+		String password = randomString();
+		setupUser(userId, userCN, username, password);
+		CloseableHttpResponse response = doPostForm("/_api/merlot/sign-in", ImmutableMap.<String,String>of(), ImmutableMap.<String,String>of("username", username, "password", password));
+		assertThat(response.getStatusLine(), is(ok()));
+		assertThat(response.getFirstHeader("Set-Cookie"), is(newCookie("ATKT", equalTo(authTicket(userId)))));
+		response.close();
+	}
+
+	@Ignore
+	@Test
+	public void sign_in_with_wrong_password_is_forbidden() throws Exception {
+		String userId = UUID.randomUUID().toString();
+		String userCN = randomString("User");
+		String username = randomEmailAddress();
+		String password = randomString();
+		setupUser(userId, userCN, username, password);
+		CloseableHttpResponse response = doPostForm("/_api/merlot/sign-in", ImmutableMap.<String,String>of(), ImmutableMap.<String,String>of("username", username, "password", "!" + password));
+		assertThat(response.getStatusLine(), is(forbidden()));
+		response.close();
+	}
+
+	@Ignore
+	@Test
+	public void sign_out_removes_cookie() throws Exception {
+		CloseableHttpResponse response = doPostForm("/_api/merlot/sign-out", ImmutableMap.<String,String>of(), ImmutableMap.<String,String>of());
+		assertThat(response.getStatusLine(), is(ok()));
+		assertThat(response.getFirstHeader("Set-Cookie"), is(removeCookie("ATKT")));
+		response.close();
+	}
+
+	private void setupUser(String userId, String userCN, String username, String password) {
+		// TODO Auto-generated method stub
+	}
+
 	private CloseableHttpResponse doGet(String path, Map<String, String> headers) throws IOException {
-		HttpUriRequest request = new HttpGet(server.appUri(path));
+		HttpGet request = new HttpGet(server.appUri(path));
 		for (Map.Entry<String, String> e : headers.entrySet()) {
 			request.addHeader(e.getKey(), e.getValue());
 		}
+		return httpClient.execute(request);
+	}
+
+	private CloseableHttpResponse doPostForm(String path, Map<String, String> headers, Map<String, String> formParameters) throws IOException {
+		HttpPost request = new HttpPost(server.appUri(path));
+		for (Map.Entry<String, String> e : headers.entrySet()) {
+			request.addHeader(e.getKey(), e.getValue());
+		}
+		List<NameValuePair> parameters = new ArrayList<>();
+		for (Map.Entry<String, String> e : formParameters.entrySet()) {
+			parameters.add(new BasicNameValuePair(e.getKey(), e.getValue()));
+		}
+		request.setEntity(new UrlEncodedFormEntity(parameters));
 		return httpClient.execute(request);
 	}
 
@@ -311,5 +370,65 @@ public class MerlotResourcesIntegrationTest {
 			builder.append(alphabet.charAt(random.nextInt(alphabet.length())));
 		}
 		return builder.toString();
+	}
+
+	private static Matcher<Header> newCookie(final String name, final Matcher<String> valueMatcher) {
+		return new TypeSafeDiagnosingMatcher<Header>() {
+			@Override
+			protected boolean matchesSafely(Header item, Description mismatchDescription) {
+				if (!item.getName().equalsIgnoreCase("set-cookie")) {
+					mismatchDescription.appendText("Header name was not 'Set-Cookie'");
+					return false;
+				}
+				Pattern pattern = Pattern.compile("([^=;]+)=([^=;]+)");
+				java.util.regex.Matcher matcher = pattern.matcher(item.getValue());
+				if (!matcher.lookingAt()) {
+					mismatchDescription.appendText("Header value does not look like a cookie setting: ").appendText(item.getValue());
+					return false;
+				}
+				String cookieName = matcher.group(1);
+				String cookieValue = matcher.group(2);
+				if (!cookieName.equals(name)) {
+					mismatchDescription.appendText("cookie name was ").appendValue(cookieName);
+					return false;
+				}
+				if (!valueMatcher.matches(cookieValue)) {
+					mismatchDescription.appendText("cookie value ");
+					valueMatcher.describeMismatch(cookieValue, mismatchDescription);
+					return false;
+				}
+				return true;
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendText("Set cookie ").appendValue(name).appendText(" to ").appendDescriptionOf(valueMatcher);
+			}
+		};
+	}
+
+	private static Matcher<Header> removeCookie(final String name) {
+		return new TypeSafeDiagnosingMatcher<Header>() {
+			@Override
+			protected boolean matchesSafely(Header item, Description mismatchDescription) {
+				if (!item.getName().equalsIgnoreCase("set-cookie")) {
+					mismatchDescription.appendText("Header name was not 'Set-Cookie'");
+					return false;
+				}
+				Pattern pattern = Pattern.compile("([^=;]+)=([^=;]+)");
+				java.util.regex.Matcher matcher = pattern.matcher(item.getValue());
+				if (!matcher.lookingAt()) {
+					mismatchDescription.appendText("Header value does not look like a cookie setting: ").appendText(item.getValue());
+					return false;
+				}
+				// TODO
+				return true;
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendText("Remove cookie ").appendValue(name);
+			}
+		};
 	}
 }
