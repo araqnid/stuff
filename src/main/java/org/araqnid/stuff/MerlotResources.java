@@ -23,11 +23,21 @@ public class MerlotResources {
 
 	public static final class Status {
 		public final String version;
-		public final String userInfo;
+		public final UserInfo userInfo;
 
-		public Status(String version, String userInfo) {
+		public Status(String version, UserInfo userInfo) {
 			this.version = version;
 			this.userInfo = userInfo;
+		}
+	}
+
+	public static final class UserInfo {
+		public final String commonName;
+		public final String username;
+
+		public UserInfo(String commonName, String username) {
+			this.commonName = commonName;
+			this.username = username;
 		}
 	}
 }
