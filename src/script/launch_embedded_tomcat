@@ -5,7 +5,7 @@ set -e
 tmpdir=$(mktemp -d --tmpdir=$PWD tomcat.XXXXXX)
 trap 'rm -rf "$tmpdir"' EXIT
 
-CATALINA_HOME=${CATALINA_HOME-/usr/share/tomcat6}
+CATALINA_HOME=${CATALINA_HOME-/usr/share/tomcat7}
 export CATALINA_HOME
 CATALINA_BASE=$tmpdir
 export CATALINA_BASE
