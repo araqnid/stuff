@@ -132,8 +132,6 @@ else
     CLASSPATH=$(while read jar; do echo -n ":$jar"; done <<EOF | sed -e 's/^://'
 $CATALINA_HOME/lib/annotations-api.jar
 $CATALINA_HOME/lib/catalina.jar
-$CATALINA_HOME/lib/catalina-ha.jar
-$CATALINA_HOME/lib/catalina-tribes.jar
 $CATALINA_HOME/lib/tomcat-util.jar
 $CATALINA_HOME/lib/tomcat-jdbc.jar
 $CATALINA_HOME/lib/tomcat-api.jar
