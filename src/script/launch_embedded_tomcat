@@ -107,7 +107,7 @@ cat <<EOF >$tmpdir/webapps/$webapp_name/WEB-INF/web.xml
 </web-app>
 EOF
 
-gradle_artifact_cache=$HOME/.gradle/caches/artifacts-26/filestore
+gradle_artifact_cache=$(ls -d $HOME/.gradle/caches/artifacts-*/filestore | head -n 1)
 mkdir -p $tmpdir/webapps/$webapp_name/WEB-INF/lib
 grep -v javax.servlet build/resources/main/META-INF/stuff.deps.txt | while read id type; do
     set -- $(echo $id | tr ':' ' ')
