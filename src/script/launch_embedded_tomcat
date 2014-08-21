@@ -133,7 +133,6 @@ else
 $CATALINA_HOME/lib/annotations-api.jar
 $CATALINA_HOME/lib/catalina.jar
 $CATALINA_HOME/lib/tomcat-util.jar
-$CATALINA_HOME/lib/tomcat-jdbc.jar
 $CATALINA_HOME/lib/tomcat-api.jar
 $CATALINA_HOME/lib/tomcat-coyote.jar
 /usr/share/java/tomcat-juli.jar
