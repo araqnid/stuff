@@ -136,7 +136,6 @@ $CATALINA_HOME/lib/tomcat-util.jar
 $CATALINA_HOME/lib/tomcat-api.jar
 $CATALINA_HOME/lib/tomcat-coyote.jar
 /usr/share/java/tomcat-juli.jar
-/usr/share/java/commons-digester.jar
 /usr/share/java/servlet-api-3.0.jar
 EOF
 )
