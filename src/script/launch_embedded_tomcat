@@ -1,0 +1,134 @@
+#!/bin/sh
+
+set -e
+
+tmpdir=$(mktemp -d --tmpdir=$PWD tomcat.XXXXXX)
+trap 'rm -rf "$tmpdir"' EXIT
+
+CATALINA_HOME=${CATALINA_HOME-/usr/share/tomcat6}
+export CATALINA_HOME
+CATALINA_BASE=$tmpdir
+export CATALINA_BASE
+
+PORT=${PORT-61000}
+SHUTDOWN_PORT=${SHUTDOWN_PORT-$(expr $PORT + 1)}
+JVM_ROUTE=${JVM_ROUTE-$(hostname --short)}
+
+mkdir -p $tmpdir/conf
+
+cat <<EOF >$tmpdir/conf/server.xml
+<Server port="$SHUTDOWN_PORT" shutdown="SHUTDOWN">
+  <Listener className="org.apache.catalina.core.JasperListener" />
+  <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
+  <Listener className="org.apache.catalina.mbeans.ServerLifecycleListener" />
+  <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
+  <Service name="Catalina">
+    <Connector port="$PORT" protocol="HTTP/1.1"
+               connectionTimeout="20000"
+               URIEncoding="UTF-8"
+               redirectPort="8443"
+               maxPostSize="0"
+               maxHttpHeaderSize="8192"
+               useBodyEncodingForURI="true"
+               minSpareThreads="25"
+               enableLookups="false" />
+    <Engine name="Catalina" defaultHost="localhost" jvmRoute="$JVM_ROUTE">
+      <Host name="localhost"  appBase="webapps"
+            unpackWARs="true" autoDeploy="true"
+            xmlValidation="false" xmlNamespaceAware="false">
+        <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs"
+               prefix="localhost_access_log." suffix=".txt" pattern="common" resolveHosts="false"/>
+      </Host>
+    </Engine>
+  </Service>
+</Server>
+EOF
+
+cat <<EOF >$tmpdir/conf/context.xml
+<Context>
+    <WatchedResource>WEB-INF/web.xml</WatchedResource>
+</Context>
+EOF
+
+cat <<EOF >$tmpdir/conf/web.xml
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+    version="2.5">
+    <servlet>
+        <servlet-name>default</servlet-name>
+        <servlet-class>org.apache.catalina.servlets.DefaultServlet</servlet-class>
+        <init-param>
+            <param-name>debug</param-name>
+            <param-value>0</param-value>
+        </init-param>
+        <init-param>
+            <param-name>listings</param-name>
+            <param-value>false</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>default</servlet-name>
+        <url-pattern>/</url-pattern>
+    </servlet-mapping>
+    <mime-mapping>
+        <extension>png</extension>
+        <mime-type>image/png</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>html</extension>
+        <mime-type>text/html</mime-type>
+    </mime-mapping>
+</web-app>
+EOF
+mkdir -p $tmpdir/conf/Catalina/localhost
+
+webapp_name=ROOT
+
+mkdir -p $tmpdir/webapps/$webapp_name/WEB-INF
+
+cat <<EOF >$tmpdir/webapps/$webapp_name/WEB-INF/web.xml
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+    version="2.5">
+    <filter>
+        <filter-name>guiceFilter</filter-name>
+        <filter-class>com.google.inject.servlet.GuiceFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>guiceFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <listener>
+        <listener-class>org.araqnid.stuff.ServletContextMain</listener-class>
+    </listener>
+</web-app>
+EOF
+
+gradle_artifact_cache=$HOME/.gradle/caches/artifacts-26/filestore
+mkdir -p $tmpdir/webapps/$webapp_name/WEB-INF/lib
+grep -v javax.servlet build/resources/main/META-INF/stuff.deps.txt | while read id type; do
+    set -- $(echo $id | tr ':' ' ')
+    group="$1"
+    name="$2"
+    version="$3"
+    file="$name-$version.jar"
+    resolved=$(find $gradle_artifact_cache -name "$file")
+    if [ -z "$resolved" ]; then
+	echo "Unable to resolve $group:$name:$version in Gradle cache" >&2
+	exit 1
+    fi
+    ln $resolved $tmpdir/webapps/$webapp_name/WEB-INF/lib
+done
+
+mkdir -p $tmpdir/webapps/$webapp_name/WEB-INF/classes
+cp -R build/classes/main/* build/resources/main/* $tmpdir/webapps/$webapp_name/WEB-INF/classes
+
+mkdir -p $tmpdir/temp
+
+JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64
+export JAVA_HOME
+
+$CATALINA_HOME/bin/catalina.sh run

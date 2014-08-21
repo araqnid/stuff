@@ -94,8 +94,6 @@ public class AppConfig extends AbstractModule {
 	@Override
 	protected void configure() {
 		bindConstant().annotatedWith(Names.named("http_port")).to(port(61000));
-		bindConstant().annotatedWith(ServerIdentity.class).to(gethostname());
-		bind(UUID.class).annotatedWith(ServerIdentity.class).toInstance(UUID.randomUUID());
 		install(new ActivityScope.Module());
 		install(new CoreModule());
 		install(new RawBeanstalkModule());
@@ -125,6 +123,8 @@ public class AppConfig extends AbstractModule {
 			bind(AppStateMonitor.class);
 			bind(AppStartupBanner.class);
 			bind(JsonFactory.class).to(MappingJsonFactory.class).in(Singleton.class);
+			bindConstant().annotatedWith(ServerIdentity.class).to(gethostname());
+			bind(UUID.class).annotatedWith(ServerIdentity.class).toInstance(UUID.randomUUID());
 		}
 
 		private AppVersion appVersion() {
@@ -264,48 +264,6 @@ public class AppConfig extends AbstractModule {
 				install(new WebModule());
 			}
 
-			@Provides
-			@Exposed
-			public Dispatcher dispatcher(HttpServletDispatcher servlet) {
-				return servlet.getDispatcher();
-			}
-
-			@Provides
-			@Exposed
-			public Registry dispatcher(Dispatcher dispatcher) {
-				return dispatcher.getRegistry();
-			}
-
-			@Provides
-			@Exposed
-			public ResteasyProviderFactory providerFactory(Dispatcher dispatcher) {
-				return dispatcher.getProviderFactory();
-			}
-
-			@Provides
-			@Exposed
-			public javax.ws.rs.core.Request request() {
-				return ResteasyProviderFactory.getContextData(javax.ws.rs.core.Request.class);
-			}
-
-			@Provides
-			@Exposed
-			public javax.ws.rs.core.HttpHeaders httpHeaders() {
-				return ResteasyProviderFactory.getContextData(javax.ws.rs.core.HttpHeaders.class);
-			}
-
-			@Provides
-			@Exposed
-			public javax.ws.rs.core.UriInfo uriInfo() {
-				return ResteasyProviderFactory.getContextData(javax.ws.rs.core.UriInfo.class);
-			}
-
-			@Provides
-			@Exposed
-			public javax.ws.rs.core.SecurityContext securityContext() {
-				return ResteasyProviderFactory.getContextData(javax.ws.rs.core.SecurityContext.class);
-			}
-
 			public static final class WebModule extends ServletModule {
 				@Override
 				protected void configureServlets() {
@@ -359,6 +317,41 @@ public class AppConfig extends AbstractModule {
 			bind(HelloResource.class);
 			bind(InfoResources.class);
 			bind(MerlotResources.class);
+		}
+
+		@Provides
+		public Dispatcher dispatcher(HttpServletDispatcher servlet) {
+			return servlet.getDispatcher();
+		}
+
+		@Provides
+		public Registry dispatcher(Dispatcher dispatcher) {
+			return dispatcher.getRegistry();
+		}
+
+		@Provides
+		public ResteasyProviderFactory providerFactory(Dispatcher dispatcher) {
+			return dispatcher.getProviderFactory();
+		}
+
+		@Provides
+		public javax.ws.rs.core.Request request() {
+			return ResteasyProviderFactory.getContextData(javax.ws.rs.core.Request.class);
+		}
+
+		@Provides
+		public javax.ws.rs.core.HttpHeaders httpHeaders() {
+			return ResteasyProviderFactory.getContextData(javax.ws.rs.core.HttpHeaders.class);
+		}
+
+		@Provides
+		public javax.ws.rs.core.UriInfo uriInfo() {
+			return ResteasyProviderFactory.getContextData(javax.ws.rs.core.UriInfo.class);
+		}
+
+		@Provides
+		public javax.ws.rs.core.SecurityContext securityContext() {
+			return ResteasyProviderFactory.getContextData(javax.ws.rs.core.SecurityContext.class);
 		}
 	}
 }
