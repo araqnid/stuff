@@ -22,6 +22,7 @@ import org.araqnid.stuff.CacheRefresher;
 import org.araqnid.stuff.HelloResource;
 import org.araqnid.stuff.InfoResources;
 import org.araqnid.stuff.JettyAppService;
+import org.araqnid.stuff.MerlotResources;
 import org.araqnid.stuff.RootServlet;
 import org.araqnid.stuff.ScheduledJobController;
 import org.araqnid.stuff.ServerIdentityFilter;
@@ -357,6 +358,7 @@ public class AppConfig extends AbstractModule {
 		protected void configure() {
 			bind(HelloResource.class);
 			bind(InfoResources.class);
+			bind(MerlotResources.class);
 		}
 	}
 }
