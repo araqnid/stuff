@@ -70,6 +70,7 @@ public class RequestActivityFilter implements Filter {
 			response.setHeader("X-RUID", requestActivity.getRuid());
 			try {
 				chain.doFilter(request, response);
+				response.flushBuffer();
 			} finally {
 				logRequest(request, response, eventPath, rootEvent);
 			}
