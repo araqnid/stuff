@@ -9,7 +9,6 @@ import org.araqnid.stuff.AppService;
 import org.araqnid.stuff.AppServicesManager;
 import org.araqnid.stuff.AppStateMonitor;
 import org.araqnid.stuff.AppVersion;
-import org.araqnid.stuff.JettyAppService;
 import org.araqnid.stuff.ScheduledJobController;
 import org.araqnid.stuff.activity.ActivityScope;
 
@@ -28,7 +27,6 @@ public final class CoreModule extends AbstractModule {
 				.build());
 		Multibinder<AppService> appServices = Multibinder.newSetBinder(binder(), AppService.class);
 		bind(AppServicesManager.class);
-		appServices.addBinding().to(JettyAppService.class);
 		appServices.addBinding().to(ScheduledJobController.class);
 		bind(AppVersion.class).toInstance(appVersion());
 		bind(AppStateMonitor.class);

@@ -7,7 +7,9 @@ import java.util.Map;
 import javax.servlet.DispatcherType;
 import javax.servlet.ServletContext;
 
+import org.araqnid.stuff.AppService;
 import org.araqnid.stuff.AppStartupBanner;
+import org.araqnid.stuff.JettyAppService;
 import org.araqnid.stuff.activity.RequestActivityFilter;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
@@ -28,6 +30,7 @@ import com.google.inject.Exposed;
 import com.google.inject.Module;
 import com.google.inject.PrivateModule;
 import com.google.inject.Provides;
+import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import com.google.inject.servlet.GuiceFilter;
@@ -69,6 +72,8 @@ public class StandaloneAppConfig extends AbstractModule {
 						}
 					});
 			bind(RequestActivityFilter.RequestLogger.class).to(RequestActivityFilter.BasicRequestLogger.class);
+			Multibinder<AppService> appServices = Multibinder.newSetBinder(binder(), AppService.class);
+			appServices.addBinding().to(JettyAppService.class);
 			install(new VanillaContextModule());
 			install(new ResteasyContextModule());
 		}
