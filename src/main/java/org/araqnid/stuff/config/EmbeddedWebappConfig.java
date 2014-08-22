@@ -15,6 +15,13 @@ import com.google.inject.Module;
 import com.google.inject.multibindings.Multibinder;
 
 public class EmbeddedWebappConfig extends AbstractModule {
+	@SuppressWarnings("unused")
+	private final ServletContext context;
+
+	public EmbeddedWebappConfig(ServletContext context) {
+		this.context = context;
+	}
+
 	@Override
 	protected void configure() {
 		Multibinder.newSetBinder(binder(), ScheduledJobController.JobDefinition.class);

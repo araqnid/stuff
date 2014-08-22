@@ -21,7 +21,7 @@ public class ServletContextMain implements ServletContextListener {
 	public void contextInitialized(ServletContextEvent sce) {
 		LOG.info("Initialising context: {}", sce.getServletContext().getContextPath());
 		injector = Guice.createInjector(Stage.PRODUCTION, 
-				new EmbeddedWebappConfig());
+				new EmbeddedWebappConfig(sce.getServletContext()));
 		delegate = injector.getInstance(GuiceResteasyBootstrapServletContextListener.class);
 		delegate.contextInitialized(sce);
 	}
