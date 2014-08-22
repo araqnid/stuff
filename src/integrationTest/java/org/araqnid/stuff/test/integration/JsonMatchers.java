@@ -31,6 +31,10 @@ public final class JsonMatchers {
 		protected boolean matchesSafely(ObjectNode item, Description mismatchDescription) {
 			Set<String> remainingFieldNames = Sets.newHashSet(item.fieldNames());
 			for (Map.Entry<String, Matcher<? extends TreeNode>> e : propertyMatchers.entrySet()) {
+				if (!item.has(e.getKey())) {
+					mismatchDescription.appendText(e.getKey()).appendText(" was not present");
+					return false;
+				}
 				TreeNode value = item.get(e.getKey());
 				if (!e.getValue().matches(value)) {
 					mismatchDescription.appendText(e.getKey()).appendText(": ");
