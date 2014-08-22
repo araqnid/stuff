@@ -4,6 +4,7 @@ import static org.araqnid.stuff.test.integration.HttpClientMatchers.forbidden;
 import static org.araqnid.stuff.test.integration.HttpClientMatchers.newCookie;
 import static org.araqnid.stuff.test.integration.HttpClientMatchers.ok;
 import static org.araqnid.stuff.test.integration.HttpClientMatchers.removeCookie;
+import static org.araqnid.stuff.test.integration.HttpClientMatchers.responseWithCookies;
 import static org.araqnid.stuff.test.integration.HttpClientMatchers.responseWithJsonContent;
 import static org.araqnid.stuff.test.integration.JsonMatchers.jsonNull;
 import static org.araqnid.stuff.test.integration.JsonMatchers.jsonObject;
@@ -11,6 +12,7 @@ import static org.araqnid.stuff.test.integration.JsonMatchers.jsonString;
 import static org.araqnid.stuff.testutil.RandomData.randomEmailAddress;
 import static org.araqnid.stuff.testutil.RandomData.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
@@ -63,11 +65,11 @@ public class MerlotResourcesIntegrationTest {
 	@Test
 	public void status_resource_with_no_cookie() throws Exception {
 		CloseableHttpResponse response = doGet("/_api/merlot/");
-		assertThat(response.getStatusLine(), is(ok()));
 		assertThat(
 				response,
-				is(responseWithJsonContent(jsonObject().withProperty("userInfo", jsonNull()).withProperty("version",
-						jsonNull()))));
+				is(both(ok()).and(
+						responseWithJsonContent(jsonObject().withProperty("userInfo", jsonNull()).withProperty(
+								"version", jsonNull())))));
 		response.close();
 	}
 
@@ -79,13 +81,13 @@ public class MerlotResourcesIntegrationTest {
 		String username = randomEmailAddress();
 		setupUser(userId, userCN, username, randomString());
 		CloseableHttpResponse response = doGet("/_api/merlot/", ImmutableMap.of("Cookie", "ATKT=" + authTicket(userId)));
-		assertThat(response.getStatusLine(), is(ok()));
 		assertThat(
 				response,
-				is(responseWithJsonContent(jsonObject().withProperty(
-						"userInfo",
-						jsonObject().withProperty("commonName", jsonString(userCN)).withProperty("username",
-								jsonString(username))).withProperty("version", jsonNull()))));
+				is(both(ok()).and(
+						responseWithJsonContent(jsonObject().withProperty(
+								"userInfo",
+								jsonObject().withProperty("commonName", jsonString(userCN)).withProperty("username",
+										jsonString(username))).withProperty("version", jsonNull())))));
 		response.close();
 	}
 
@@ -93,7 +95,7 @@ public class MerlotResourcesIntegrationTest {
 	@Test
 	public void status_resource_with_invalid_auth_cookie() throws Exception {
 		CloseableHttpResponse response = doGet("/_api/merlot/", ImmutableMap.of("Cookie", "ATKT=xyzzy"));
-		assertThat(response.getStatusLine(), is(forbidden()));
+		assertThat(response, is(forbidden()));
 		response.close();
 	}
 
@@ -107,8 +109,7 @@ public class MerlotResourcesIntegrationTest {
 		setupUser(userId, userCN, username, password);
 		CloseableHttpResponse response = doPostForm("/_api/merlot/sign-in", ImmutableMap.<String, String> of(),
 				ImmutableMap.<String, String> of("username", username, "password", password));
-		assertThat(response.getStatusLine(), is(ok()));
-		assertThat(response.getFirstHeader("Set-Cookie"), is(newCookie("ATKT", equalTo(authTicket(userId)))));
+		assertThat(response, is(both(ok()).and(responseWithCookies(newCookie("ATKT", equalTo(authTicket(userId)))))));
 		response.close();
 	}
 
@@ -122,7 +123,7 @@ public class MerlotResourcesIntegrationTest {
 		setupUser(userId, userCN, username, password);
 		CloseableHttpResponse response = doPostForm("/_api/merlot/sign-in", ImmutableMap.<String, String> of(),
 				ImmutableMap.<String, String> of("username", username, "password", "!" + password));
-		assertThat(response.getStatusLine(), is(forbidden()));
+		assertThat(response, is(forbidden()));
 		response.close();
 	}
 
@@ -131,8 +132,7 @@ public class MerlotResourcesIntegrationTest {
 	public void sign_out_removes_cookie() throws Exception {
 		CloseableHttpResponse response = doPostForm("/_api/merlot/sign-out", ImmutableMap.<String, String> of(),
 				ImmutableMap.<String, String> of());
-		assertThat(response.getStatusLine(), is(ok()));
-		assertThat(response.getFirstHeader("Set-Cookie"), is(removeCookie("ATKT")));
+		assertThat(response, is(both(ok()).and(responseWithCookies(removeCookie("ATKT")))));
 		response.close();
 	}
 

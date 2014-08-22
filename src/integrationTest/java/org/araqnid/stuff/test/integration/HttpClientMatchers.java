@@ -6,16 +6,19 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.regex.Pattern;
-
-import javax.servlet.http.HttpServletResponse;
 
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
 import org.hamcrest.Description;
 import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
+import org.hamcrest.Matchers;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 import com.fasterxml.jackson.core.TreeNode;
@@ -26,12 +29,23 @@ public final class HttpClientMatchers {
 	}
 
 	@Factory
-	public static Matcher<StatusLine> ok() {
-		return new TypeSafeDiagnosingMatcher<StatusLine>() {
+	public static Matcher<HttpResponse> ok() {
+		return responseWith(statusOk());
+	}
+
+	@Factory
+	public static Matcher<HttpResponse> forbidden() {
+		return responseWith(statusForbidden());
+	}
+
+	@Factory
+	public static Matcher<HttpResponse> responseWith(final Matcher<StatusLine> statusMatcher) {
+		return new TypeSafeDiagnosingMatcher<HttpResponse>() {
 			@Override
-			protected boolean matchesSafely(StatusLine item, Description mismatchDescription) {
-				if (item.getStatusCode() != HttpServletResponse.SC_OK) {
-					mismatchDescription.appendText("status is ").appendValue(item);
+			protected boolean matchesSafely(HttpResponse item, Description mismatchDescription) {
+				if (!statusMatcher.matches(item.getStatusLine())) {
+					mismatchDescription.appendText("response status ");
+					statusMatcher.describeMismatch(item.getStatusLine(), mismatchDescription);
 					return false;
 				}
 				return true;
@@ -39,18 +53,28 @@ public final class HttpClientMatchers {
 
 			@Override
 			public void describeTo(Description description) {
-				description.appendText("status is ").appendValue(HttpServletResponse.SC_OK);
+				description.appendText("response with status ").appendDescriptionOf(statusMatcher);
 			}
 		};
 	}
 
 	@Factory
-	public static Matcher<StatusLine> forbidden() {
+	public static Matcher<StatusLine> statusOk() {
+		return statusIs(HttpStatus.SC_OK);
+	}
+
+	@Factory
+	public static Matcher<StatusLine> statusForbidden() {
+		return statusIs(HttpStatus.SC_FORBIDDEN);
+	}
+
+	@Factory
+	public static Matcher<StatusLine> statusIs(final int sc) {
 		return new TypeSafeDiagnosingMatcher<StatusLine>() {
 			@Override
 			protected boolean matchesSafely(StatusLine item, Description mismatchDescription) {
-				if (item.getStatusCode() != HttpServletResponse.SC_FORBIDDEN) {
-					mismatchDescription.appendText("status is ").appendValue(item);
+				if (item.getStatusCode() != sc) {
+					mismatchDescription.appendText("status line is ").appendValue(item);
 					return false;
 				}
 				return true;
@@ -58,7 +82,7 @@ public final class HttpClientMatchers {
 
 			@Override
 			public void describeTo(Description description) {
-				description.appendText("status is ").appendValue(HttpServletResponse.SC_OK);
+				description.appendText("HTTP status ").appendValue(sc);
 			}
 		};
 	}
@@ -101,6 +125,42 @@ public final class HttpClientMatchers {
 			@Override
 			public void describeTo(Description description) {
 				description.appendText("response with JSON content: ").appendDescriptionOf(contentMatcher);
+			}
+		};
+	}
+
+	@Factory
+	@SafeVarargs
+	public static Matcher<HttpResponse> responseWithCookies(Matcher<? super Header>... matchers) {
+		return responseWithCookies(Arrays.asList(matchers));
+	}
+
+	@Factory
+	public static Matcher<HttpResponse> responseWithCookies(List<Matcher<? super Header>> matchers) {
+		return responseWithHeaders("Set-Cookie", matchers);
+	}
+
+	@Factory
+	public static Matcher<HttpResponse> responseWithHeaders(final String headerName, final List<Matcher<? super Header>> matchers) {
+		return new TypeSafeDiagnosingMatcher<HttpResponse>() {
+			private Matcher<Iterable<? extends Header>> aggregatedMatcher = Matchers.<Header>contains(matchers);
+
+			@Override
+			protected boolean matchesSafely(HttpResponse item, Description mismatchDescription) {
+				Header[] headers = item.getHeaders(headerName);
+				List<Header> headerList = headers != null ? Arrays.asList(headers) : Collections.<Header> emptyList();
+				if (!aggregatedMatcher.matches(headerList)) {
+					mismatchDescription.appendValue(headerName).appendText(" headers: ");
+					aggregatedMatcher.describeMismatch(headerList, mismatchDescription);
+					return false;
+				}
+				return true;
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendText("response with ").appendValue(headerName).appendText(" headers: ")
+						.appendDescriptionOf(aggregatedMatcher);
 			}
 		};
 	}
