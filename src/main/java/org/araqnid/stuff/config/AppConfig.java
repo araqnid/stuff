@@ -262,6 +262,7 @@ public class AppConfig extends AbstractModule {
 			@Override
 			protected void configure() {
 				install(new WebModule());
+				expose(HttpServletDispatcher.class);
 			}
 
 			public static final class WebModule extends ServletModule {
