@@ -5,38 +5,14 @@ import java.net.UnknownHostException;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.servlet.DispatcherType;
 import javax.servlet.ServletContext;
 
-import org.araqnid.stuff.AppLifecycleEvent;
-import org.araqnid.stuff.AppService;
-import org.araqnid.stuff.AppServicesManager;
-import org.araqnid.stuff.AppStartupBanner;
-import org.araqnid.stuff.AppStateMonitor;
-import org.araqnid.stuff.AppVersion;
-import org.araqnid.stuff.CacheRefresher;
-import org.araqnid.stuff.HelloResource;
-import org.araqnid.stuff.InfoResources;
-import org.araqnid.stuff.JettyAppService;
-import org.araqnid.stuff.MerlotResources;
 import org.araqnid.stuff.RootServlet;
-import org.araqnid.stuff.ScheduledJobController;
 import org.araqnid.stuff.ServerIdentityFilter;
-import org.araqnid.stuff.SomeQueueProcessor;
-import org.araqnid.stuff.SometubeHandler;
-import org.araqnid.stuff.activity.ActivityEventSink;
 import org.araqnid.stuff.activity.ActivityScope;
-import org.araqnid.stuff.activity.AsyncActivityEventSink;
-import org.araqnid.stuff.activity.AsyncActivityEventsProcessor;
-import org.araqnid.stuff.activity.LogActivityEvents;
-import org.araqnid.stuff.activity.RequestActivity;
 import org.araqnid.stuff.activity.RequestActivityFilter;
-import org.araqnid.stuff.workqueue.SqlWorkQueue;
-import org.araqnid.stuff.workqueue.WorkQueue;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
@@ -46,14 +22,9 @@ import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.util.resource.Resource;
-import org.jboss.resteasy.core.Dispatcher;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
 import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
-import org.jboss.resteasy.spi.Registry;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.databind.MappingJsonFactory;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
@@ -62,19 +33,15 @@ import com.google.inject.Module;
 import com.google.inject.PrivateModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
-import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import com.google.inject.servlet.GuiceFilter;
 import com.google.inject.servlet.ServletModule;
-import com.lexicalscope.eventcast.EventCast;
-import com.surftools.BeanstalkClient.Client;
-import com.surftools.BeanstalkClientImpl.ClientImpl;
 
 public class AppConfig extends AbstractModule {
 	private Map<String, String> environment;
 
-	private static String gethostname() {
+	static String gethostname() {
 		try {
 			return InetAddress.getLocalHost().getHostName();
 		} catch (UnknownHostException e) {
@@ -107,107 +74,6 @@ public class AppConfig extends AbstractModule {
 		String envValue = environment.get("PORT");
 		if (envValue == null) return defaultPort;
 		return Integer.valueOf(envValue);
-	}
-
-	public static final class CoreModule extends AbstractModule {
-		@Override
-		protected void configure() {
-			install(EventCast.eventCastModuleBuilder()
-					.implement(AppLifecycleEvent.class)
-					.build());
-			Multibinder<AppService> appServices = Multibinder.newSetBinder(binder(), AppService.class);
-			bind(AppServicesManager.class);
-			appServices.addBinding().to(JettyAppService.class);
-			appServices.addBinding().to(ScheduledJobController.class);
-			bind(AppVersion.class).toInstance(appVersion());
-			bind(AppStateMonitor.class);
-			bind(AppStartupBanner.class);
-			bind(JsonFactory.class).to(MappingJsonFactory.class).in(Singleton.class);
-			bindConstant().annotatedWith(ServerIdentity.class).to(gethostname());
-			bind(UUID.class).annotatedWith(ServerIdentity.class).toInstance(UUID.randomUUID());
-		}
-
-		private AppVersion appVersion() {
-			Package pkg = getClass().getPackage();
-			String title = getClass().getPackage().getImplementationTitle();
-			String vendor = pkg.getImplementationVendor();
-			String version = getClass().getPackage().getImplementationVersion();
-			return new AppVersion(title, vendor, version);
-		}
-	}
-
-	public static final class AsynchronousActivityEventsModule extends AbstractModule {
-		@Override
-		protected void configure() {
-			Multibinder<AppService> appServices = Multibinder.newSetBinder(binder(), AppService.class);
-			bind(ActivityEventSink.class).to(MDCPopulatingEventSink.class);
-			bind(ActivityEventSink.class).annotatedWith(Names.named("logger")).to(AsyncActivityEventSink.class);
-			bind(ActivityEventSink.class).annotatedWith(Names.named("backend")).to(LogActivityEvents.class);
-			appServices.addBinding().to(AsyncActivityEventsProcessor.class);
-		}
-
-		@Provides
-		@Singleton
-		public BlockingQueue<AsyncActivityEventSink.Event> activityEventQueue() {
-			return new LinkedBlockingQueue<>();
-		}
-
-		@Provides
-		public AsyncActivityEventsProcessor activityEventProcessor(@Named("backend") ActivityEventSink sink,
-				BlockingQueue<AsyncActivityEventSink.Event> queue) {
-			return new AsyncActivityEventsProcessor(sink, queue);
-		}
-	}
-
-	public static final class SynchronousActivityEventsModule extends AbstractModule {
-		@Override
-		protected void configure() {
-			bind(ActivityEventSink.class).to(MDCPopulatingEventSink.class);
-			bind(ActivityEventSink.class).annotatedWith(Names.named("logger")).to(LogActivityEvents.class);
-		}
-	}
-
-	public static final class RawBeanstalkModule extends BeanstalkModule {
-		@Override
-		protected void configureDelivery() {
-			into(Multibinder.newSetBinder(binder(), AppService.class));
-			process("sometube").with(SometubeHandler.class);
-		}
-
-		@Provides
-		public Client beanstalkClient() {
-			ClientImpl client = new ClientImpl();
-			client.setUniqueConnectionPerThread(false);
-			return client;
-		}
-	}
-
-	public static final class WorkQueueModule extends BeanstalkWorkQueueModule {
-		@Override
-		protected void configureDelivery() {
-			into(Multibinder.newSetBinder(binder(), AppService.class));
-			process("somequeue").with(SomeQueueProcessor.class);
-			process("otherqueue").with(SomeQueueProcessor.class);
-		}
-
-		@Provides
-		@Named("somequeue")
-		public WorkQueue somequeue(RequestActivity requestActivity) {
-			return new SqlWorkQueue("somequeue", requestActivity);
-		}
-
-		@Provides
-		@Named("otherqueue")
-		public WorkQueue otherqueue(RequestActivity requestActivity) {
-			return new SqlWorkQueue("otherqueue", requestActivity);
-		}
-	}
-
-	public static final class ScheduledModule extends ScheduledJobsModule {
-		@Override
-		protected void configureJobs() {
-			run(CacheRefresher.class).withInterval(60 * 1000L);
-		}
 	}
 
 	public static final class JettyModule extends AbstractModule {
@@ -309,50 +175,6 @@ public class AppConfig extends AbstractModule {
 			server.setConnectors(new Connector[] { connector });
 			server.setHandler(handler);
 			return server;
-		}
-	}
-
-	public static final class ResteasyModule extends AbstractModule {
-		@Override
-		protected void configure() {
-			bind(HelloResource.class);
-			bind(InfoResources.class);
-			bind(MerlotResources.class);
-		}
-
-		@Provides
-		public Dispatcher dispatcher(HttpServletDispatcher servlet) {
-			return servlet.getDispatcher();
-		}
-
-		@Provides
-		public Registry dispatcher(Dispatcher dispatcher) {
-			return dispatcher.getRegistry();
-		}
-
-		@Provides
-		public ResteasyProviderFactory providerFactory(Dispatcher dispatcher) {
-			return dispatcher.getProviderFactory();
-		}
-
-		@Provides
-		public javax.ws.rs.core.Request request() {
-			return ResteasyProviderFactory.getContextData(javax.ws.rs.core.Request.class);
-		}
-
-		@Provides
-		public javax.ws.rs.core.HttpHeaders httpHeaders() {
-			return ResteasyProviderFactory.getContextData(javax.ws.rs.core.HttpHeaders.class);
-		}
-
-		@Provides
-		public javax.ws.rs.core.UriInfo uriInfo() {
-			return ResteasyProviderFactory.getContextData(javax.ws.rs.core.UriInfo.class);
-		}
-
-		@Provides
-		public javax.ws.rs.core.SecurityContext securityContext() {
-			return ResteasyProviderFactory.getContextData(javax.ws.rs.core.SecurityContext.class);
 		}
 	}
 }

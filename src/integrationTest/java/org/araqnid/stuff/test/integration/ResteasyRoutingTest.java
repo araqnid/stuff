@@ -13,6 +13,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import org.araqnid.stuff.HelloResource;
 import org.araqnid.stuff.InfoResources;
 import org.araqnid.stuff.config.AppConfig;
+import org.araqnid.stuff.config.ResteasyModule;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
@@ -40,7 +41,7 @@ public class ResteasyRoutingTest {
 	@BeforeClass
 	public static void setupDispatcher() {
 		new ModuleProcessor(dispatcher.getRegistry(), dispatcher.getProviderFactory()).processInjector(Guice
-				.createInjector(new AppConfig()).createChildInjector(new AppConfig.ResteasyModule()));
+				.createInjector(new AppConfig()).createChildInjector(new ResteasyModule()));
 	}
 
 	@DataPoint

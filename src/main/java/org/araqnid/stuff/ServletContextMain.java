@@ -8,7 +8,9 @@ import javax.servlet.ServletContextListener;
 
 import org.araqnid.stuff.activity.ActivityScope;
 import org.araqnid.stuff.config.AppConfig;
-import org.araqnid.stuff.config.AppConfig.ResteasyModule;
+import org.araqnid.stuff.config.CoreModule;
+import org.araqnid.stuff.config.ResteasyModule;
+import org.araqnid.stuff.config.SynchronousActivityEventsModule;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +44,7 @@ public class ServletContextMain implements ServletContextListener {
 					}
 				});
 			}
-		}, new AppConfig.CoreModule(), new ActivityScope.Module(), new AppConfig.SynchronousActivityEventsModule(),
+		}, new CoreModule(), new ActivityScope.Module(), new SynchronousActivityEventsModule(),
 				new AppConfig.JettyModule.ResteasyContextModule.WebModule());
 		delegate = injector.getInstance(GuiceResteasyBootstrapServletContextListener.class);
 		delegate.contextInitialized(sce);
