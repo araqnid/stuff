@@ -90,4 +90,15 @@ public class RequestActivityFilter implements Filter {
 			LOG.info("{} {} {} {}s", request.getMethod(), eventPath, response.getStatus(), nfmt.format(elapsedMillis / 1000.0));
 		}
 	}
+
+	public static class NoStatusRequestLogger implements RequestLogger {
+		@Override
+		public void logRequest(HttpServletRequest request, HttpServletResponse response, String eventPath, ActivityEventNode event) {
+			long elapsedMillis = event.stopwatch.elapsed(TimeUnit.MILLISECONDS);
+			NumberFormat nfmt = NumberFormat.getInstance();
+			nfmt.setMaximumFractionDigits(1);
+			nfmt.setMinimumFractionDigits(1);
+			LOG.info("{} {} {} {}s", request.getMethod(), eventPath, "???", nfmt.format(elapsedMillis / 1000.0));
+		}
+	}
 }

@@ -3,8 +3,10 @@ package org.araqnid.stuff.config;
 import java.util.List;
 
 import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletResponse;
 
 import org.araqnid.stuff.ScheduledJobController;
+import org.araqnid.stuff.activity.RequestActivityFilter;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
 
 import com.google.common.collect.ImmutableList;
@@ -26,5 +28,19 @@ public class EmbeddedWebappConfig extends AbstractModule {
 		});
 		install(new CoreModule());
 		install(new ResteasyServletModule());
+		if (servletApiSupportsRequestGetStatus()) {
+			bind(RequestActivityFilter.RequestLogger.class).to(RequestActivityFilter.BasicRequestLogger.class);
+		} else {
+			bind(RequestActivityFilter.RequestLogger.class).to(RequestActivityFilter.NoStatusRequestLogger.class);
+		}
+	}
+
+	private static boolean servletApiSupportsRequestGetStatus() {
+		try {
+			HttpServletResponse.class.getMethod("getStatus", new Class[0]);
+			return true;
+		} catch (NoSuchMethodException e) {
+			return false;
+		}
 	}
 }
