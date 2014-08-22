@@ -1,16 +1,16 @@
 package org.araqnid.stuff.activity;
 
+import static org.araqnid.stuff.testutil.RandomData.randomEnumInstance;
+import static org.araqnid.stuff.testutil.RandomData.randomOtherInstanceOfEnum;
+import static org.araqnid.stuff.testutil.RandomData.randomString;
+
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 
-import org.araqnid.stuff.activity.RequestActivity;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
@@ -173,17 +173,6 @@ public class RequestActivityTest {
 		activity.beginRequest(randomRequestType(), randomString());
 	}
 
-	private static String randomString() {
-		Random random = new Random();
-		String alphabet = "abcdefghijklmnopqrstuvwxyz";
-		int len = 10;
-		StringBuilder builder = new StringBuilder(len);
-		for (int i = 0; i < len; i++) {
-			builder.append(alphabet.charAt(random.nextInt(alphabet.length())));
-		}
-		return builder.toString();
-	}
-
 	private static AppRequestType randomRequestType() {
 		return randomEnumInstance(AppRequestType.class);
 	}
@@ -198,23 +187,6 @@ public class RequestActivityTest {
 
 	private static AppEventType notThis(AppEventType value) {
 		return randomOtherInstanceOfEnum(AppEventType.class, value);
-	}
-
-	private static <T extends Enum<T>> T randomEnumInstance(Class<T> enumClass) {
-		return pickOne(EnumSet.allOf(enumClass));
-	}
-
-	private static <T extends Enum<T>> T randomOtherInstanceOfEnum(Class<T> enumClass, T excludedValue) {
-		return pickOne(EnumSet.complementOf(EnumSet.of(excludedValue)));
-	}
-
-	private static <T> T pickOne(Set<T> values) {
-		int index = new Random().nextInt(values.size());
-		Iterator<T> iter = values.iterator();
-		while (index-- > 0) {
-			iter.next();
-		}
-		return iter.next();
 	}
 
 	@SafeVarargs

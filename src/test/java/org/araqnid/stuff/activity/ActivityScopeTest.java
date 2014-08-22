@@ -1,8 +1,9 @@
 package org.araqnid.stuff.activity;
 
+import static org.araqnid.stuff.testutil.RandomData.randomString;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.regex.Pattern;
 
 import org.hamcrest.Description;
@@ -172,17 +173,6 @@ public class ActivityScopeTest {
 		ActivityScopeControl scopeControl = scope.createController(mockSink);
 		scopeControl.beginRequest(AppRequestType.HttpRequest, randomString());
 		scopeControl.finishRequest(AppRequestType.ScheduledJob);
-	}
-
-	private static String randomString() {
-		Random random = new Random();
-		String alphabet = "abcdefghijklmnopqrstuvwxyz";
-		int len = 10;
-		StringBuilder builder = new StringBuilder(len);
-		for (int i = 0; i < len; i++) {
-			builder.append(alphabet.charAt(random.nextInt(alphabet.length())));
-		}
-		return builder.toString();
 	}
 
 	private static <T> Provider<T> invalid_provider(Class<T> clazz) {

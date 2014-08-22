@@ -1,5 +1,7 @@
 package org.araqnid.stuff.workqueue;
 
+import static org.araqnid.stuff.testutil.RandomData.randomString;
+
 import java.util.Random;
 
 import org.junit.Test;
@@ -47,17 +49,6 @@ public class WorkDispatcherTest {
 		Mockito.verify(queue).markInProgress(messageId);
 		Mockito.verify(queue).markFailed(messageId, true, failureMessage, exception);
 		Mockito.verifyNoMoreInteractions(queue);
-	}
-
-	private static String randomString() {
-		Random random = new Random();
-		String alphabet = "abcdefghijklmnopqrstuvwxyz";
-		int len = 10;
-		StringBuilder builder = new StringBuilder(len);
-		for (int i = 0; i < len; i++) {
-			builder.append(alphabet.charAt(random.nextInt(alphabet.length())));
-		}
-		return builder.toString();
 	}
 
 	private static byte[] randomPayload() {

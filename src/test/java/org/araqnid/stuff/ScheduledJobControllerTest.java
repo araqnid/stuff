@@ -1,5 +1,7 @@
 package org.araqnid.stuff;
 
+import static org.araqnid.stuff.testutil.RandomData.randomString;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,8 +13,8 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.araqnid.stuff.ScheduledJobController.JobDefinition;
-import org.araqnid.stuff.activity.ActivityScoped;
 import org.araqnid.stuff.activity.ActivityScopeControl;
+import org.araqnid.stuff.activity.ActivityScoped;
 import org.araqnid.stuff.activity.AppRequestType;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -213,16 +215,5 @@ public class ScheduledJobControllerTest {
 	}
 
 	public static final class ActivityScopedThing {
-	}
-
-	private static String randomString() {
-		Random random = new Random();
-		String alphabet = "abcdefghijklmnopqrstuvwxyz";
-		int len = 10;
-		StringBuilder builder = new StringBuilder(len);
-		for (int i = 0; i < len; i++) {
-			builder.append(alphabet.charAt(random.nextInt(alphabet.length())));
-		}
-		return builder.toString();
 	}
 }
