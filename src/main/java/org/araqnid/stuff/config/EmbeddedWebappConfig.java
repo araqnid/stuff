@@ -13,12 +13,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.multibindings.Multibinder;
-import com.google.inject.name.Names;
 
 public class EmbeddedWebappConfig extends AbstractModule {
 	@Override
 	protected void configure() {
-		bindConstant().annotatedWith(Names.named("http_port")).to(0);
 		Multibinder.newSetBinder(binder(), ScheduledJobController.JobDefinition.class);
 		bind(GuiceResteasyBootstrapServletContextListener.class).toInstance(new GuiceResteasyBootstrapServletContextListener() {
 			@Override
