@@ -5,6 +5,7 @@ import java.util.List;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletResponse;
 
+import org.araqnid.stuff.EmbeddedAppStartupBanner;
 import org.araqnid.stuff.ScheduledJobController;
 import org.araqnid.stuff.activity.RequestActivityFilter;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
@@ -13,9 +14,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.multibindings.Multibinder;
+import com.google.inject.name.Names;
 
 public class EmbeddedWebappConfig extends AbstractModule {
-	@SuppressWarnings("unused")
 	private final ServletContext context;
 
 	public EmbeddedWebappConfig(ServletContext context) {
@@ -24,6 +25,7 @@ public class EmbeddedWebappConfig extends AbstractModule {
 
 	@Override
 	protected void configure() {
+		bindConstant().annotatedWith(Names.named("context_path")).to(context.getContextPath());
 		Multibinder.newSetBinder(binder(), ScheduledJobController.JobDefinition.class);
 		bind(GuiceResteasyBootstrapServletContextListener.class).toInstance(new GuiceResteasyBootstrapServletContextListener() {
 			@Override
@@ -38,6 +40,7 @@ public class EmbeddedWebappConfig extends AbstractModule {
 		} else {
 			bind(RequestActivityFilter.RequestLogger.class).to(RequestActivityFilter.NoStatusRequestLogger.class);
 		}
+		bind(EmbeddedAppStartupBanner.class);
 	}
 
 	private static boolean servletApiSupportsRequestGetStatus() {

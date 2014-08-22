@@ -5,30 +5,29 @@ import javax.servlet.ServletContextListener;
 
 import org.araqnid.stuff.config.EmbeddedWebappConfig;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Stage;
 
 public class ServletContextMain implements ServletContextListener {
-	private static final Logger LOG = LoggerFactory.getLogger(ServletContextMain.class);
 	private Injector injector;
 	private GuiceResteasyBootstrapServletContextListener delegate;
+	private AppServicesManager servicesManager;
 
 	@Override
 	public void contextInitialized(ServletContextEvent sce) {
-		LOG.info("Initialising context: {}", sce.getServletContext().getContextPath());
 		injector = Guice.createInjector(Stage.PRODUCTION, 
 				new EmbeddedWebappConfig(sce.getServletContext()));
 		delegate = injector.getInstance(GuiceResteasyBootstrapServletContextListener.class);
 		delegate.contextInitialized(sce);
+		servicesManager = injector.getInstance(AppServicesManager.class);
+		servicesManager.start();
 	}
 
 	@Override
 	public void contextDestroyed(ServletContextEvent sce) {
-		LOG.info("Destroying context: {}", sce.getServletContext().getContextPath());
+		if (servicesManager != null) servicesManager.stop();
 		if (delegate != null) delegate.contextDestroyed(sce);
 		injector = null;
 	}

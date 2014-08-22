@@ -34,5 +34,6 @@ public class AppStartupBanner implements AppLifecycleEvent {
 
 	@Override
 	public void stopped() {
+		LOG.info("Stopped version {}", appVersion.version);
 	}
 }
