@@ -1,9 +1,6 @@
 package org.araqnid.stuff.test.integration;
 
-import static org.araqnid.stuff.test.integration.ServerIntegrationTest.headerWithValue;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -12,9 +9,11 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.http.Header;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
+import org.apache.http.entity.ContentType;
 import org.hamcrest.Description;
 import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
@@ -87,46 +86,87 @@ public final class HttpClientMatchers {
 		};
 	}
 
-	@Factory
-	public static Matcher<HttpResponse> responseWithJsonContent(final Matcher<? extends TreeNode> contentMatcher) {
-		return new TypeSafeDiagnosingMatcher<HttpResponse>() {
-			private TreeNode document;
-			private IOException parseException;
+	public static abstract class HttpContentMatcher<T> extends TypeSafeDiagnosingMatcher<HttpEntity> {
+		private final Matcher<String> contentTypeMatcher;
+		private final Matcher<T> contentMatcher;
+		private boolean parsed;
+		private T parsedValue;
+		private Exception parseException;
 
+		public HttpContentMatcher(Matcher<String> contentTypeMatcher, Matcher<T> contentMatcher) {
+			this.contentTypeMatcher = contentTypeMatcher;
+			this.contentMatcher = contentMatcher;
+		}
+
+		@Override
+		protected boolean matchesSafely(HttpEntity item, Description mismatchDescription) {
+			ContentType contentType = ContentType.parse(item.getContentType().getValue());
+			if (!contentTypeMatcher.matches(contentType.getMimeType())) {
+				mismatchDescription.appendText("content type ");
+				contentTypeMatcher.describeMismatch(contentType.getMimeType(), mismatchDescription);
+				return false;
+			}
+			T value = parse(item);
+			if (!contentMatcher.matches(value)) {
+				mismatchDescription.appendText("content ");
+				contentMatcher.describeMismatch(value, mismatchDescription);
+				return false;
+			}
+			return true;
+		}
+
+		protected T parse(HttpEntity item) {
+			if (parsed) {
+				if (parseException != null) throw new AssertionError("Failed to parse content", parseException);
+				return parsedValue;
+			}
+			try {
+				parsedValue = doParse(item);
+				return parsedValue;
+			} catch (Exception e) {
+				parseException = e;
+				throw new AssertionError("Failed to parse content", e);
+			} finally {
+				parsed = true;
+			}
+		}
+
+		protected abstract T doParse(HttpEntity item) throws Exception;
+
+		@Override
+		public void describeTo(Description description) {
+			description.appendText("type ").appendDescriptionOf(contentTypeMatcher).appendText(": ")
+					.appendDescriptionOf(contentMatcher);
+		}
+	}
+
+	public static Matcher<HttpResponse> responseWithContent(final Matcher<HttpEntity> entityMatcher) {
+		return new TypeSafeDiagnosingMatcher<HttpResponse>() {
 			@Override
-			protected boolean matchesSafely(HttpResponse response, Description mismatchDescription) {
-				assertThat(response.getEntity().getContentType(), is(headerWithValue(equalTo("application/json"))));
-				try {
-					parse(response);
-				} catch (IOException e) {
-					mismatchDescription.appendText("response contains invalid JSON: ").appendValue(e);
-					return false;
-				}
-				if (!contentMatcher.matches(document)) {
-					mismatchDescription.appendText("in response document, ");
-					contentMatcher.describeMismatch(document, mismatchDescription);
+			protected boolean matchesSafely(HttpResponse item, Description mismatchDescription) {
+				if (!entityMatcher.matches(item.getEntity())) {
+					mismatchDescription.appendText("entity ");
+					entityMatcher.describeMismatch(item.getEntity(), mismatchDescription);
 					return false;
 				}
 				return true;
 			}
 
-			private void parse(HttpResponse response) throws IOException {
-				if (document != null) return;
-				if (parseException != null) throw parseException;
-				try {
-					document = new MappingJsonFactory().createParser(response.getEntity().getContent())
-							.readValueAsTree();
-				} catch (IOException e) {
-					parseException = e;
-					throw e;
-				}
-			}
-
 			@Override
 			public void describeTo(Description description) {
-				description.appendText("response with JSON content: ").appendDescriptionOf(contentMatcher);
+				description.appendText("entity ").appendDescriptionOf(entityMatcher);
 			}
 		};
+	}
+
+	@Factory
+	public static <T extends TreeNode> Matcher<HttpResponse> responseWithJsonContent(final Matcher<T> contentMatcher) {
+		return responseWithContent(new HttpContentMatcher<T>(equalTo("application/json"), contentMatcher) {
+			@Override
+			protected T doParse(HttpEntity item) throws IOException {
+				return new MappingJsonFactory().createParser(item.getContent()).readValueAsTree();
+			}
+		});
 	}
 
 	@Factory
@@ -141,9 +181,10 @@ public final class HttpClientMatchers {
 	}
 
 	@Factory
-	public static Matcher<HttpResponse> responseWithHeaders(final String headerName, final List<Matcher<? super Header>> matchers) {
+	public static Matcher<HttpResponse> responseWithHeaders(final String headerName,
+			final List<Matcher<? super Header>> matchers) {
 		return new TypeSafeDiagnosingMatcher<HttpResponse>() {
-			private Matcher<Iterable<? extends Header>> aggregatedMatcher = Matchers.<Header>contains(matchers);
+			private Matcher<Iterable<? extends Header>> aggregatedMatcher = Matchers.<Header> contains(matchers);
 
 			@Override
 			protected boolean matchesSafely(HttpResponse item, Description mismatchDescription) {
