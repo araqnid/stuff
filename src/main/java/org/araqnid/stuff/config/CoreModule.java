@@ -1,5 +1,7 @@
 package org.araqnid.stuff.config;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.UUID;
 
 import org.araqnid.stuff.AppLifecycleEvent;
@@ -31,7 +33,7 @@ public final class CoreModule extends AbstractModule {
 		bind(AppVersion.class).toInstance(appVersion());
 		bind(AppStateMonitor.class);
 		bind(JsonFactory.class).to(MappingJsonFactory.class).in(Singleton.class);
-		bindConstant().annotatedWith(ServerIdentity.class).to(StandaloneAppConfig.gethostname());
+		bindConstant().annotatedWith(ServerIdentity.class).to(gethostname());
 		bind(UUID.class).annotatedWith(ServerIdentity.class).toInstance(UUID.randomUUID());
 		install(new ActivityScope.Module());
 		install(new RawBeanstalkModule());
@@ -46,5 +48,13 @@ public final class CoreModule extends AbstractModule {
 		String vendor = pkg.getImplementationVendor();
 		String version = getClass().getPackage().getImplementationVersion();
 		return new AppVersion(title, vendor, version);
+	}
+
+	private static String gethostname() {
+		try {
+			return InetAddress.getLocalHost().getHostName();
+		} catch (UnknownHostException e) {
+			return "localhost";
+		}
 	}
 }

@@ -1,7 +1,5 @@
 package org.araqnid.stuff.config;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -36,14 +34,6 @@ import com.google.inject.servlet.GuiceFilter;
 
 public class StandaloneAppConfig extends AbstractModule {
 	private Map<String, String> environment;
-
-	static String gethostname() {
-		try {
-			return InetAddress.getLocalHost().getHostName();
-		} catch (UnknownHostException e) {
-			return "localhost";
-		}
-	}
 
 	public StandaloneAppConfig() {
 		this(System.getenv());
