@@ -28,11 +28,13 @@ import com.google.inject.Singleton;
 public class RequestActivityFilter implements Filter {
 	private static final Logger LOG = LoggerFactory.getLogger(RequestActivityFilter.class);
 	private final Provider<RequestActivity> stateProvider;
+	private final RequestLogger requestLogger;
 	private final ActivityScopeControl scopeControl;
 
 	@Inject
-	public RequestActivityFilter(Provider<RequestActivity> stateProvider, ActivityScopeControl scopeControl) {
+	public RequestActivityFilter(Provider<RequestActivity> stateProvider, RequestLogger requestLogger, ActivityScopeControl scopeControl) {
 		this.stateProvider = stateProvider;
+		this.requestLogger = requestLogger;
 		this.scopeControl = scopeControl;
 	}
 
@@ -41,8 +43,7 @@ public class RequestActivityFilter implements Filter {
 	}
 
 	@Override
-	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException,
-			ServletException {
+	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
 		if (request instanceof HttpServletRequest) {
 			doHttpFilter((HttpServletRequest) request, (HttpServletResponse) response, chain);
 		}
@@ -51,19 +52,11 @@ public class RequestActivityFilter implements Filter {
 		}
 	}
 
-	private void doHttpFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
-			throws IOException, ServletException {
+	private void doHttpFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
 		String ruid = request.getHeader("X-RUID");
 		String eventPath = Joiner.on("").join(
-				Iterables.filter(
-						Arrays.asList(request.getContextPath(), request.getServletPath(),
-								request.getPathInfo()), Predicates.notNull()));
-		scopeControl.beginRequest(
-				ruid,
-				AppRequestType.HttpRequest,
-				Joiner.on('\t').join(
-						request.getMethod(),
-						eventPath));
+				Iterables.filter(Arrays.asList(request.getContextPath(), request.getServletPath(), request.getPathInfo()), Predicates.notNull()));
+		scopeControl.beginRequest(ruid, AppRequestType.HttpRequest, Joiner.on('\t').join(request.getMethod(), eventPath));
 		try {
 			RequestActivity requestActivity = stateProvider.get();
 			ActivityEventNode rootEvent = requestActivity.getRootEvent();
@@ -72,22 +65,29 @@ public class RequestActivityFilter implements Filter {
 				chain.doFilter(request, response);
 				response.flushBuffer();
 			} finally {
-				logRequest(request, response, eventPath, rootEvent);
+				requestLogger.logRequest(request, response, eventPath, rootEvent);
 			}
 		} finally {
 			scopeControl.finishRequest(AppRequestType.HttpRequest);
 		}
 	}
 
-	private void logRequest(HttpServletRequest request, HttpServletResponse response, String eventPath, ActivityEventNode event) {
-		long elapsedMillis = event.stopwatch.elapsed(TimeUnit.MILLISECONDS);
-		NumberFormat nfmt = NumberFormat.getInstance();
-		nfmt.setMaximumFractionDigits(1);
-		nfmt.setMinimumFractionDigits(1);
-		LOG.info("{} {} {} {}s", request.getMethod(), eventPath, response.getStatus(), nfmt.format(elapsedMillis / 1000.0));
-	}
-
 	@Override
 	public void destroy() {
+	}
+
+	public interface RequestLogger {
+		void logRequest(HttpServletRequest request, HttpServletResponse response, String eventPath, ActivityEventNode event);
+	}
+
+	public static class BasicRequestLogger implements RequestLogger {
+		@Override
+		public void logRequest(HttpServletRequest request, HttpServletResponse response, String eventPath, ActivityEventNode event) {
+			long elapsedMillis = event.stopwatch.elapsed(TimeUnit.MILLISECONDS);
+			NumberFormat nfmt = NumberFormat.getInstance();
+			nfmt.setMaximumFractionDigits(1);
+			nfmt.setMinimumFractionDigits(1);
+			LOG.info("{} {} {} {}s", request.getMethod(), eventPath, response.getStatus(), nfmt.format(elapsedMillis / 1000.0));
+		}
 	}
 }

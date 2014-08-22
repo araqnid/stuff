@@ -10,6 +10,7 @@ import javax.servlet.DispatcherType;
 import javax.servlet.ServletContext;
 
 import org.araqnid.stuff.AppStartupBanner;
+import org.araqnid.stuff.activity.RequestActivityFilter;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
@@ -77,6 +78,7 @@ public class StandaloneAppConfig extends AbstractModule {
 							return ImmutableList.of(new ResteasyModule());
 						}
 					});
+			bind(RequestActivityFilter.RequestLogger.class).to(RequestActivityFilter.BasicRequestLogger.class);
 			install(new VanillaContextModule());
 			install(new ResteasyContextModule());
 		}
