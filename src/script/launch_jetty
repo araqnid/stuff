@@ -27,4 +27,4 @@ if [ -z "$JAVA" ]; then
     fi
 fi
 
-${JAVA-java} ${JAVA_OPTS} -classpath "$classpath:build/classes/main:build/resources/main" org.araqnid.stuff.Main
+exec ${JAVA-java} ${JAVA_OPTS} -classpath "$classpath:build/classes/main:build/resources/main" org.araqnid.stuff.Main
