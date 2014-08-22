@@ -26,11 +26,11 @@ public class AsyncActivityEventSink implements ActivityEventSink {
 
 
 	@Override
-	public void beginEvent(final String ruid, final long eventId, final long parentEventId, final String type, final String description) {
+	public void beginEvent(final String ruid, final long eventId, final long parentEventId, final String type, final String description, final long startTimeNanos) {
 		queue.add(new Event() {
 			@Override
 			public void deliver(ActivityEventSink sink) {
-				sink.beginEvent(ruid, eventId, parentEventId, type, description);
+				sink.beginEvent(ruid, eventId, parentEventId, type, description, startTimeNanos);
 			}
 		});
 	}

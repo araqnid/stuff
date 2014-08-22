@@ -19,8 +19,8 @@ public class MDCPopulatingEventSink implements ActivityEventSink {
 		MDC.put("ruid", ruid);
 	}
 
-	public void beginEvent(String ruid, long eventId, long parentEventId, String type, String description) {
-		underlying.beginEvent(ruid, eventId, parentEventId, type, description);
+	public void beginEvent(String ruid, long eventId, long parentEventId, String type, String description, long startTimeNanos) {
+		underlying.beginEvent(ruid, eventId, parentEventId, type, description, startTimeNanos);
 	}
 
 	public void finishEvent(String ruid, long eventId, long parentEventId, String type, long durationNanos) {

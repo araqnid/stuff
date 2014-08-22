@@ -12,7 +12,7 @@ public class LogActivityEvents implements ActivityEventSink {
 	}
 
 	@Override
-	public void beginEvent(String ruid, long eventId, long parentEventId, String type, String description) {
+	public void beginEvent(String ruid, long eventId, long parentEventId, String type, String description, long startTimeNanos) {
 		LOG.info("begin " + ruid + " " + type + " " + parentEventId + "->" + eventId + " " + description);
 	}
 

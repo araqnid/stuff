@@ -98,7 +98,7 @@ public class ActivityScopeTest {
 		String eventDescription = randomString();
 		requestActivity.beginEvent(eventType, eventDescription);
 		Mockito.verify(mockSink).beginEvent(Mockito.anyString(), Mockito.anyLong(), Mockito.anyLong(),
-				Mockito.eq(eventType.name()), Mockito.eq(eventDescription));
+				Mockito.eq(eventType.name()), Mockito.eq(eventDescription), Mockito.anyLong());
 	}
 
 	@Test

@@ -37,7 +37,7 @@ public class RequestActivity {
 		if (event == null) throw new IllegalStateException("Event stack is empty");
 		ActivityEventNode parent = event;
 		event = new ActivityEventNode(idGenerator.incrementAndGet(), type.name(), description, parent);
-		activityEventSink.beginEvent(ruid, event.id, parent.id, type.name(), description);
+		activityEventSink.beginEvent(ruid, event.id, parent.id, type.name(), description, rootEvent.stopwatch.elapsed(TimeUnit.NANOSECONDS));
 	}
 
 	public void finishEvent(AppEventType type) {

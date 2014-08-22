@@ -331,7 +331,7 @@ public class RequestActivityTest {
 
 	public static final class BeginEventMatcher extends EventMatcher {
 		public BeginEventMatcher() {
-			super("beginEvent", "ruid", "parentEventId", "eventId", "type", "description");
+			super("beginEvent", "ruid", "parentEventId", "eventId", "type", "description", "startTimeNanos");
 		}
 
 		public BeginEventMatcher with_ruid(String value) {
@@ -381,6 +381,16 @@ public class RequestActivityTest {
 
 		public BeginEventMatcher where_description_is(Matcher<? super String> matcher) {
 			attributesMatcher.match("description", matcher);
+			return this;
+		}
+
+		public BeginEventMatcher with_start_time_nanos(long value) {
+			attributesMatcher.match("startTimeNanos", Matchers.equalTo(value));
+			return this;
+		}
+
+		public BeginEventMatcher where_start_time_nanos_is(Matcher<? super Long> matcher) {
+			attributesMatcher.match("startTimeNanos", matcher);
 			return this;
 		}
 	}
@@ -549,9 +559,9 @@ public class RequestActivityTest {
 		}
 
 		@Override
-		public void beginEvent(String ruid, long eventId, long parentEventId, String type, String description) {
+		public void beginEvent(String ruid, long eventId, long parentEventId, String type, String description, long startTimeNanos) {
 			add("beginEvent", "ruid", ruid, "eventId", eventId, "parentEventId", parentEventId, "type", type,
-					"description", description);
+					"description", description, "startTimeNanos", startTimeNanos);
 		}
 
 		@Override
