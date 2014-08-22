@@ -9,10 +9,7 @@ import java.util.Map;
 import javax.servlet.DispatcherType;
 import javax.servlet.ServletContext;
 
-import org.araqnid.stuff.RootServlet;
-import org.araqnid.stuff.ServerIdentityFilter;
-import org.araqnid.stuff.activity.ActivityScope;
-import org.araqnid.stuff.activity.RequestActivityFilter;
+import org.araqnid.stuff.AppStartupBanner;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
@@ -32,13 +29,11 @@ import com.google.inject.Exposed;
 import com.google.inject.Module;
 import com.google.inject.PrivateModule;
 import com.google.inject.Provides;
-import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import com.google.inject.servlet.GuiceFilter;
-import com.google.inject.servlet.ServletModule;
 
-public class AppConfig extends AbstractModule {
+public class StandaloneAppConfig extends AbstractModule {
 	private Map<String, String> environment;
 
 	static String gethostname() {
@@ -49,25 +44,21 @@ public class AppConfig extends AbstractModule {
 		}
 	}
 
-	public AppConfig() {
+	public StandaloneAppConfig() {
 		this(System.getenv());
 	}
 
 	@VisibleForTesting
-	public AppConfig(Map<String, String> environment) {
+	public StandaloneAppConfig(Map<String, String> environment) {
 		this.environment = environment;
 	}
 
 	@Override
 	protected void configure() {
 		bindConstant().annotatedWith(Names.named("http_port")).to(port(61000));
-		install(new ActivityScope.Module());
 		install(new CoreModule());
-		install(new RawBeanstalkModule());
-		install(new WorkQueueModule());
-		install(new ScheduledModule());
-		install(new SynchronousActivityEventsModule());
 		install(new JettyModule());
+		bind(AppStartupBanner.class);
 	}
 
 	private int port(int defaultPort) {
@@ -93,16 +84,7 @@ public class AppConfig extends AbstractModule {
 		public static final class VanillaContextModule extends PrivateModule {
 			@Override
 			protected void configure() {
-				install(new WebModule());
-			}
-
-			public static final class WebModule extends ServletModule {
-				@Override
-				protected void configureServlets() {
-					serve("/").with(RootServlet.class);
-					filter("/*").through(RequestActivityFilter.class);
-					filter("/*").through(ServerIdentityFilter.class);
-				}
+				install(new VanillaServletModule());
 			}
 
 			@Provides
@@ -127,18 +109,8 @@ public class AppConfig extends AbstractModule {
 		public static final class ResteasyContextModule extends PrivateModule {
 			@Override
 			protected void configure() {
-				install(new WebModule());
+				install(new ResteasyServletModule());
 				expose(HttpServletDispatcher.class);
-			}
-
-			public static final class WebModule extends ServletModule {
-				@Override
-				protected void configureServlets() {
-					bind(HttpServletDispatcher.class).in(Singleton.class);
-					serve("/*").with(HttpServletDispatcher.class);
-					filter("/*").through(RequestActivityFilter.class);
-					filter("/*").through(ServerIdentityFilter.class);
-				}
 			}
 
 			@Provides

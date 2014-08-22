@@ -5,11 +5,11 @@ import java.util.UUID;
 import org.araqnid.stuff.AppLifecycleEvent;
 import org.araqnid.stuff.AppService;
 import org.araqnid.stuff.AppServicesManager;
-import org.araqnid.stuff.AppStartupBanner;
 import org.araqnid.stuff.AppStateMonitor;
 import org.araqnid.stuff.AppVersion;
 import org.araqnid.stuff.JettyAppService;
 import org.araqnid.stuff.ScheduledJobController;
+import org.araqnid.stuff.activity.ActivityScope;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
@@ -30,10 +30,14 @@ public final class CoreModule extends AbstractModule {
 		appServices.addBinding().to(ScheduledJobController.class);
 		bind(AppVersion.class).toInstance(appVersion());
 		bind(AppStateMonitor.class);
-		bind(AppStartupBanner.class);
 		bind(JsonFactory.class).to(MappingJsonFactory.class).in(Singleton.class);
-		bindConstant().annotatedWith(ServerIdentity.class).to(AppConfig.gethostname());
+		bindConstant().annotatedWith(ServerIdentity.class).to(StandaloneAppConfig.gethostname());
 		bind(UUID.class).annotatedWith(ServerIdentity.class).toInstance(UUID.randomUUID());
+		install(new ActivityScope.Module());
+		install(new RawBeanstalkModule());
+		install(new WorkQueueModule());
+		install(new ScheduledModule());
+		install(new SynchronousActivityEventsModule());
 	}
 
 	private AppVersion appVersion() {

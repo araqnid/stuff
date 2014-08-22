@@ -6,7 +6,7 @@ import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.araqnid.stuff.config.AppConfig;
+import org.araqnid.stuff.config.StandaloneAppConfig;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
@@ -88,7 +88,7 @@ public class BrowserTestFrame {
 	}
 
 	public void setUp() throws Exception {
-		Module module = Modules.override(new AppConfig()).with(new AbstractModule() {
+		Module module = Modules.override(new StandaloneAppConfig()).with(new AbstractModule() {
 			@Override
 			protected void configure() {
 			}

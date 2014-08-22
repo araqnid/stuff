@@ -1,6 +1,6 @@
 package org.araqnid.stuff;
 
-import org.araqnid.stuff.config.AppConfig;
+import org.araqnid.stuff.config.StandaloneAppConfig;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -8,7 +8,7 @@ import com.google.inject.Stage;
 
 public class Main {
 	public static void main(String[] args) {
-		final Injector injector = Guice.createInjector(Stage.PRODUCTION, new AppConfig());
+		final Injector injector = Guice.createInjector(Stage.PRODUCTION, new StandaloneAppConfig());
 		final AppServicesManager servicesManager = injector.getInstance(AppServicesManager.class);
 		servicesManager.start();
 		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {

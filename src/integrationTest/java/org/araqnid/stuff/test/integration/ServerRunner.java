@@ -1,7 +1,7 @@
 package org.araqnid.stuff.test.integration;
 
 import org.araqnid.stuff.activity.ActivityEventSink;
-import org.araqnid.stuff.config.AppConfig;
+import org.araqnid.stuff.config.StandaloneAppConfig;
 import org.araqnid.stuff.test.integration.CollectActivityEvents.ActivityEventRecord;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
@@ -25,7 +25,7 @@ public class ServerRunner {
 	private CollectActivityEvents collectActivityEvents = new CollectActivityEvents();
 
 	public void start() throws Exception {
-		injector = Guice.createInjector(Modules.override(new AppConfig()).with(new AbstractModule() {
+		injector = Guice.createInjector(Modules.override(new StandaloneAppConfig()).with(new AbstractModule() {
 			@Override
 			protected void configure() {
 				bind(ActivityEventSink.class).toInstance(collectActivityEvents);
