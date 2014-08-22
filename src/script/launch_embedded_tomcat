@@ -79,7 +79,7 @@ cat <<EOF >$tmpdir/conf/web.xml
 EOF
 mkdir -p $tmpdir/conf/Catalina/localhost
 
-webapp_name=ROOT
+webapp_name=_api
 
 mkdir -p $tmpdir/webapps/$webapp_name/WEB-INF
 
