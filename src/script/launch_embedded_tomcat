@@ -104,7 +104,7 @@ EOF
 
 gradle_artifact_cache=$(ls -d $HOME/.gradle/caches/artifacts-*/filestore | head -n 1)
 mkdir -p $tmpdir/webapps/$webapp_name/WEB-INF/lib
-grep -v javax.servlet build/resources/main/META-INF/stuff.deps.txt | while read id type; do
+grep -vE '^org.eclipse.jetty' build/resources/main/META-INF/stuff.deps.txt | while read id type; do
     set -- $(echo $id | tr ':' ' ')
     group="$1"
     name="$2"
