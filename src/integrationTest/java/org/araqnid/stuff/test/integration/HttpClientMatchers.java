@@ -1,5 +1,6 @@
 package org.araqnid.stuff.test.integration;
 
+import static org.hamcrest.Matchers.either;
 import static org.hamcrest.Matchers.equalTo;
 
 import java.io.IOException;
@@ -59,7 +60,7 @@ public final class HttpClientMatchers {
 
 	@Factory
 	public static Matcher<StatusLine> statusOk() {
-		return statusIs(HttpStatus.SC_OK);
+		return either(statusIs(HttpStatus.SC_OK)).or(statusIs(HttpStatus.SC_NO_CONTENT));
 	}
 
 	@Factory
@@ -184,7 +185,8 @@ public final class HttpClientMatchers {
 	public static Matcher<HttpResponse> responseWithHeaders(final String headerName,
 			final List<Matcher<? super Header>> matchers) {
 		return new TypeSafeDiagnosingMatcher<HttpResponse>() {
-			private Matcher<Iterable<? extends Header>> aggregatedMatcher = Matchers.<Header> contains(matchers);
+			private Matcher<Iterable<? extends Header>> aggregatedMatcher = matchers.isEmpty() ? Matchers
+					.<Header> emptyIterable() : Matchers.<Header> contains(matchers);
 
 			@Override
 			protected boolean matchesSafely(HttpResponse item, Description mismatchDescription) {

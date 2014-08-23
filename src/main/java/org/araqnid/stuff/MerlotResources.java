@@ -7,6 +7,7 @@ import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.CookieParam;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
@@ -33,6 +34,16 @@ public class MerlotResources {
 	@Produces("application/json")
 	public Status fetchStatus() {
 		return new Status(appVersion.version, optionalUserInfo().orNull());
+	}
+
+	@POST
+	@Path("sign-in")
+	public void signIn() {
+	}
+
+	@POST
+	@Path("sign-out")
+	public void signOut() {
 	}
 
 	private Optional<UserInfo> optionalUserInfo() {

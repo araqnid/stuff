@@ -123,6 +123,19 @@ public class MerlotResourcesIntegrationTest {
 
 	@Ignore
 	@Test
+	public void sign_in_for_deleted_user_is_forbidden() throws Exception {
+		String userCN = randomString("User");
+		String username = randomEmailAddress();
+		char[] password = randomString().toCharArray();
+		setupAndDeleteUser(userCN, username, password);
+		CloseableHttpResponse response = doPostForm("/_api/merlot/sign-in", ImmutableMap.<String, String> of(),
+				ImmutableMap.<String, String> of("username", username, "password", new String(password)));
+		assertThat(response, is(forbidden()));
+		response.close();
+	}
+
+	@Ignore
+	@Test
 	public void sign_in_with_wrong_password_is_forbidden() throws Exception {
 		String userCN = randomString("User");
 		String username = randomEmailAddress();
@@ -137,9 +150,20 @@ public class MerlotResourcesIntegrationTest {
 	@Ignore
 	@Test
 	public void sign_out_removes_cookie() throws Exception {
+		String userCN = randomString("User");
+		String username = randomEmailAddress();
+		UUID userId = setupUser(userCN, username, randomString().toCharArray());
+		CloseableHttpResponse response = doPostForm("/_api/merlot/sign-out",
+				ImmutableMap.of("Cookie", "ATKT=" + authTicket(userId)), ImmutableMap.<String, String> of());
+		assertThat(response, is(both(ok()).and(responseWithCookies(removeCookie("ATKT")))));
+		response.close();
+	}
+
+	@Test
+	public void sign_out_with_no_cookie_is_a_no_op() throws Exception {
 		CloseableHttpResponse response = doPostForm("/_api/merlot/sign-out", ImmutableMap.<String, String> of(),
 				ImmutableMap.<String, String> of());
-		assertThat(response, is(both(ok()).and(responseWithCookies(removeCookie("ATKT")))));
+		assertThat(response, is(both(ok()).and(responseWithCookies())));
 		response.close();
 	}
 
