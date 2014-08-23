@@ -1,5 +1,8 @@
 package org.araqnid.stuff;
 
+import java.util.UUID;
+
+import org.araqnid.stuff.config.ServerIdentity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,11 +15,14 @@ public class EmbeddedAppStartupBanner implements AppLifecycleEvent {
 	private static final Logger LOG = LoggerFactory.getLogger(EmbeddedAppStartupBanner.class);
 	private final String contextPath;
 	private final AppVersion appVersion;
+	private final UUID instanceId;
 
 	@Inject
-	public EmbeddedAppStartupBanner(@Named("context_path") String contextPath, AppVersion appVersion) {
+	public EmbeddedAppStartupBanner(@Named("context_path") String contextPath, AppVersion appVersion,
+			@ServerIdentity UUID instanceId) {
 		this.contextPath = contextPath;
 		this.appVersion = appVersion;
+		this.instanceId = instanceId;
 	}
 
 	@Override
@@ -26,9 +32,11 @@ public class EmbeddedAppStartupBanner implements AppLifecycleEvent {
 	@Override
 	public void started() {
 		if (contextPath.isEmpty()) {
-			LOG.info("Started version {}; at root context", appVersion.version);
-		} else {
-			LOG.info("Started version {}; at context path {}", appVersion.version, contextPath);
+			LOG.info("Started instance {} (app version {}); at root context", instanceId, appVersion.version);
+		}
+		else {
+			LOG.info("Started instance {} (app version {}); at context path {}", instanceId, appVersion.version,
+					contextPath);
 		}
 	}
 
@@ -39,9 +47,11 @@ public class EmbeddedAppStartupBanner implements AppLifecycleEvent {
 	@Override
 	public void stopped() {
 		if (contextPath.isEmpty()) {
-			LOG.info("Stopped version {}; at root context", appVersion.version);
-		} else {
-			LOG.info("Stopped version {}; at context path {}", appVersion.version, contextPath);
+			LOG.info("Stopped instance {} (app version {}); at root context", instanceId, appVersion.version);
+		}
+		else {
+			LOG.info("Stopped instance {} (app version {}); at context path {}", instanceId, appVersion.version,
+					contextPath);
 		}
 	}
 }
