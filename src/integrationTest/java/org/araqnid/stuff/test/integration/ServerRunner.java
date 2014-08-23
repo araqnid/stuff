@@ -4,8 +4,9 @@ import org.araqnid.stuff.activity.ActivityEventSink;
 import org.araqnid.stuff.config.StandaloneAppConfig;
 import org.araqnid.stuff.test.integration.CollectActivityEvents.ActivityEventRecord;
 import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.nio.SelectChannelConnector;
+import org.eclipse.jetty.server.ServerConnector;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
@@ -33,13 +34,21 @@ public class ServerRunner {
 
 			@Singleton
 			@Provides
-			public Connector connector() {
-				return new SelectChannelConnector();
+			public Server server(Handler handler) {
+				Server server = new Server();
+				server.setConnectors(new Connector[] { new ServerConnector(server) });
+				server.setHandler(handler);
+				return server;
+			}
+
+			@Provides
+			public ServerConnector serverConnector(Server server) {
+				return (ServerConnector) server.getConnectors()[0];
 			}
 		}));
 		server = injector.getInstance(Server.class);
 		server.start();
-		port = injector.getInstance(Connector.class).getLocalPort();
+		port = injector.getInstance(ServerConnector.class).getLocalPort();
 		baseUri = String.format("http://localhost:%d", port);
 	}
 

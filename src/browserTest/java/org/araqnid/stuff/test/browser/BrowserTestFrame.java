@@ -8,8 +8,9 @@ import java.util.regex.Pattern;
 
 import org.araqnid.stuff.config.StandaloneAppConfig;
 import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.nio.SelectChannelConnector;
+import org.eclipse.jetty.server.ServerConnector;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.remote.DesiredCapabilities;
@@ -93,16 +94,24 @@ public class BrowserTestFrame {
 			protected void configure() {
 			}
 
-			@Provides
 			@Singleton
-			public Connector connector() {
-				return new SelectChannelConnector();
+			@Provides
+			public Server server(Handler handler) {
+				Server server = new Server();
+				server.setConnectors(new Connector[] { new ServerConnector(server) });
+				server.setHandler(handler);
+				return server;
+			}
+
+			@Provides
+			public ServerConnector serverConnector(Server server) {
+				return (ServerConnector) server.getConnectors()[0];
 			}
 		});
 		injector = Guice.createInjector(module);
 		server = injector.getInstance(Server.class);
 		server.start();
-		localPort = injector.getInstance(Connector.class).getLocalPort();
+		localPort = injector.getInstance(ServerConnector.class).getLocalPort();
 		baseUri = "http://" + ourHostName + ":" + localPort + "/";
 		driver = driverProvider.get();
 	}

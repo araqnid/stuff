@@ -3,9 +3,9 @@ package org.araqnid.stuff.config;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.channels.ReadableByteChannel;
 
 import org.eclipse.jetty.util.resource.Resource;
 
@@ -21,10 +21,6 @@ public class EmbeddedResource extends Resource {
 	@Override
 	public boolean isContainedIn(Resource r) throws MalformedURLException {
 		return false;
-	}
-
-	@Override
-	public void release() {
 	}
 
 	@Override
@@ -69,8 +65,12 @@ public class EmbeddedResource extends Resource {
 	}
 
 	@Override
-	public OutputStream getOutputStream() throws IOException, SecurityException {
+	public ReadableByteChannel getReadableByteChannel() throws IOException {
 		return null;
+	}
+
+	@Override
+	public void close() {
 	}
 
 	@Override

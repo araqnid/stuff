@@ -3,7 +3,8 @@ package org.araqnid.stuff.test.integration;
 import java.util.Random;
 
 import org.araqnid.stuff.config.StandaloneAppConfig;
-import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -21,7 +22,8 @@ public class AppConfigTest {
 	@Test
 	public void jetty_connector_uses_default_port_if_no_environment_setting() {
 		Injector injector = Guice.createInjector(new StandaloneAppConfig(ImmutableMap.<String, String> of()));
-		Connector connector = injector.getInstance(Connector.class);
+		Server server = injector.getInstance(Server.class);
+		ServerConnector connector = (ServerConnector) server.getConnectors()[0];
 		Assert.assertEquals(61000, connector.getPort());
 	}
 
@@ -30,7 +32,8 @@ public class AppConfigTest {
 		int port = new Random().nextInt(0xffff);
 		Injector injector = Guice.createInjector(new StandaloneAppConfig(ImmutableMap.<String, String> of("PORT",
 				String.valueOf(port))));
-		Connector connector = injector.getInstance(Connector.class);
+		Server server = injector.getInstance(Server.class);
+		ServerConnector connector = (ServerConnector) server.getConnectors()[0];
 		Assert.assertEquals(port, connector.getPort());
 	}
 }

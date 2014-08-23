@@ -14,8 +14,8 @@ import org.araqnid.stuff.activity.RequestActivityFilter;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
-import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
@@ -125,13 +125,6 @@ public class StandaloneAppConfig extends AbstractModule {
 		}
 
 		@Provides
-		public Connector connector(@Named("http_port") int port) {
-			Connector connector = new SelectChannelConnector();
-			connector.setPort(port);
-			return connector;
-		}
-
-		@Provides
 		public Handler handler(@Named("vanilla") Handler vanillaContext, @Named("resteasy") Handler resteasyContext) {
 			ContextHandlerCollection contexts = new ContextHandlerCollection();
 			contexts.setHandlers(new Handler[] { vanillaContext, resteasyContext });
@@ -139,8 +132,10 @@ public class StandaloneAppConfig extends AbstractModule {
 		}
 
 		@Provides
-		public Server server(Connector connector, Handler handler) {
+		public Server server(Handler handler, @Named("http_port") int port) {
 			Server server = new Server();
+			ServerConnector connector = new ServerConnector(server);
+			connector.setPort(port);
 			server.setConnectors(new Connector[] { connector });
 			server.setHandler(handler);
 			return server;
