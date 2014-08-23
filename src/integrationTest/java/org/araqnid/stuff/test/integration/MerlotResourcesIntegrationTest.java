@@ -108,7 +108,6 @@ public class MerlotResourcesIntegrationTest {
 		response.close();
 	}
 
-	@Ignore
 	@Test
 	public void sign_in_creates_auth_ticket() throws Exception {
 		String userCN = randomString("User");
@@ -121,7 +120,6 @@ public class MerlotResourcesIntegrationTest {
 		response.close();
 	}
 
-	@Ignore
 	@Test
 	public void sign_in_for_deleted_user_is_forbidden() throws Exception {
 		String userCN = randomString("User");
@@ -134,7 +132,6 @@ public class MerlotResourcesIntegrationTest {
 		response.close();
 	}
 
-	@Ignore
 	@Test
 	public void sign_in_with_wrong_password_is_forbidden() throws Exception {
 		String userCN = randomString("User");
@@ -169,14 +166,14 @@ public class MerlotResourcesIntegrationTest {
 
 	private UUID setupUser(String userCN, String username, char[] password) {
 		MerlotRepository repo = server.getInjector().getInstance(MerlotRepository.class);
-		MerlotRepository.User user = repo.createUser(username, userCN);
+		MerlotRepository.User user = repo.createUser(username, userCN, password);
 		return user.id;
 	}
 
 	private UUID setupAndDeleteUser(String userCN, String username, char[] password) {
 		MerlotRepository repo = server.getInjector().getInstance(MerlotRepository.class);
-		MerlotRepository.User user = repo.createUser(username, userCN);
-		repo.deleteUser(user);
+		MerlotRepository.User user = repo.createUser(username, userCN, password);
+		repo.deleteUser(user.id);
 		return user.id;
 	}
 
