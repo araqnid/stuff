@@ -4,10 +4,10 @@ import static org.hamcrest.Matchers.either;
 import static org.hamcrest.Matchers.equalTo;
 
 import java.io.IOException;
+import java.net.HttpCookie;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -210,29 +210,16 @@ public final class HttpClientMatchers {
 
 	@Factory
 	public static Matcher<Header> newCookie(final String name, final Matcher<String> valueMatcher) {
-		return new TypeSafeDiagnosingMatcher<Header>() {
+		return singleCookie(new TypeSafeDiagnosingMatcher<HttpCookie>() {
 			@Override
-			protected boolean matchesSafely(Header item, Description mismatchDescription) {
-				if (!item.getName().equalsIgnoreCase("set-cookie")) {
-					mismatchDescription.appendText("Header name was not 'Set-Cookie'");
+			protected boolean matchesSafely(HttpCookie item, Description mismatchDescription) {
+				if (!item.getName().equals(name)) {
+					mismatchDescription.appendText("Cookie name was ").appendValue(item.getName());
 					return false;
 				}
-				Pattern pattern = Pattern.compile("([^=;]+)=([^=;]+)");
-				java.util.regex.Matcher matcher = pattern.matcher(item.getValue());
-				if (!matcher.lookingAt()) {
-					mismatchDescription.appendText("Header value does not look like a cookie setting: ").appendText(
-							item.getValue());
-					return false;
-				}
-				String cookieName = matcher.group(1);
-				String cookieValue = matcher.group(2);
-				if (!cookieName.equals(name)) {
-					mismatchDescription.appendText("cookie name was ").appendValue(cookieName);
-					return false;
-				}
-				if (!valueMatcher.matches(cookieValue)) {
-					mismatchDescription.appendText("cookie value ");
-					valueMatcher.describeMismatch(cookieValue, mismatchDescription);
+				if (!valueMatcher.matches(item.getValue())) {
+					mismatchDescription.appendText("Cookie ").appendValue(name).appendText(" ");
+					valueMatcher.describeMismatch(item.getValue(), mismatchDescription);
 					return false;
 				}
 				return true;
@@ -243,32 +230,52 @@ public final class HttpClientMatchers {
 				description.appendText("Set cookie ").appendValue(name).appendText(" to ")
 						.appendDescriptionOf(valueMatcher);
 			}
-		};
+		});
 	}
 
 	@Factory
 	public static Matcher<Header> removeCookie(final String name) {
-		return new TypeSafeDiagnosingMatcher<Header>() {
+		return singleCookie(new TypeSafeDiagnosingMatcher<HttpCookie>() {
 			@Override
-			protected boolean matchesSafely(Header item, Description mismatchDescription) {
-				if (!item.getName().equalsIgnoreCase("set-cookie")) {
-					mismatchDescription.appendText("Header name was not 'Set-Cookie'");
+			protected boolean matchesSafely(HttpCookie item, Description mismatchDescription) {
+				if (!item.getName().equals(name)) {
+					mismatchDescription.appendText("Cookie was ").appendValue(item);
 					return false;
 				}
-				Pattern pattern = Pattern.compile("([^=;]+)=([^=;]+)");
-				java.util.regex.Matcher matcher = pattern.matcher(item.getValue());
-				if (!matcher.lookingAt()) {
-					mismatchDescription.appendText("Header value does not look like a cookie setting: ").appendText(
-							item.getValue());
+				if (item.getMaxAge() > 0) {
+					mismatchDescription.appendText("Cookie ").appendValue(item.getName()).appendText(" has positive max-age");
 					return false;
 				}
-				// TODO
 				return true;
 			}
 
 			@Override
 			public void describeTo(Description description) {
 				description.appendText("Remove cookie ").appendValue(name);
+			}
+		});
+	}
+
+	public static Matcher<Header> singleCookie(final Matcher<HttpCookie> cookieMatcher) {
+		return new TypeSafeDiagnosingMatcher<Header>() {
+			@Override
+			protected boolean matchesSafely(Header item, Description mismatchDescription) {
+				List<HttpCookie> parsed = HttpCookie.parse(item.toString());
+				if (parsed.size() != 1) {
+					mismatchDescription.appendText("Didn't get a unique cookie from header: ").appendValue(parsed);
+					return false;
+				}
+				HttpCookie cookie = parsed.get(0);
+				if (!cookieMatcher.matches(cookie)) {
+					cookieMatcher.describeMismatch(cookie, mismatchDescription);
+					return false;
+				}
+				return true;
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendText("single cookie ").appendDescriptionOf(cookieMatcher);
 			}
 		};
 	}

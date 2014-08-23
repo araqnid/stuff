@@ -56,7 +56,9 @@ public class MerlotResources {
 
 	@POST
 	@Path("sign-out")
-	public void signOut() {
+	public Response signOut() {
+		if (userTicket == null) return Response.noContent().build();
+		return Response.noContent().cookie(removeAuthTicket()).build();
 	}
 
 	private Optional<UserInfo> optionalUserInfo() {
@@ -68,6 +70,10 @@ public class MerlotResources {
 
 	private NewCookie newAuthTicket(User user) {
 		return new NewCookie("ATKT", new UserTicket(user.id).marshal(), cookiePath, cookieDomain, cookieComment, cookieMaxAge, cookieSecure);
+	}
+
+	private NewCookie removeAuthTicket() {
+		return new NewCookie("ATKT", "", cookiePath, cookieDomain, cookieComment, 0, cookieSecure);
 	}
 
 	public static class Password {

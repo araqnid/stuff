@@ -34,7 +34,6 @@ import org.apache.http.message.BasicNameValuePair;
 import org.araqnid.stuff.MerlotRepository;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
@@ -144,7 +143,6 @@ public class MerlotResourcesIntegrationTest {
 		response.close();
 	}
 
-	@Ignore
 	@Test
 	public void sign_out_removes_cookie() throws Exception {
 		String userCN = randomString("User");
@@ -152,6 +150,7 @@ public class MerlotResourcesIntegrationTest {
 		UUID userId = setupUser(userCN, username, randomString().toCharArray());
 		CloseableHttpResponse response = doPostForm("/_api/merlot/sign-out",
 				ImmutableMap.of("Cookie", "ATKT=" + authTicket(userId)), ImmutableMap.<String, String> of());
+		System.err.println("found " + response.getFirstHeader("Set-Cookie"));
 		assertThat(response, is(both(ok()).and(responseWithCookies(removeCookie("ATKT")))));
 		response.close();
 	}
