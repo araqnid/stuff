@@ -12,6 +12,12 @@ public class MerlotRepository {
 	private final Map<UUID, User> users = new HashMap<>();
 	private final Map<String, UUID> usersByName = new HashMap<>();
 
+	public MerlotRepository() {
+		createUser("alice@example.com", "Alice Aintree", "w0nderland".toCharArray());
+		createUser("bob@example.com", "Uncle Bob", "b0b".toCharArray());
+		createUser("ivan@example.com", "Иван Иванович Иванов", "s0v.b0i".toCharArray());
+	}
+
 	public synchronized User createUser(String username, String commonName, char[] password) {
 		if (usersByName.containsKey(username)) throw new IllegalArgumentException("Username already used: " + username);
 		User user = new User();
