@@ -6,6 +6,7 @@ import static org.araqnid.stuff.test.integration.HttpClientMatchers.ok;
 import static org.araqnid.stuff.test.integration.HttpClientMatchers.removeCookie;
 import static org.araqnid.stuff.test.integration.HttpClientMatchers.responseWithCookies;
 import static org.araqnid.stuff.test.integration.HttpClientMatchers.responseWithJsonContent;
+import static org.araqnid.stuff.test.integration.JsonMatchers.jsonAny;
 import static org.araqnid.stuff.test.integration.JsonMatchers.jsonNull;
 import static org.araqnid.stuff.test.integration.JsonMatchers.jsonObject;
 import static org.araqnid.stuff.test.integration.JsonMatchers.jsonString;
@@ -103,7 +104,11 @@ public class MerlotResourcesIntegrationTest {
 		char[] password = randomString().toCharArray();
 		UUID userId = setupAndDeleteUser(userCN, username, password);
 		CloseableHttpResponse response = doGet("/_api/merlot/", ImmutableMap.of("Cookie", "ATKT=" + authTicket(userId)));
-		assertThat(response, is(forbidden()));
+		assertThat(
+				response,
+				is(both(ok()).and(
+						responseWithJsonContent(jsonObject().withProperty("userInfo", jsonNull()).withProperty(
+								"version", jsonAny())))));
 		response.close();
 	}
 

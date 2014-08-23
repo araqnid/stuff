@@ -64,7 +64,7 @@ public class MerlotResources {
 	private Optional<UserInfo> optionalUserInfo() {
 		if (userTicket == null) return Optional.absent();
 		Optional<User> user = repository.findUserById(userTicket.userId);
-		if (!user.isPresent()) throw new InvalidUserException(userTicket.userId);
+		if (!user.isPresent()) return Optional.absent();
 		return Optional.of(new UserInfo(user.get().commonName, user.get().username));
 	}
 
@@ -99,14 +99,6 @@ public class MerlotResources {
 		public Status(String version, UserInfo userInfo) {
 			this.version = version;
 			this.userInfo = userInfo;
-		}
-	}
-
-	public static final class InvalidUserException extends WebApplicationException {
-		private static final long serialVersionUID = 2014082301L;
-
-		public InvalidUserException(UUID userId) {
-			super("Invalid user: " + userId, HttpServletResponse.SC_FORBIDDEN);
 		}
 	}
 
