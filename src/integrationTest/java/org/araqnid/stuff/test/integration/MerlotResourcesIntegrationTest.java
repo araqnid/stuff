@@ -31,6 +31,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
+import org.araqnid.stuff.MerlotRepository;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -73,13 +74,11 @@ public class MerlotResourcesIntegrationTest {
 		response.close();
 	}
 
-	@Ignore
 	@Test
 	public void status_resource_with_auth_cookie() throws Exception {
-		String userId = UUID.randomUUID().toString();
 		String userCN = randomString("User");
 		String username = randomEmailAddress();
-		setupUser(userId, userCN, username, randomString());
+		UUID userId = setupUser(userCN, username, randomString().toCharArray());
 		CloseableHttpResponse response = doGet("/_api/merlot/", ImmutableMap.of("Cookie", "ATKT=" + authTicket(userId)));
 		assertThat(
 				response,
@@ -91,7 +90,6 @@ public class MerlotResourcesIntegrationTest {
 		response.close();
 	}
 
-	@Ignore
 	@Test
 	public void status_resource_with_invalid_auth_cookie() throws Exception {
 		CloseableHttpResponse response = doGet("/_api/merlot/", ImmutableMap.of("Cookie", "ATKT=xyzzy"));
@@ -99,16 +97,26 @@ public class MerlotResourcesIntegrationTest {
 		response.close();
 	}
 
+	@Test
+	public void status_resource_with_valid_auth_cookie_for_invalid_user() throws Exception {
+		String userCN = randomString("User");
+		String username = randomEmailAddress();
+		char[] password = randomString().toCharArray();
+		UUID userId = setupAndDeleteUser(userCN, username, password);
+		CloseableHttpResponse response = doGet("/_api/merlot/", ImmutableMap.of("Cookie", "ATKT=" + authTicket(userId)));
+		assertThat(response, is(forbidden()));
+		response.close();
+	}
+
 	@Ignore
 	@Test
 	public void sign_in_creates_auth_ticket() throws Exception {
-		String userId = UUID.randomUUID().toString();
 		String userCN = randomString("User");
 		String username = randomEmailAddress();
-		String password = randomString();
-		setupUser(userId, userCN, username, password);
+		char[] password = randomString().toCharArray();
+		UUID userId = setupUser(userCN, username, password);
 		CloseableHttpResponse response = doPostForm("/_api/merlot/sign-in", ImmutableMap.<String, String> of(),
-				ImmutableMap.<String, String> of("username", username, "password", password));
+				ImmutableMap.<String, String> of("username", username, "password", new String(password)));
 		assertThat(response, is(both(ok()).and(responseWithCookies(newCookie("ATKT", equalTo(authTicket(userId)))))));
 		response.close();
 	}
@@ -116,13 +124,12 @@ public class MerlotResourcesIntegrationTest {
 	@Ignore
 	@Test
 	public void sign_in_with_wrong_password_is_forbidden() throws Exception {
-		String userId = UUID.randomUUID().toString();
 		String userCN = randomString("User");
 		String username = randomEmailAddress();
-		String password = randomString();
-		setupUser(userId, userCN, username, password);
+		char[] password = randomString().toCharArray();
+		setupUser(userCN, username, password);
 		CloseableHttpResponse response = doPostForm("/_api/merlot/sign-in", ImmutableMap.<String, String> of(),
-				ImmutableMap.<String, String> of("username", username, "password", "!" + password));
+				ImmutableMap.<String, String> of("username", username, "password", "!" + new String(password)));
 		assertThat(response, is(forbidden()));
 		response.close();
 	}
@@ -136,8 +143,17 @@ public class MerlotResourcesIntegrationTest {
 		response.close();
 	}
 
-	private void setupUser(String userId, String userCN, String username, String password) {
-		// TODO Auto-generated method stub
+	private UUID setupUser(String userCN, String username, char[] password) {
+		MerlotRepository repo = server.getInjector().getInstance(MerlotRepository.class);
+		MerlotRepository.User user = repo.createUser(username, userCN);
+		return user.id;
+	}
+
+	private UUID setupAndDeleteUser(String userCN, String username, char[] password) {
+		MerlotRepository repo = server.getInjector().getInstance(MerlotRepository.class);
+		MerlotRepository.User user = repo.createUser(username, userCN);
+		repo.deleteUser(user);
+		return user.id;
 	}
 
 	private CloseableHttpResponse doGet(String path, Map<String, String> headers) throws IOException {
@@ -166,7 +182,7 @@ public class MerlotResourcesIntegrationTest {
 		return doGet(path, Collections.<String, String> emptyMap());
 	}
 
-	private static String authTicket(String userId) {
+	private static String authTicket(UUID userId) {
 		return "u" + userId + ",x00000000";
 	}
 

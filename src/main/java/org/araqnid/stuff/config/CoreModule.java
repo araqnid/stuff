@@ -9,6 +9,7 @@ import org.araqnid.stuff.AppService;
 import org.araqnid.stuff.AppServicesManager;
 import org.araqnid.stuff.AppStateMonitor;
 import org.araqnid.stuff.AppVersion;
+import org.araqnid.stuff.MerlotRepository;
 import org.araqnid.stuff.ScheduledJobController;
 import org.araqnid.stuff.activity.ActivityScope;
 
@@ -38,6 +39,7 @@ public final class CoreModule extends AbstractModule {
 		install(new WorkQueueModule());
 		install(new ScheduledModule());
 		install(new SynchronousActivityEventsModule());
+		bind(MerlotRepository.class);
 	}
 
 	private AppVersion appVersion() {

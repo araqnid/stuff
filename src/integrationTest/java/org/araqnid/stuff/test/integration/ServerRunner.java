@@ -56,6 +56,10 @@ public class ServerRunner {
 		return baseUri + path;
 	}
 
+	public Injector getInjector() {
+		return injector;
+	}
+
 	public Iterable<CollectActivityEvents.ActivityEventRecord> activityEvents() {
 		return collectActivityEvents.events;
 	}
