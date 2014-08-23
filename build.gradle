@@ -16,8 +16,8 @@ jar {
 
 sourceSets {
     integrationTest {
-        compileClasspath += main.output;
-        runtimeClasspath += main.output;
+        compileClasspath += main.output + test.output;
+        runtimeClasspath += main.output + test.output;
     }
     browserTest {
         compileClasspath += main.output;
