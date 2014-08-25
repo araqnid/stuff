@@ -55,7 +55,7 @@ public class IntegrationTest {
 		};
 	}
 
-	protected CloseableHttpResponse doGet(String path, Map<String, String> headers) throws IOException,
+	protected CloseableHttpResponse doGetWithHeaders(String path, Map<String, String> headers) throws IOException,
 			URISyntaxException {
 		HttpUriRequest request = new HttpGet(server.uri(path));
 		for (Map.Entry<String, String> e : headers.entrySet()) {
@@ -65,7 +65,7 @@ public class IntegrationTest {
 	}
 
 	protected CloseableHttpResponse doGet(String path) throws IOException, URISyntaxException {
-		return doGet(path, Collections.<String, String> emptyMap());
+		return doGetWithHeaders(path, Collections.<String, String> emptyMap());
 	}
 
 	protected CloseableHttpResponse doPostForm(String path, Map<String, String> headers,

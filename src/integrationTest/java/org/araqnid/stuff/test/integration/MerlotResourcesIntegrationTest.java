@@ -19,7 +19,6 @@ import static org.hamcrest.Matchers.is;
 
 import java.util.UUID;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.araqnid.stuff.MerlotRepository;
 import org.junit.Test;
 
@@ -28,13 +27,11 @@ import com.google.common.collect.ImmutableMap;
 public class MerlotResourcesIntegrationTest extends IntegrationTest {
 	@Test
 	public void status_resource_with_no_cookie() throws Exception {
-		CloseableHttpResponse response = doGet("/_api/merlot/");
 		assertThat(
-				response,
+				doGet("/_api/merlot/"),
 				is(both(ok()).and(
 						responseWithJsonContent(jsonObject().withProperty("userInfo", jsonNull()).withProperty(
 								"version", jsonNull())))));
-		response.close();
 	}
 
 	@Test
@@ -42,22 +39,18 @@ public class MerlotResourcesIntegrationTest extends IntegrationTest {
 		String userCN = randomString("User");
 		String username = randomEmailAddress();
 		UUID userId = setupUser(userCN, username, randomString().toCharArray());
-		CloseableHttpResponse response = doGet("/_api/merlot/", ImmutableMap.of("Cookie", "ATKT=" + authTicket(userId)));
 		assertThat(
-				response,
+				doGetWithHeaders("/_api/merlot/", ImmutableMap.of("Cookie", "ATKT=" + authTicket(userId))),
 				is(both(ok()).and(
 						responseWithJsonContent(jsonObject().withProperty(
 								"userInfo",
 								jsonObject().withProperty("commonName", jsonString(userCN)).withProperty("username",
 										jsonString(username))).withProperty("version", jsonNull())))));
-		response.close();
 	}
 
 	@Test
 	public void status_resource_with_invalid_auth_cookie() throws Exception {
-		CloseableHttpResponse response = doGet("/_api/merlot/", ImmutableMap.of("Cookie", "ATKT=xyzzy"));
-		assertThat(response, is(forbidden()));
-		response.close();
+		assertThat(doGetWithHeaders("/_api/merlot/", ImmutableMap.of("Cookie", "ATKT=xyzzy")), is(forbidden()));
 	}
 
 	@Test
@@ -66,13 +59,11 @@ public class MerlotResourcesIntegrationTest extends IntegrationTest {
 		String username = randomEmailAddress();
 		char[] password = randomString().toCharArray();
 		UUID userId = setupAndDeleteUser(userCN, username, password);
-		CloseableHttpResponse response = doGet("/_api/merlot/", ImmutableMap.of("Cookie", "ATKT=" + authTicket(userId)));
 		assertThat(
-				response,
+				doGetWithHeaders("/_api/merlot/", ImmutableMap.of("Cookie", "ATKT=" + authTicket(userId))),
 				is(both(ok()).and(
 						responseWithJsonContent(jsonObject().withProperty("userInfo", jsonNull()).withProperty(
 								"version", jsonAny())))));
-		response.close();
 	}
 
 	@Test
@@ -81,10 +72,10 @@ public class MerlotResourcesIntegrationTest extends IntegrationTest {
 		String username = randomEmailAddress();
 		char[] password = randomString().toCharArray();
 		UUID userId = setupUser(userCN, username, password);
-		CloseableHttpResponse response = doPostForm("/_api/merlot/sign-in", ImmutableMap.<String, String> of(),
-				ImmutableMap.<String, String> of("username", username, "password", new String(password)));
-		assertThat(response, is(both(ok()).and(responseWithCookies(newCookie("ATKT", equalTo(authTicket(userId)))))));
-		response.close();
+		assertThat(
+				doPostForm("/_api/merlot/sign-in", ImmutableMap.<String, String> of(),
+						ImmutableMap.<String, String> of("username", username, "password", new String(password))),
+				is(both(ok()).and(responseWithCookies(newCookie("ATKT", equalTo(authTicket(userId)))))));
 	}
 
 	@Test
@@ -93,10 +84,10 @@ public class MerlotResourcesIntegrationTest extends IntegrationTest {
 		String username = randomEmailAddress();
 		char[] password = randomString().toCharArray();
 		setupAndDeleteUser(userCN, username, password);
-		CloseableHttpResponse response = doPostForm("/_api/merlot/sign-in", ImmutableMap.<String, String> of(),
-				ImmutableMap.<String, String> of("username", username, "password", new String(password)));
-		assertThat(response, is(forbidden()));
-		response.close();
+		assertThat(
+				doPostForm("/_api/merlot/sign-in", ImmutableMap.<String, String> of(),
+						ImmutableMap.<String, String> of("username", username, "password", new String(password))),
+				is(forbidden()));
 	}
 
 	@Test
@@ -105,10 +96,10 @@ public class MerlotResourcesIntegrationTest extends IntegrationTest {
 		String username = randomEmailAddress();
 		char[] password = randomString().toCharArray();
 		setupUser(userCN, username, password);
-		CloseableHttpResponse response = doPostForm("/_api/merlot/sign-in", ImmutableMap.<String, String> of(),
-				ImmutableMap.<String, String> of("username", username, "password", "!" + new String(password)));
-		assertThat(response, is(forbidden()));
-		response.close();
+		assertThat(
+				doPostForm("/_api/merlot/sign-in", ImmutableMap.<String, String> of(),
+						ImmutableMap.<String, String> of("username", username, "password", "!" + new String(password))),
+				is(forbidden()));
 	}
 
 	@Test
@@ -116,19 +107,17 @@ public class MerlotResourcesIntegrationTest extends IntegrationTest {
 		String userCN = randomString("User");
 		String username = randomEmailAddress();
 		UUID userId = setupUser(userCN, username, randomString().toCharArray());
-		CloseableHttpResponse response = doPostForm("/_api/merlot/sign-out",
-				ImmutableMap.of("Cookie", "ATKT=" + authTicket(userId)), ImmutableMap.<String, String> of());
-		System.err.println("found " + response.getFirstHeader("Set-Cookie"));
-		assertThat(response, is(both(ok()).and(responseWithCookies(removeCookie("ATKT")))));
-		response.close();
+		assertThat(
+				doPostForm("/_api/merlot/sign-out", ImmutableMap.of("Cookie", "ATKT=" + authTicket(userId)),
+						ImmutableMap.<String, String> of()),
+				is(both(ok()).and(responseWithCookies(removeCookie("ATKT")))));
 	}
 
 	@Test
 	public void sign_out_with_no_cookie_is_a_no_op() throws Exception {
-		CloseableHttpResponse response = doPostForm("/_api/merlot/sign-out", ImmutableMap.<String, String> of(),
-				ImmutableMap.<String, String> of());
-		assertThat(response, is(both(ok()).and(responseWithCookies())));
-		response.close();
+		assertThat(
+				doPostForm("/_api/merlot/sign-out", ImmutableMap.<String, String> of(),
+						ImmutableMap.<String, String> of()), is(both(ok()).and(responseWithCookies())));
 	}
 
 	private UUID setupUser(String userCN, String username, char[] password) {

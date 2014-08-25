@@ -178,6 +178,7 @@ public final class HttpClientMatchers {
 
 	@Factory
 	public static Matcher<HttpResponse> responseWithCookies(List<Matcher<? super Header>> matchers) {
+		if (matchers.size() == 1) { return responseWithHeader("Set-Cookie", matchers.get(0)); }
 		return responseWithHeaders("Set-Cookie", matchers);
 	}
 
@@ -204,6 +205,41 @@ public final class HttpClientMatchers {
 			public void describeTo(Description description) {
 				description.appendText("response with ").appendValue(headerName).appendText(" headers: ")
 						.appendDescriptionOf(aggregatedMatcher);
+			}
+		};
+	}
+
+	@Factory
+	public static Matcher<HttpResponse> responseWithHeader(final String headerName,
+			final Matcher<? super Header> headerMatcher) {
+		return new TypeSafeDiagnosingMatcher<HttpResponse>() {
+			@Override
+			protected boolean matchesSafely(HttpResponse item, Description mismatchDescription) {
+				Header[] headers = item.getHeaders(headerName);
+				if (headers.length == 0) {
+					mismatchDescription.appendText("no such header: ").appendValue(headerName);
+				}
+				if (headers.length == 1) {
+					Header header = headers[0];
+					if (!headerMatcher.matches(header)) {
+						mismatchDescription.appendValue(headerName).appendText(" header ");
+						headerMatcher.describeMismatch(header, mismatchDescription);
+						return false;
+					}
+					return true;
+				}
+				for (Header h : headers) {
+					if (headerMatcher.matches(h)) return true;
+				}
+				mismatchDescription.appendValue(headerName).appendText(" not matched: ")
+						.appendDescriptionOf(headerMatcher);
+				return false;
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendText("with ").appendValue(headerName).appendText(" header ")
+						.appendDescriptionOf(headerMatcher);
 			}
 		};
 	}
@@ -243,7 +279,8 @@ public final class HttpClientMatchers {
 					return false;
 				}
 				if (item.getMaxAge() > 0) {
-					mismatchDescription.appendText("Cookie ").appendValue(item.getName()).appendText(" has positive max-age");
+					mismatchDescription.appendText("Cookie ").appendValue(item.getName())
+							.appendText(" has positive max-age");
 					return false;
 				}
 				return true;
@@ -256,6 +293,7 @@ public final class HttpClientMatchers {
 		});
 	}
 
+	@Factory
 	public static Matcher<Header> singleCookie(final Matcher<HttpCookie> cookieMatcher) {
 		return new TypeSafeDiagnosingMatcher<Header>() {
 			@Override
@@ -276,6 +314,27 @@ public final class HttpClientMatchers {
 			@Override
 			public void describeTo(Description description) {
 				description.appendText("single cookie ").appendDescriptionOf(cookieMatcher);
+			}
+		};
+	}
+
+	@Factory
+	public static Matcher<Header> headerWithValue(final Matcher<String> valueMatcher) {
+		return new TypeSafeDiagnosingMatcher<Header>() {
+			@Override
+			protected boolean matchesSafely(Header item, Description mismatchDescription) {
+				String value = item.getValue();
+				if (!valueMatcher.matches(value)) {
+					mismatchDescription.appendText("header value ");
+					valueMatcher.describeMismatch(value, mismatchDescription);
+					return false;
+				}
+				return true;
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendText("Header with value ").appendDescriptionOf(valueMatcher);
 			}
 		};
 	}

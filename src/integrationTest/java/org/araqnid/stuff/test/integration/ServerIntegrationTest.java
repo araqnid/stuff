@@ -2,20 +2,19 @@ package org.araqnid.stuff.test.integration;
 
 import static org.araqnid.stuff.test.integration.CollectActivityEvents.beginRequestRecord;
 import static org.araqnid.stuff.test.integration.CollectActivityEvents.finishRequestRecord;
+import static org.araqnid.stuff.test.integration.HttpClientMatchers.responseWithHeader;
+import static org.araqnid.stuff.test.integration.HttpClientMatchers.headerWithValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.any;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 
 import java.util.Iterator;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-import org.apache.http.Header;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
-import org.hamcrest.MatcherAssert;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.Test;
 
@@ -26,27 +25,19 @@ import com.google.common.collect.ImmutableMap;
 public class ServerIntegrationTest extends IntegrationTest {
 	@Test
 	public void ruid_generated_and_returned_in_http_response() throws Exception {
-		CloseableHttpResponse response = doGet("/");
-		Header ruidHeader = response.getFirstHeader("X-RUID");
-		MatcherAssert.assertThat(ruidHeader, is(headerWithValue(likeAUUID())));
-		response.close();
+		assertThat(doGet("/"), responseWithHeader("X-RUID", headerWithValue(likeAUUID())));
 	}
 
 	@Test
 	public void server_identity_in_http_response() throws Exception {
-		CloseableHttpResponse response = doGet("/");
-		Header ruidHeader = response.getFirstHeader("X-Server-Identity");
-		MatcherAssert.assertThat(ruidHeader, is(headerWithValue(twoParts(any(String.class), likeAUUID()))));
-		response.close();
+		assertThat(doGet("/"),
+				responseWithHeader("X-Server-Identity", headerWithValue(twoParts(any(String.class), likeAUUID()))));
 	}
 
 	@Test
 	public void request_activity_emitted() throws Exception {
-		CloseableHttpResponse response = doGet("/");
-		String ruid = response.getFirstHeader("X-RUID").getValue();
-		response.close();
-		MatcherAssert.assertThat(
-				server.activityEventsForRuid(ruid),
+		assertThat(
+				server.activityEventsForRuid(doGet("/").getFirstHeader("X-RUID").getValue()),
 				includesSubsequence(
 						beginRequestRecord(equalTo("HttpRequest")).withDescription(
 								stringContainsInOrder(ImmutableList.of("GET", "/"))),
@@ -56,30 +47,8 @@ public class ServerIntegrationTest extends IntegrationTest {
 	@Test
 	public void ruid_echoed_from_http_request() throws Exception {
 		String ourRuid = UUID.randomUUID().toString();
-		CloseableHttpResponse response = doGet("/", ImmutableMap.of("X-RUID", ourRuid));
-		Header ruidHeader = response.getFirstHeader("X-RUID");
-		MatcherAssert.assertThat(ruidHeader, is(headerWithValue(equalTo(ourRuid))));
-		response.close();
-	}
-
-	public static Matcher<Header> headerWithValue(final Matcher<String> valueMatcher) {
-		return new TypeSafeDiagnosingMatcher<Header>() {
-			@Override
-			protected boolean matchesSafely(Header item, Description mismatchDescription) {
-				String value = item.getValue();
-				if (!valueMatcher.matches(value)) {
-					mismatchDescription.appendText("header value ");
-					valueMatcher.describeMismatch(value, mismatchDescription);
-					return false;
-				}
-				return true;
-			}
-
-			@Override
-			public void describeTo(Description description) {
-				description.appendText("Header with value ").appendDescriptionOf(valueMatcher);
-			}
-		};
+		assertThat(doGetWithHeaders("/", ImmutableMap.of("X-RUID", ourRuid)),
+				responseWithHeader("X-RUID", headerWithValue(equalTo(ourRuid))));
 	}
 
 	public static Matcher<String> likeAUUID() {
