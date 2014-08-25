@@ -1,31 +1,5 @@
 package org.araqnid.stuff.test.integration;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.UUID;
-import java.util.regex.Pattern;
-
-import org.apache.http.Header;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.TypeSafeDiagnosingMatcher;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-
 import static org.araqnid.stuff.test.integration.CollectActivityEvents.beginRequestRecord;
 import static org.araqnid.stuff.test.integration.CollectActivityEvents.finishRequestRecord;
 import static org.hamcrest.Matchers.any;
@@ -33,30 +7,23 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 
-public class ServerIntegrationTest {
-	private CloseableHttpClient httpClient;
-	private ServerRunner server = new ServerRunner();
+import java.util.Iterator;
+import java.util.UUID;
+import java.util.regex.Pattern;
 
-	@Before
-	public void startServer() throws Exception {
-		server.start();
-	}
+import org.apache.http.Header;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.TypeSafeDiagnosingMatcher;
+import org.junit.Test;
 
-	@After
-	public void stopServer() throws Exception {
-		server.stop();
-	}
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 
-	@Before
-	public void setUp() throws Exception {
-		httpClient = HttpClientBuilder.create().build();
-	}
-
-	@After
-	public void tearDown() throws Exception {
-		if (httpClient != null) httpClient.close();
-	}
-
+public class ServerIntegrationTest extends IntegrationTest {
 	@Test
 	public void ruid_generated_and_returned_in_http_response() throws Exception {
 		CloseableHttpResponse response = doGet("/");
@@ -93,19 +60,6 @@ public class ServerIntegrationTest {
 		Header ruidHeader = response.getFirstHeader("X-RUID");
 		MatcherAssert.assertThat(ruidHeader, is(headerWithValue(equalTo(ourRuid))));
 		response.close();
-	}
-
-	private CloseableHttpResponse doGet(String path, Map<String, String> headers) throws IOException,
-			URISyntaxException {
-		HttpUriRequest request = new HttpGet(server.uri(path));
-		for (Map.Entry<String, String> e : headers.entrySet()) {
-			request.addHeader(e.getKey(), e.getValue());
-		}
-		return httpClient.execute(request);
-	}
-
-	private CloseableHttpResponse doGet(String path) throws IOException, URISyntaxException {
-		return doGet(path, Collections.<String, String> emptyMap());
 	}
 
 	public static Matcher<Header> headerWithValue(final Matcher<String> valueMatcher) {

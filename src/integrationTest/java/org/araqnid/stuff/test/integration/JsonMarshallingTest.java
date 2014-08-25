@@ -7,8 +7,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.is;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -17,10 +15,6 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.araqnid.stuff.config.ResteasyModule.JacksonContextResolver;
 import org.hamcrest.Description;
 import org.hamcrest.Factory;
@@ -31,40 +25,15 @@ import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.joda.time.LocalDateTime;
 import org.joda.time.LocalTime;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 
-public class JsonMarshallingTest {
-	private CloseableHttpClient httpClient;
-	private ServerRunner server = new ServerRunner(serverConfiguration());
-
-	@Before
-	public void startServer() throws Exception {
-		server.start();
-	}
-
-	@After
-	public void stopServer() throws Exception {
-		server.stop();
-	}
-
-	@Before
-	public void setUp() throws Exception {
-		httpClient = HttpClientBuilder.create().build();
-	}
-
-	@After
-	public void tearDown() throws Exception {
-		if (httpClient != null) httpClient.close();
-	}
-
-	private static Module serverConfiguration() {
+public class JsonMarshallingTest extends IntegrationTest {
+	@Override
+	protected Module serverConfiguration() {
 		return new AbstractModule() {
 			@Override
 			protected void configure() {
@@ -85,35 +54,30 @@ public class JsonMarshallingTest {
 		};
 	}
 
-	private CloseableHttpResponse doGet(String path) throws URISyntaxException, IOException {
-		Preconditions.checkArgument(path.startsWith("/"));
-		return httpClient.execute(new HttpGet(server.uri("/_api" + path)));
-	}
-
 	@Test
 	public void joda_datetime_is_marshalled_as_a_nice_string() throws Exception {
 		assertThat(
-				doGet("/test/datetime"),
+				doGet("/_api/test/datetime"),
 				is(both(ok())
 						.and(responseWithJsonContent(jsonString(like("\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(\\.\\d\\d\\d)?Z"))))));
 	}
 
 	@Test
 	public void joda_localdate_is_marshalled_as_a_nice_string() throws Exception {
-		assertThat(doGet("/test/localdate"),
+		assertThat(doGet("/_api/test/localdate"),
 				is(both(ok()).and(responseWithJsonContent(jsonString(like("\\d\\d\\d\\d-\\d\\d-\\d\\d"))))));
 	}
 
 	@Test
 	public void joda_localtime_is_marshalled_as_a_nice_string() throws Exception {
-		assertThat(doGet("/test/localtime"),
+		assertThat(doGet("/_api/test/localtime"),
 				is(both(ok()).and(responseWithJsonContent(jsonString(like("\\d\\d:\\d\\d:\\d\\d(\\.\\d\\d\\d)?"))))));
 	}
 
 	@Test
 	public void joda_localdatetime_is_marshalled_as_a_nice_string() throws Exception {
 		assertThat(
-				doGet("/test/localdatetime"),
+				doGet("/_api/test/localdatetime"),
 				is(both(ok())
 						.and(responseWithJsonContent(jsonString(like("\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(\\.\\d\\d\\d)?"))))));
 	}
