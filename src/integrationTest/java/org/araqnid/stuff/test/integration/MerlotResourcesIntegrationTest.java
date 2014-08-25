@@ -18,6 +18,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -181,8 +182,9 @@ public class MerlotResourcesIntegrationTest {
 		return user.id;
 	}
 
-	private CloseableHttpResponse doGet(String path, Map<String, String> headers) throws IOException {
-		HttpGet request = new HttpGet(server.appUri(path));
+	private CloseableHttpResponse doGet(String path, Map<String, String> headers) throws IOException,
+			URISyntaxException {
+		HttpGet request = new HttpGet(server.uri(path));
 		for (Map.Entry<String, String> e : headers.entrySet()) {
 			request.addHeader(e.getKey(), e.getValue());
 		}
@@ -190,8 +192,8 @@ public class MerlotResourcesIntegrationTest {
 	}
 
 	private CloseableHttpResponse doPostForm(String path, Map<String, String> headers,
-			Map<String, String> formParameters) throws IOException {
-		HttpPost request = new HttpPost(server.appUri(path));
+			Map<String, String> formParameters) throws IOException, URISyntaxException {
+		HttpPost request = new HttpPost(server.uri(path));
 		for (Map.Entry<String, String> e : headers.entrySet()) {
 			request.addHeader(e.getKey(), e.getValue());
 		}
@@ -203,7 +205,7 @@ public class MerlotResourcesIntegrationTest {
 		return httpClient.execute(request);
 	}
 
-	private CloseableHttpResponse doGet(String path) throws IOException {
+	private CloseableHttpResponse doGet(String path) throws IOException, URISyntaxException {
 		return doGet(path, Collections.<String, String> emptyMap());
 	}
 

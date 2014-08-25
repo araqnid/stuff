@@ -39,6 +39,7 @@ public final class CoreModule extends AbstractModule {
 		install(new WorkQueueModule());
 		install(new ScheduledModule());
 		install(new SynchronousActivityEventsModule());
+		install(new JacksonModule());
 		bind(MerlotRepository.class);
 	}
 

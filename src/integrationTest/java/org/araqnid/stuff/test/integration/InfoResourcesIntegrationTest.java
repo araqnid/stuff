@@ -7,6 +7,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -97,15 +98,15 @@ public class InfoResourcesIntegrationTest {
 		response.close();
 	}
 
-	private CloseableHttpResponse doGet(String path, Map<String, String> headers) throws IOException {
-		HttpUriRequest request = new HttpGet(server.appUri(path));
+	private CloseableHttpResponse doGet(String path, Map<String, String> headers) throws URISyntaxException, IOException {
+		HttpUriRequest request = new HttpGet(server.uri(path));
 		for (Map.Entry<String, String> e : headers.entrySet()) {
 			request.addHeader(e.getKey(), e.getValue());
 		}
 		return httpClient.execute(request);
 	}
 
-	private CloseableHttpResponse doGet(String path) throws IOException {
+	private CloseableHttpResponse doGet(String path) throws URISyntaxException, IOException {
 		return doGet(path, Collections.<String, String> emptyMap());
 	}
 

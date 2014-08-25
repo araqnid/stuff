@@ -1,5 +1,8 @@
 package org.araqnid.stuff.config;
 
+import javax.ws.rs.ext.ContextResolver;
+import javax.ws.rs.ext.Provider;
+
 import org.araqnid.stuff.HelloResource;
 import org.araqnid.stuff.InfoResources;
 import org.araqnid.stuff.MerlotResources;
@@ -8,7 +11,9 @@ import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
 import org.jboss.resteasy.spi.Registry;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
+import com.google.inject.Inject;
 import com.google.inject.Provides;
 
 public final class ResteasyModule extends AbstractModule {
@@ -17,6 +22,7 @@ public final class ResteasyModule extends AbstractModule {
 		bind(HelloResource.class);
 		bind(InfoResources.class);
 		bind(MerlotResources.class);
+		bind(JacksonContextResolver.class);
 	}
 
 	@Provides
@@ -52,5 +58,20 @@ public final class ResteasyModule extends AbstractModule {
 	@Provides
 	public javax.ws.rs.core.SecurityContext securityContext() {
 		return ResteasyProviderFactory.getContextData(javax.ws.rs.core.SecurityContext.class);
+	}
+
+	@Provider
+	public static class JacksonContextResolver implements ContextResolver<ObjectMapper> {
+		private final ObjectMapper objectMapper;
+
+		@Inject
+		public JacksonContextResolver(ObjectMapper objectMapper) {
+			this.objectMapper = objectMapper;
+		}
+
+		@Override
+		public ObjectMapper getContext(Class<?> type) {
+			return objectMapper;
+		}
 	}
 }

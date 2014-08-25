@@ -1,5 +1,9 @@
 package org.araqnid.stuff.test.integration;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+
 import org.araqnid.stuff.activity.ActivityEventSink;
 import org.araqnid.stuff.config.StandaloneAppConfig;
 import org.araqnid.stuff.test.integration.CollectActivityEvents.ActivityEventRecord;
@@ -10,46 +14,56 @@ import org.eclipse.jetty.server.ServerConnector;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.google.common.collect.Iterables;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.util.Modules;
 
 public class ServerRunner {
+	private final Module additionalConfig;
 	private Server server;
 	private Injector injector;
 	private int port;
-	private String baseUri;
 	private CollectActivityEvents collectActivityEvents = new CollectActivityEvents();
 
+	public ServerRunner() {
+		this.additionalConfig = null;
+	}
+
+	public ServerRunner(Module additional) {
+		this.additionalConfig = additional;
+	}
+
 	public void start() throws Exception {
-		injector = Guice.createInjector(Modules.override(new StandaloneAppConfig()).with(new AbstractModule() {
-			@Override
-			protected void configure() {
-				bind(ActivityEventSink.class).toInstance(collectActivityEvents);
-			}
+		injector = Guice.createInjector(Modules.override(new StandaloneAppConfig()).with(
+				Iterables.filter(Arrays.asList(new AbstractModule() {
+					@Override
+					protected void configure() {
+						bind(ActivityEventSink.class).toInstance(collectActivityEvents);
+					}
 
-			@Singleton
-			@Provides
-			public Server server(Handler handler) {
-				Server server = new Server();
-				server.setConnectors(new Connector[] { new ServerConnector(server) });
-				server.setHandler(handler);
-				return server;
-			}
+					@Singleton
+					@Provides
+					public Server server(Handler handler) {
+						Server server = new Server();
+						server.setConnectors(new Connector[] { new ServerConnector(server) });
+						server.setHandler(handler);
+						return server;
+					}
 
-			@Provides
-			public ServerConnector serverConnector(Server server) {
-				return (ServerConnector) server.getConnectors()[0];
-			}
-		}));
+					@Provides
+					public ServerConnector serverConnector(Server server) {
+						return (ServerConnector) server.getConnectors()[0];
+					}
+				}, additionalConfig), Predicates.notNull())));
 		server = injector.getInstance(Server.class);
 		server.start();
 		port = injector.getInstance(ServerConnector.class).getLocalPort();
-		baseUri = String.format("http://localhost:%d", port);
 	}
 
 	public void stop() throws Exception {
@@ -60,9 +74,9 @@ public class ServerRunner {
 		collectActivityEvents.events.clear();
 	}
 
-	public String appUri(String path) {
+	public URI uri(String path) throws URISyntaxException {
 		Preconditions.checkArgument(path.startsWith("/"));
-		return baseUri + path;
+		return new URI("http", null, "localhost", port, path, null, null);
 	}
 
 	public Injector getInjector() {
@@ -74,11 +88,12 @@ public class ServerRunner {
 	}
 
 	public Iterable<CollectActivityEvents.ActivityEventRecord> activityEventsForRuid(final String ruid) {
-		return Iterables.filter(collectActivityEvents.events, new Predicate<CollectActivityEvents.ActivityEventRecord>() {
-			@Override
-			public boolean apply(ActivityEventRecord input) {
-				return input.ruid.equals(ruid);
-			}
-		});
+		return Iterables.filter(collectActivityEvents.events,
+				new Predicate<CollectActivityEvents.ActivityEventRecord>() {
+					@Override
+					public boolean apply(ActivityEventRecord input) {
+						return input.ruid.equals(ruid);
+					}
+				});
 	}
 }

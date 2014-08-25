@@ -1,6 +1,7 @@
 package org.araqnid.stuff.test.integration;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
@@ -79,7 +80,9 @@ public class ServerIntegrationTest {
 		response.close();
 		MatcherAssert.assertThat(
 				server.activityEventsForRuid(ruid),
-				includesSubsequence(beginRequestRecord(equalTo("HttpRequest")).withDescription(stringContainsInOrder(ImmutableList.of("GET", "/"))),
+				includesSubsequence(
+						beginRequestRecord(equalTo("HttpRequest")).withDescription(
+								stringContainsInOrder(ImmutableList.of("GET", "/"))),
 						finishRequestRecord(equalTo("HttpRequest"))));
 	}
 
@@ -92,15 +95,16 @@ public class ServerIntegrationTest {
 		response.close();
 	}
 
-	private CloseableHttpResponse doGet(String path, Map<String, String> headers) throws IOException {
-		HttpUriRequest request = new HttpGet(server.appUri(path));
+	private CloseableHttpResponse doGet(String path, Map<String, String> headers) throws IOException,
+			URISyntaxException {
+		HttpUriRequest request = new HttpGet(server.uri(path));
 		for (Map.Entry<String, String> e : headers.entrySet()) {
 			request.addHeader(e.getKey(), e.getValue());
 		}
 		return httpClient.execute(request);
 	}
 
-	private CloseableHttpResponse doGet(String path) throws IOException {
+	private CloseableHttpResponse doGet(String path) throws IOException, URISyntaxException {
 		return doGet(path, Collections.<String, String> emptyMap());
 	}
 
@@ -200,9 +204,7 @@ public class ServerIntegrationTest {
 					}
 					T value = valueIterator.next();
 					if (currentMatcher.matches(value)) {
-						if (!matchIterator.hasNext()) {
-							return true;
-						}
+						if (!matchIterator.hasNext()) { return true; }
 						currentMatcher = matchIterator.next();
 					}
 				}
@@ -211,7 +213,7 @@ public class ServerIntegrationTest {
 			@Override
 			public void describeTo(Description description) {
 				description.appendText("an iterable including ");
-				for (Iterator<Matcher<? super T>> iter = matchers.iterator(); iter.hasNext(); ) {
+				for (Iterator<Matcher<? super T>> iter = matchers.iterator(); iter.hasNext();) {
 					description.appendDescriptionOf(iter.next());
 					if (iter.hasNext()) {
 						description.appendText(", ");
