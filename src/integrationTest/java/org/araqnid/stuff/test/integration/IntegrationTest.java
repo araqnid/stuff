@@ -3,7 +3,6 @@ package org.araqnid.stuff.test.integration;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -19,6 +18,8 @@ import org.apache.http.message.BasicNameValuePair;
 import org.junit.After;
 import org.junit.Before;
 
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Multimap;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 
@@ -55,17 +56,17 @@ public class IntegrationTest {
 		};
 	}
 
-	protected CloseableHttpResponse doGetWithHeaders(String path, Map<String, String> headers) throws IOException,
+	protected CloseableHttpResponse doGetWithHeaders(String path, Multimap<String, String> headers) throws IOException,
 			URISyntaxException {
 		HttpUriRequest request = new HttpGet(server.uri(path));
-		for (Map.Entry<String, String> e : headers.entrySet()) {
+		for (Map.Entry<String, String> e : headers.entries()) {
 			request.addHeader(e.getKey(), e.getValue());
 		}
 		return httpClient.execute(request);
 	}
 
 	protected CloseableHttpResponse doGet(String path) throws IOException, URISyntaxException {
-		return doGetWithHeaders(path, Collections.<String, String> emptyMap());
+		return doGetWithHeaders(path, ImmutableMultimap.<String,String>of());
 	}
 
 	protected CloseableHttpResponse doPostForm(String path, Map<String, String> headers,

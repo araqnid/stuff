@@ -2,8 +2,8 @@ package org.araqnid.stuff.test.integration;
 
 import static org.araqnid.stuff.test.integration.CollectActivityEvents.beginRequestRecord;
 import static org.araqnid.stuff.test.integration.CollectActivityEvents.finishRequestRecord;
-import static org.araqnid.stuff.test.integration.HttpClientMatchers.responseWithHeader;
 import static org.araqnid.stuff.test.integration.HttpClientMatchers.headerWithValue;
+import static org.araqnid.stuff.test.integration.HttpClientMatchers.responseWithHeader;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.any;
 import static org.hamcrest.Matchers.equalTo;
@@ -20,7 +20,7 @@ import org.junit.Test;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
 
 public class ServerIntegrationTest extends IntegrationTest {
 	@Test
@@ -47,7 +47,7 @@ public class ServerIntegrationTest extends IntegrationTest {
 	@Test
 	public void ruid_echoed_from_http_request() throws Exception {
 		String ourRuid = UUID.randomUUID().toString();
-		assertThat(doGetWithHeaders("/", ImmutableMap.of("X-RUID", ourRuid)),
+		assertThat(doGetWithHeaders("/", ImmutableMultimap.of("X-RUID", ourRuid)),
 				responseWithHeader("X-RUID", headerWithValue(equalTo(ourRuid))));
 	}
 

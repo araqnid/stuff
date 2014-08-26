@@ -1,8 +1,11 @@
 package org.araqnid.stuff;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -17,13 +20,17 @@ import org.jboss.resteasy.core.ResourceMethodInvoker;
 import org.jboss.resteasy.core.ResourceMethodRegistry;
 import org.jboss.resteasy.spi.Registry;
 
+import com.google.common.base.Function;
 import com.google.common.base.Functions;
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.TreeMultimap;
 import com.google.inject.Inject;
 
 @Path("info")
-@Produces("application/json")
 public class InfoResources {
 	private final AppVersion appVersion;
 	private final AppStateMonitor appStateMonitor;
@@ -38,12 +45,21 @@ public class InfoResources {
 
 	@GET
 	@Path("version")
+	@Produces("application/json")
 	public AppVersion getVersion() {
 		return appVersion;
 	}
 
 	@GET
+	@Path("version")
+	@Produces("text/plain")
+	public String getPlainVersion() {
+		return appVersion.version;
+	}
+
+	@GET
 	@Path("state")
+	@Produces({ "application/json", "text/plain" })
 	public AppState getAppState() {
 		return appStateMonitor.getState();
 	}
@@ -69,6 +85,7 @@ public class InfoResources {
 
 	@GET
 	@Path("routing")
+	@Produces("application/json")
 	public Map<String, List<InvokerDetail>> getRouting() {
 		ResourceMethodRegistry rmr = (ResourceMethodRegistry) registry;
 		Map<String, List<InvokerDetail>> output = new TreeMap<>();
@@ -81,7 +98,7 @@ public class InfoResources {
 				if (invoker instanceof ResourceMethodInvoker) {
 					ResourceMethodInvoker resourceMethodInvoker = (ResourceMethodInvoker) invoker;
 					invokerInfo = new InvokerDetail(method.getName(), resourceMethodInvoker.getResourceClass()
-							.getName(), resourceMethodInvoker.getHttpMethods(),
+							.getSimpleName(), resourceMethodInvoker.getHttpMethods(),
 							ImmutableSet.copyOf(Iterables.transform(Arrays.asList(resourceMethodInvoker.getConsumes()),
 									Functions.toStringFunction())), ImmutableSet.copyOf(Iterables.transform(
 									Arrays.asList(resourceMethodInvoker.getProduces()), Functions.toStringFunction())));
@@ -94,5 +111,96 @@ public class InfoResources {
 			}
 		}
 		return output;
+	}
+
+	@GET
+	@Path("routing")
+	@Produces("text/plain")
+	public String dumpRouting() {
+		DumpNode root = new DumpNode();
+		for (Map.Entry<String, List<InvokerDetail>> e : getRouting().entrySet()) {
+			Iterator<String> segmentIter = Splitter.on('/').omitEmptyStrings().split(e.getKey()).iterator();
+			DumpNode cursor = root;
+			while (segmentIter.hasNext()) {
+				cursor = cursor.matchSegment(segmentIter.next());
+			}
+			for (InvokerDetail invoker : e.getValue()) {
+				for (String httpMethod : invoker.httpMethods) {
+					cursor.addHandler(httpMethod, invoker.resourceClass + "." + invoker.method);
+				}
+			}
+		}
+		StringWriter sw = new StringWriter();
+		root.dump(new PrintWriter(sw));
+		return sw.toString();
+	}
+
+	private class DumpNode {
+		private final DumpNode parent;
+		private final Map<String, DumpNode> segmentMatches = new TreeMap<>();
+		private final Multimap<String, String> methodHandlers = TreeMultimap.create();
+
+		public DumpNode() {
+			this.parent = null;
+		}
+
+		private DumpNode(DumpNode parent) {
+			this.parent = parent;
+		}
+
+		public DumpNode matchSegment(String segment) {
+			DumpNode next = segmentMatches.get(segment);
+			if (next == null) {
+				next = new DumpNode(this);
+				segmentMatches.put(segment, next);
+			}
+			return next;
+		}
+
+		public void addHandler(String httpMethod, String target) {
+			methodHandlers.put(httpMethod, target);
+		}
+
+		public void dump(PrintWriter pw) {
+			if (!methodHandlers.isEmpty()) {
+				dumpHandlers(pw);
+				pw.println("");
+			}
+			dumpSegments(pw);
+		}
+
+		private void dumpSegments(PrintWriter pw) {
+			for (Map.Entry<String, DumpNode> e : segmentMatches.entrySet()) {
+				indent(pw);
+				pw.append(e.getKey());
+				e.getValue().dumpHandlers(pw);
+				pw.println("");
+				e.getValue().dumpSegments(pw);
+			}
+		}
+
+		private void dumpHandlers(PrintWriter pw) {
+			if (methodHandlers.isEmpty()) return;
+			pw.append(" = ").append(
+					Joiner.on(' ').join(
+							Iterables.transform(methodHandlers.entries(),
+									new Function<Map.Entry<String, String>, String>() {
+										@Override
+										public String apply(Map.Entry<String, String> input) {
+											return input.getKey() + ":" + input.getValue();
+										}
+									})));
+		}
+
+		private int level() {
+			if (parent == null) return 0;
+			return parent.level() + 1;
+		}
+
+		private void indent(PrintWriter pw) {
+			for (int i = 0; i < level(); i++) {
+				pw.write('\t');
+			}
+		}
 	}
 }

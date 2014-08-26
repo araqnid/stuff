@@ -23,6 +23,7 @@ import org.araqnid.stuff.MerlotRepository;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
 
 public class MerlotResourcesIntegrationTest extends IntegrationTest {
 	@Test
@@ -40,7 +41,7 @@ public class MerlotResourcesIntegrationTest extends IntegrationTest {
 		String username = randomEmailAddress();
 		UUID userId = setupUser(userCN, username, randomString().toCharArray());
 		assertThat(
-				doGetWithHeaders("/_api/merlot/", ImmutableMap.of("Cookie", "ATKT=" + authTicket(userId))),
+				doGetWithHeaders("/_api/merlot/", ImmutableMultimap.of("Cookie", "ATKT=" + authTicket(userId))),
 				is(both(ok()).and(
 						responseWithJsonContent(jsonObject().withProperty(
 								"userInfo",
@@ -50,7 +51,7 @@ public class MerlotResourcesIntegrationTest extends IntegrationTest {
 
 	@Test
 	public void status_resource_with_invalid_auth_cookie() throws Exception {
-		assertThat(doGetWithHeaders("/_api/merlot/", ImmutableMap.of("Cookie", "ATKT=xyzzy")), is(forbidden()));
+		assertThat(doGetWithHeaders("/_api/merlot/", ImmutableMultimap.of("Cookie", "ATKT=xyzzy")), is(forbidden()));
 	}
 
 	@Test
@@ -60,7 +61,7 @@ public class MerlotResourcesIntegrationTest extends IntegrationTest {
 		char[] password = randomString().toCharArray();
 		UUID userId = setupAndDeleteUser(userCN, username, password);
 		assertThat(
-				doGetWithHeaders("/_api/merlot/", ImmutableMap.of("Cookie", "ATKT=" + authTicket(userId))),
+				doGetWithHeaders("/_api/merlot/", ImmutableMultimap.of("Cookie", "ATKT=" + authTicket(userId))),
 				is(both(ok()).and(
 						responseWithJsonContent(jsonObject().withProperty("userInfo", jsonNull()).withProperty(
 								"version", jsonAny())))));
