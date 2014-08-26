@@ -3,6 +3,7 @@ package org.araqnid.stuff.config;
 import java.util.List;
 
 import javax.servlet.ServletContext;
+import javax.servlet.ServletContextListener;
 import javax.servlet.http.HttpServletResponse;
 
 import org.araqnid.stuff.EmbeddedAppStartupBanner;
@@ -27,7 +28,8 @@ public class EmbeddedWebappConfig extends AbstractModule {
 	protected void configure() {
 		bindConstant().annotatedWith(Names.named("context_path")).to(context.getContextPath());
 		Multibinder.newSetBinder(binder(), ScheduledJobController.JobDefinition.class);
-		bind(GuiceResteasyBootstrapServletContextListener.class).toInstance(new GuiceResteasyBootstrapServletContextListener() {
+		Multibinder<ServletContextListener> servletContextListeners = Multibinder.newSetBinder(binder(), ServletContextListener.class);
+		servletContextListeners.addBinding().toInstance(new GuiceResteasyBootstrapServletContextListener() {
 			@Override
 			protected List<? extends Module> getModules(ServletContext context) {
 				return ImmutableList.of(new ResteasyModule());
