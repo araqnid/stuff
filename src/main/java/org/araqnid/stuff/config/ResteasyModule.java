@@ -3,6 +3,7 @@ package org.araqnid.stuff.config;
 import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.Provider;
 
+import org.araqnid.stuff.AsyncResources;
 import org.araqnid.stuff.HelloResource;
 import org.araqnid.stuff.InfoResources;
 import org.araqnid.stuff.MerlotResources;
@@ -23,6 +24,7 @@ public final class ResteasyModule extends AbstractModule {
 		bind(InfoResources.class);
 		bind(MerlotResources.class);
 		bind(JacksonContextResolver.class);
+		bind(AsyncResources.class);
 	}
 
 	@Provides

@@ -21,6 +21,7 @@ import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.util.resource.Resource;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
+import org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher;
 import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -107,7 +108,7 @@ public class StandaloneAppConfig extends AbstractModule {
 			@Override
 			protected void configure() {
 				install(new ResteasyServletModule());
-				expose(HttpServletDispatcher.class);
+				expose(HttpServlet30Dispatcher.class);
 			}
 
 			@Provides
@@ -117,7 +118,7 @@ public class StandaloneAppConfig extends AbstractModule {
 					GuiceResteasyBootstrapServletContextListener listener) {
 				ServletContextHandler context = new ServletContextHandler();
 				context.setContextPath("/_api");
-				context.addFilter(new FilterHolder(guiceFilter), "/*", EnumSet.of(DispatcherType.REQUEST));
+				context.addFilter(new FilterHolder(guiceFilter), "/*", EnumSet.of(DispatcherType.REQUEST, DispatcherType.ASYNC));
 				context.addServlet(DefaultServlet.class, "/");
 				context.addEventListener(listener);
 				return context;
