@@ -1,20 +1,29 @@
 package org.araqnid.stuff.test.integration;
 
-import static org.hamcrest.Matchers.equalTo;
-
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.hamcrest.Description;
+import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
+import org.hamcrest.Matchers;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
+import org.hamcrest.collection.IsIterableContainingInAnyOrder;
+import org.hamcrest.collection.IsIterableContainingInOrder;
 
 import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.collect.Sets;
+
+import static org.hamcrest.Matchers.equalTo;
 
 public final class JsonMatchers {
 	private JsonMatchers() {
@@ -120,5 +129,86 @@ public final class JsonMatchers {
 				description.appendText("JSON null");
 			}
 		};
+	}
+
+	public static class ArrayNodeMatcher extends TypeSafeDiagnosingMatcher<ArrayNode> {
+		private Matcher<Iterable<? extends TreeNode>> contentsMatcher = Matchers.emptyIterable();
+
+		@Override
+		protected boolean matchesSafely(final ArrayNode item, Description mismatchDescription) {
+			Iterable<JsonNode> iterable = new Iterable<JsonNode>() {
+				@Override
+				public Iterator<JsonNode> iterator() {
+					return item.elements();
+				}
+			};
+			if (!contentsMatcher.matches(iterable)) {
+				contentsMatcher.describeMismatch(iterable, mismatchDescription);
+				return false;
+			}
+			return true;
+		}
+
+		@Override
+		public void describeTo(Description description) {
+			description.appendText("JSON array");
+			if (contentsMatcher != null) {
+				description.appendText(" containing ").appendDescriptionOf(contentsMatcher);
+			}
+		}
+
+		@SafeVarargs
+		public final ArrayNodeMatcher of(Matcher<? extends TreeNode>... nodeMatchers) {
+			if (nodeMatchers.length == 0) {
+				contentsMatcher = Matchers.emptyIterable();
+				return this;
+			}
+			@SuppressWarnings({ "unchecked", "rawtypes" })
+			List<Matcher<? super TreeNode>> matcherList = (List) Arrays.asList(nodeMatchers);
+			contentsMatcher = IsIterableContainingInOrder.contains(matcherList);
+			return this;
+		}
+
+		@SafeVarargs
+		public final ArrayNodeMatcher inAnyOrder(Matcher<? extends TreeNode>... nodeMatchers) {
+			if (nodeMatchers.length == 0) {
+				contentsMatcher = Matchers.emptyIterable();
+				return this;
+			}
+			@SuppressWarnings({ "unchecked", "rawtypes" })
+			List<Matcher<? super TreeNode>> matcherList = (List) Arrays.asList(nodeMatchers);
+			contentsMatcher = IsIterableContainingInAnyOrder.containsInAnyOrder(matcherList);
+			return this;
+		}
+
+		public ArrayNodeMatcher including(final Matcher<? extends TreeNode> nodeMatcher) {
+			contentsMatcher = new TypeSafeDiagnosingMatcher<Iterable<? extends TreeNode>>() {
+				@Override
+				protected boolean matchesSafely(Iterable<? extends TreeNode> item, Description mismatchDescription) {
+					Iterator<? extends TreeNode> iterator = item.iterator();
+					if (!iterator.hasNext()) {
+						mismatchDescription.appendText("array was empty");
+						return false;
+					}
+					while (iterator.hasNext()) {
+						TreeNode node = iterator.next();
+						if (nodeMatcher.matches(node)) return true;
+					}
+					mismatchDescription.appendText("not matched: ").appendDescriptionOf(nodeMatcher);
+					return false;
+				}
+
+				@Override
+				public void describeTo(Description description) {
+					description.appendDescriptionOf(nodeMatcher);
+				}
+			};
+			return this;
+		}
+	}
+
+	@Factory
+	public static ArrayNodeMatcher jsonArray() {
+		return new ArrayNodeMatcher();
 	}
 }
