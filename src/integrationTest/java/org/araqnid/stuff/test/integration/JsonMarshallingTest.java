@@ -9,6 +9,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.araqnid.stuff.config.ResteasyModule.JacksonContextResolver;
 import org.hamcrest.Description;
 import org.hamcrest.Factory;
@@ -46,83 +47,80 @@ public class JsonMarshallingTest extends IntegrationTest {
 		return new AbstractModule() {
 			@Override
 			protected void configure() {
-				bind(GuiceResteasyBootstrapServletContextListener.class).toInstance(
-						new GuiceResteasyBootstrapServletContextListener() {
+				bind(GuiceResteasyBootstrapServletContextListener.class).toInstance(new GuiceResteasyBootstrapServletContextListener() {
+					@Override
+					protected List<? extends Module> getModules(ServletContext context) {
+						return ImmutableList.of(new AbstractModule() {
 							@Override
-							protected List<? extends Module> getModules(ServletContext context) {
-								return ImmutableList.of(new AbstractModule() {
-									@Override
-									protected void configure() {
-										bind(TestResource.class);
-										bind(JacksonContextResolver.class);
-									}
-								});
+							protected void configure() {
+								bind(TestResource.class);
+								bind(JacksonContextResolver.class);
 							}
 						});
+					}
+				});
 			}
 		};
 	}
 
 	@Test
 	public void joda_datetime_is_marshalled_as_a_nice_string() throws Exception {
-		assertThat(
-				doGet("/_api/test/datetime"),
-				is(both(ok())
-						.and(responseWithJsonContent(jsonString(like("\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(\\.\\d\\d\\d)?Z"))))));
+		try (CloseableHttpResponse response = doGet("/_api/test/datetime")) {
+			assertThat(response,
+					is(both(ok()).and(responseWithJsonContent(jsonString(like("\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(\\.\\d\\d\\d)?Z"))))));
+		}
 	}
 
 	@Test
 	public void joda_localdate_is_marshalled_as_a_nice_string() throws Exception {
-		assertThat(doGet("/_api/test/localdate"),
-				is(both(ok()).and(responseWithJsonContent(jsonString(like("\\d\\d\\d\\d-\\d\\d-\\d\\d"))))));
+		try (CloseableHttpResponse response = doGet("/_api/test/localdate")) {
+			assertThat(response, is(both(ok()).and(responseWithJsonContent(jsonString(like("\\d\\d\\d\\d-\\d\\d-\\d\\d"))))));
+		}
 	}
 
 	@Test
 	public void joda_localtime_is_marshalled_as_a_nice_string() throws Exception {
-		assertThat(doGet("/_api/test/localtime"),
-				is(both(ok()).and(responseWithJsonContent(jsonString(like("\\d\\d:\\d\\d:\\d\\d(\\.\\d\\d\\d)?"))))));
+		try (CloseableHttpResponse response = doGet("/_api/test/localtime")) {
+			assertThat(response, is(both(ok()).and(responseWithJsonContent(jsonString(like("\\d\\d:\\d\\d:\\d\\d(\\.\\d\\d\\d)?"))))));
+		}
 	}
 
 	@Test
 	public void joda_localdatetime_is_marshalled_as_a_nice_string() throws Exception {
-		assertThat(
-				doGet("/_api/test/localdatetime"),
-				is(both(ok())
-						.and(responseWithJsonContent(jsonString(like("\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(\\.\\d\\d\\d)?"))))));
+		try (CloseableHttpResponse response = doGet("/_api/test/localdatetime")) {
+			assertThat(response,
+					is(both(ok()).and(responseWithJsonContent(jsonString(like("\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(\\.\\d\\d\\d)?"))))));
+		}
 	}
 
 	@Test
 	public void present_optional_is_marshalled_directly() throws Exception {
 		String value = randomString();
-		assertThat(
-				doGet("/_api/test/optional/present/" + value),
-				is(both(ok())
-						.and(responseWithJsonContent(jsonString(value)))));
+		try (CloseableHttpResponse response = doGet("/_api/test/optional/present/" + value)) {
+			assertThat(response, is(both(ok()).and(responseWithJsonContent(jsonString(value)))));
+		}
 	}
 
 	@Test
 	public void absent_optional_is_marshalled_as_null() throws Exception {
-		assertThat(
-				doGet("/_api/test/optional/absent"),
-				is(both(ok())
-						.and(responseWithJsonContent(jsonNull()))));
+		try (CloseableHttpResponse response = doGet("/_api/test/optional/absent")) {
+			assertThat(response, is(both(ok()).and(responseWithJsonContent(jsonNull()))));
+		}
 	}
 
 	@Test
 	public void present_optional_property_is_marshalled_directly() throws Exception {
 		String value = randomString();
-		assertThat(
-				doGet("/_api/test/object-with-optional/present/" + value),
-				is(both(ok())
-						.and(responseWithJsonContent(jsonObject().withProperty("value", jsonString(value))))));
+		try (CloseableHttpResponse response = doGet("/_api/test/object-with-optional/present/" + value)) {
+			assertThat(response, is(both(ok()).and(responseWithJsonContent(jsonObject().withProperty("value", jsonString(value))))));
+		}
 	}
 
 	@Test
 	public void absent_optional_property_is_marshalled_as_null() throws Exception {
-		assertThat(
-				doGet("/_api/test/object-with-optional/absent"),
-				is(both(ok())
-						.and(responseWithJsonContent(jsonObject().withProperty("value", jsonNull())))));
+		try (CloseableHttpResponse response = doGet("/_api/test/object-with-optional/absent")) {
+			assertThat(response, is(both(ok()).and(responseWithJsonContent(jsonObject().withProperty("value", jsonNull())))));
+		}
 	}
 
 	@Test
@@ -131,13 +129,19 @@ public class JsonMarshallingTest extends IntegrationTest {
 		String key2 = randomString();
 		String value1 = randomString();
 		String value2 = randomString();
-		assertThat(doGet("/_api/test/multimap/" + Joiner.on('/').join(key1, value1, value2)),
-				is(both(ok()).and(responseWithJsonContent(jsonObject().withProperty(key1, jsonArray().of(jsonString(value1), jsonString(value2)))))));
-		assertThat(
-				doGet("/_api/test/multimap/" + Joiner.on('/').join(key1, value1, key2, value2)),
-				is(both(ok()).and(
-						responseWithJsonContent(jsonObject().withProperty(key1, jsonArray().of(jsonString(value1))).withProperty(key2,
-								jsonArray().of(jsonString(value2)))))));
+		try (CloseableHttpResponse response = doGet("/_api/test/multimap/" + Joiner.on('/').join(key1, value1, value2))) {
+			assertThat(
+					response,
+					is(both(ok()).and(
+							responseWithJsonContent(jsonObject().withProperty(key1, jsonArray().of(jsonString(value1), jsonString(value2)))))));
+		}
+		try (CloseableHttpResponse response = doGet("/_api/test/multimap/" + Joiner.on('/').join(key1, value1, key2, value2))) {
+			assertThat(
+					response,
+					is(both(ok()).and(
+							responseWithJsonContent(jsonObject().withProperty(key1, jsonArray().of(jsonString(value1))).withProperty(key2,
+									jsonArray().of(jsonString(value2)))))));
+		}
 	}
 
 	@Factory
