@@ -41,7 +41,7 @@ public class MerlotResources {
 	@GET
 	@Produces("application/json")
 	public Status fetchStatus() {
-		return new Status(appVersion.version, optionalUserInfo().orNull());
+		return new Status(appVersion.version, optionalUserInfo());
 	}
 
 	@POST
@@ -94,9 +94,9 @@ public class MerlotResources {
 
 	public static final class Status {
 		public final String version;
-		public final UserInfo userInfo;
+		public final Optional<UserInfo> userInfo;
 
-		public Status(String version, UserInfo userInfo) {
+		public Status(String version, Optional<UserInfo> userInfo) {
 			this.version = version;
 			this.userInfo = userInfo;
 		}
