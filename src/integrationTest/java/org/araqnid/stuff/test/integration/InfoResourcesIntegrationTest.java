@@ -35,8 +35,16 @@ import com.google.common.io.CharSource;
 
 public class InfoResourcesIntegrationTest extends IntegrationTest {
 	@Test
-	public void version_resource_as_json() throws Exception {
+	public void version_resource_default_is_json() throws Exception {
 		try (CloseableHttpResponse response = doGet("/_api/info/version")) {
+			assertThat(response, is(allOf(ok(), responseWithJsonContent(jsonAny()))));
+		}
+	}
+
+	@Test
+	public void version_resource_as_json() throws Exception {
+		try (CloseableHttpResponse response = doGetWithHeaders("/_api/info/version",
+				ImmutableMultimap.of("Accept", "application/json"))) {
 			assertThat(
 					response,
 					is(allOf(
@@ -66,8 +74,16 @@ public class InfoResourcesIntegrationTest extends IntegrationTest {
 	}
 
 	@Test
-	public void state_resource_as_json() throws Exception {
+	public void state_resource_default_is_json() throws Exception {
 		try (CloseableHttpResponse response = doGet("/_api/info/state")) {
+			assertThat(response, is(allOf(ok(), responseWithJsonContent(jsonAny()))));
+		}
+	}
+
+	@Test
+	public void state_resource_as_json() throws Exception {
+		try (CloseableHttpResponse response = doGetWithHeaders("/_api/info/state",
+				ImmutableMultimap.of("Accept", "application/json"))) {
 			assertThat(response, is(allOf(ok(), responseWithJsonContent(jsonString(any(String.class))))));
 		}
 	}
@@ -81,8 +97,16 @@ public class InfoResourcesIntegrationTest extends IntegrationTest {
 	}
 
 	@Test
-	public void routing_resource_as_json() throws Exception {
+	public void routing_resource_default_is_json() throws Exception {
 		try (CloseableHttpResponse response = doGet("/_api/info/routing")) {
+			assertThat(response, is(allOf(ok(), responseWithJsonContent(jsonAny()))));
+		}
+	}
+
+	@Test
+	public void routing_resource_as_json() throws Exception {
+		try (CloseableHttpResponse response = doGetWithHeaders("/_api/info/routing",
+				ImmutableMultimap.of("Accept", "application/json"))) {
 			assertThat(response, is(allOf(ok(), responseWithJsonContent(jsonAny()))));
 		}
 	}
