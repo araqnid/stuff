@@ -35,6 +35,7 @@ public class CrossScopeTest {
 				@Override
 				public <T> Provider<T> scope(final Key<T> key, final Provider<T> unscoped) {
 					return new Provider<T>() {
+						@Override
 						public T get() {
 							if (scopedThings == null) throw new IllegalStateException("Scope not entered yet");
 							if (!scopedThings.containsKey(key)) {
