@@ -6,8 +6,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.araqnid.stuff.AppLifecycleEvent;
-import org.araqnid.stuff.AppService;
-import org.araqnid.stuff.AppServicesAdaptor;
 import org.araqnid.stuff.AppStateMonitor;
 import org.araqnid.stuff.AppVersion;
 import org.araqnid.stuff.MerlotRepository;
@@ -28,10 +26,8 @@ public final class CoreModule extends AbstractModule {
 	@Override
 	protected void configure() {
 		install(EventCast.eventCastModuleBuilder().implement(AppLifecycleEvent.class).build());
-		Multibinder.newSetBinder(binder(), AppService.class);
 		Multibinder<Service> services = Multibinder.newSetBinder(binder(), Service.class);
 		services.addBinding().to(ScheduledJobController.class);
-		services.addBinding().to(AppServicesAdaptor.class);
 		bind(AppVersion.class).toInstance(appVersion());
 		bind(AppStateMonitor.class);
 		bind(JsonFactory.class).to(MappingJsonFactory.class).in(Singleton.class);
