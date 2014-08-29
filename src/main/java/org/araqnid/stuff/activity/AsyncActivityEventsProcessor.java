@@ -1,56 +1,37 @@
 package org.araqnid.stuff.activity;
 
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
-import org.araqnid.stuff.AppService;
 import org.araqnid.stuff.activity.AsyncActivityEventSink.Event;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.google.inject.Inject;
 
-public class AsyncActivityEventsProcessor implements AppService {
-	private static final Logger LOG = LoggerFactory.getLogger(AsyncActivityEventsProcessor.class);
+public class AsyncActivityEventsProcessor extends AbstractExecutionThreadService {
+	private static final Event STOP = new Event() {
+		@Override
+		public void deliver(ActivityEventSink sink) {
+		}
+	};
 	private final ActivityEventSink sink;
-	private final ExecutorService executor;
 	private final BlockingQueue<Event> queue;
 
 	@Inject
 	public AsyncActivityEventsProcessor(ActivityEventSink sink, BlockingQueue<Event> queue) {
 		this.sink = sink;
 		this.queue = queue;
-		this.executor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat(
-				"AsyncActivityEvents").build());
 	}
 
 	@Override
-	public void start() {
-		executor.execute(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					do {
-						Event event = queue.take();
-						event.deliver(sink);
-					} while (true);
-				} catch (InterruptedException e) {
-					LOG.debug("Consuming event queue interruped, exiting");
-				}
-			}
-		});
-	}
-
-	@Override
-	public void stop() {
-		executor.shutdownNow();
-		try {
-			executor.awaitTermination(2, TimeUnit.SECONDS);
-		} catch (InterruptedException e) {
-			LOG.warn("Interrupted wait for consumer thread shutdown");
+	protected void run() throws Exception {
+		while (isRunning()) {
+			Event event = queue.take();
+			if (event != STOP) event.deliver(sink);
 		}
+	}
+
+	@Override
+	protected void triggerShutdown() {
+		queue.add(STOP);
 	}
 }
