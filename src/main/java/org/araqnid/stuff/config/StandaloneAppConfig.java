@@ -7,7 +7,6 @@ import java.util.Map;
 import javax.servlet.DispatcherType;
 import javax.servlet.ServletContext;
 
-import org.araqnid.stuff.AppService;
 import org.araqnid.stuff.AppStartupBanner;
 import org.araqnid.stuff.JettyAppService;
 import org.araqnid.stuff.activity.RequestActivityFilter;
@@ -25,6 +24,7 @@ import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Service;
 import com.google.inject.AbstractModule;
 import com.google.inject.Exposed;
 import com.google.inject.Module;
@@ -72,8 +72,8 @@ public class StandaloneAppConfig extends AbstractModule {
 						}
 					});
 			bind(RequestActivityFilter.RequestLogger.class).to(RequestActivityFilter.BasicRequestLogger.class);
-			Multibinder<AppService> appServices = Multibinder.newSetBinder(binder(), AppService.class);
-			appServices.addBinding().to(JettyAppService.class);
+			Multibinder<Service> services = Multibinder.newSetBinder(binder(), Service.class);
+			services.addBinding().to(JettyAppService.class);
 			install(new VanillaContextModule());
 			install(new ResteasyContextModule());
 		}

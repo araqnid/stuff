@@ -2,9 +2,10 @@ package org.araqnid.stuff;
 
 import org.eclipse.jetty.server.Server;
 
+import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.inject.Inject;
 
-public class JettyAppService implements AppService {
+public class JettyAppService extends AbstractIdleService {
 	private final Server jetty;
 
 	@Inject
@@ -13,20 +14,12 @@ public class JettyAppService implements AppService {
 	}
 
 	@Override
-	public void start() {
-		try {
-			jetty.start();
-		} catch (Exception e) {
-			throw new RuntimeException("Unable to start Jetty", e);
-		}
+	protected void startUp() throws Exception {
+		jetty.start();
 	}
 
 	@Override
-	public void stop() {
-		try {
-			jetty.stop();
-		} catch (Exception e) {
-			throw new RuntimeException("Unable to stop Jetty", e);
-		}
+	protected void shutDown() throws Exception {
+		jetty.stop();
 	}
 }
