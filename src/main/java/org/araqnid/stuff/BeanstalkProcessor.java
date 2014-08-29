@@ -1,10 +1,9 @@
 package org.araqnid.stuff;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.araqnid.stuff.activity.ActivityScopeControl;
 import org.araqnid.stuff.activity.AppRequestType;
@@ -16,6 +15,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.AbstractService;
+import com.google.common.util.concurrent.ExecutionList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -34,7 +34,7 @@ public class BeanstalkProcessor extends AbstractService {
 	private final Provider<? extends DeliveryTarget> targetProvider;
 	private final ExecutorService executor;
 	private final int maxThreads;
-	private final Set<TubeConsumer> consumers = new HashSet<>();
+	private final ConcurrentLinkedDeque<TubeConsumer> consumers = new ConcurrentLinkedDeque<>();
 
 	public BeanstalkProcessor(Provider<Client> connectionProvider,
 			String tubeName,
@@ -54,7 +54,14 @@ public class BeanstalkProcessor extends AbstractService {
 	protected void doStart() {
 		LOG.info("Consuming from tube \"{}\" with {} thread(s)", tubeName, maxThreads);
 		for (int i = 0; i < maxThreads; i++) {
-			TubeConsumer consumer = new TubeConsumer();
+			final TubeConsumer consumer = new TubeConsumer();
+			consumer.addCompletionListener(new Runnable() {
+				@Override
+				public void run() {
+					consumers.remove();
+					// TODO schedule reconnecting
+				}
+			}, MoreExecutors.sameThreadExecutor());
 			consumers.add(consumer);
 			executor.execute(consumer);
 		}
@@ -63,15 +70,24 @@ public class BeanstalkProcessor extends AbstractService {
 
 	@Override
 	protected void doStop() {
-		Futures.allAsList(Iterables.transform(consumers, new Function<TubeConsumer, ListenableFuture<Boolean>>() {
+		executor.shutdown();
+		Futures.allAsList(Iterables.transform(consumers, new Function<TubeConsumer, ListenableFuture<?>>() {
 			@Override
-			public ListenableFuture<Boolean> apply(TubeConsumer consumer) {
+			public ListenableFuture<?> apply(TubeConsumer consumer) {
+				final SettableFuture<Boolean> future = SettableFuture.create();
 				consumer.halt();
-				return consumer.finished;
+				consumer.addCompletionListener(new Runnable() {
+					@Override
+					public void run() {
+						future.set(true);
+					}
+				}, MoreExecutors.sameThreadExecutor());
+				return future;
 			}
 		})).addListener(new Runnable() {
 			@Override
 			public void run() {
+				LOG.info("Stopped consuming from tube \"{}\"", tubeName);
 				notifyStopped();
 			}
 		}, MoreExecutors.sameThreadExecutor());
@@ -104,47 +120,49 @@ public class BeanstalkProcessor extends AbstractService {
 	private final class TubeConsumer implements Runnable {
 		private Client connection;
 		private Logger log = LoggerFactory.getLogger(BeanstalkProcessor.class.getName() + "." + tubeName);
-		private AtomicBoolean halted = new AtomicBoolean();
-		private SettableFuture<Boolean> finished = SettableFuture.create();
+		private ExecutionList completionListeners = new ExecutionList();
+		private boolean completed;
+		private boolean haltRequested;
 
 		@Override
 		public void run() {
 			try {
 				connect();
-				if (!tubeName.equals("default")) {
-					connection.watch(tubeName);
-					connection.ignore("default");
-				}
-				connection.useTube(tubeName);
 				try {
-					pollConnection();
+					consume();
 				} finally {
-					synchronized (this) {
-						connection = null;
-					}
+					clearConnection();
 				}
 			} finally {
-				finished.set(true);
+				synchronized (this) {
+					completed = true;
+				}
+				completionListeners.execute();
 			}
 		}
 
-		private void connect() {
-			Client newConnection = connectionProvider.get();
+		public void halt() {
 			synchronized (this) {
-				connection = newConnection;
+				if (completed) return;
+				haltRequested = true;
 			}
+			connection.close();
 		}
 
-		private void pollConnection() {
+		public void addCompletionListener(Runnable runnable, Executor executor) {
+			completionListeners.add(runnable, executor);
+		}
+
+		private void consume() {
+			setupConnection();
 			log.debug("Listening for jobs");
-			while (true) {
-				if (halted.get()) break;
+			while (!isHaltRequested()) {
 				log.debug("Reserving job");
 				Job job;
 				try {
 					job = connection.reserve(100);
 				} catch (BeanstalkException e) {
-					if (halted.get()) {
+					if (isHaltRequested()) {
 						log.debug("Error reserving job -- ignoring during halt", e);
 					}
 					else {
@@ -167,10 +185,27 @@ public class BeanstalkProcessor extends AbstractService {
 			connection.close();
 		}
 
-		public synchronized void halt() {
-			if (connection == null) return;
-			halted.set(true);
-			connection.close();
+		private void setupConnection() {
+			if (!tubeName.equals("default")) {
+				connection.watch(tubeName);
+				connection.ignore("default");
+			}
+			connection.useTube(tubeName);
+		}
+
+		private void connect() {
+			Client newConnection = connectionProvider.get();
+			synchronized (this) {
+				connection = newConnection;
+			}
+		}
+
+		private synchronized void clearConnection() {
+			connection = null;
+		}
+
+		private synchronized boolean isHaltRequested() {
+			return haltRequested;
 		}
 	}
 
