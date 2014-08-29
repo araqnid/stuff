@@ -4,7 +4,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.araqnid.stuff.activity.ActivityScopeControl;
@@ -13,14 +12,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.AbstractService;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.SettableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Provider;
 import com.surftools.BeanstalkClient.BeanstalkException;
 import com.surftools.BeanstalkClient.Client;
 import com.surftools.BeanstalkClient.Job;
 
-public class BeanstalkProcessor implements AppService {
+public class BeanstalkProcessor extends AbstractService {
 	private static final Logger LOG = LoggerFactory.getLogger(BeanstalkProcessor.class);
 	private final Provider<Client> connectionProvider;
 	private final String tubeName;
@@ -30,8 +36,11 @@ public class BeanstalkProcessor implements AppService {
 	private final int maxThreads;
 	private final Set<TubeConsumer> consumers = new HashSet<>();
 
-	public BeanstalkProcessor(Provider<Client> connectionProvider, String tubeName, int maxThreads,
-			ActivityScopeControl scopeControl, Provider<? extends DeliveryTarget> targetProvider) {
+	public BeanstalkProcessor(Provider<Client> connectionProvider,
+			String tubeName,
+			int maxThreads,
+			ActivityScopeControl scopeControl,
+			Provider<? extends DeliveryTarget> targetProvider) {
 		this.connectionProvider = connectionProvider;
 		this.tubeName = tubeName;
 		this.scopeControl = scopeControl;
@@ -42,26 +51,30 @@ public class BeanstalkProcessor implements AppService {
 	}
 
 	@Override
-	public void start() {
+	protected void doStart() {
 		LOG.info("Consuming from tube \"{}\" with {} thread(s)", tubeName, maxThreads);
 		for (int i = 0; i < maxThreads; i++) {
 			TubeConsumer consumer = new TubeConsumer();
 			consumers.add(consumer);
 			executor.execute(consumer);
 		}
+		notifyStarted();
 	}
 
 	@Override
-	public void stop() {
-		for (TubeConsumer consumer : consumers) {
-			consumer.halt();
-		}
-		executor.shutdown();
-		try {
-			executor.awaitTermination(5, TimeUnit.SECONDS);
-		} catch (InterruptedException e) {
-			LOG.warn("Waiting for executor shutdown interrupted: " + e);
-		}
+	protected void doStop() {
+		Futures.allAsList(Iterables.transform(consumers, new Function<TubeConsumer, ListenableFuture<Boolean>>() {
+			@Override
+			public ListenableFuture<Boolean> apply(TubeConsumer consumer) {
+				consumer.halt();
+				return consumer.finished;
+			}
+		})).addListener(new Runnable() {
+			@Override
+			public void run() {
+				notifyStopped();
+			}
+		}, MoreExecutors.sameThreadExecutor());
 	}
 
 	private boolean deliver(Job job) {
@@ -92,21 +105,26 @@ public class BeanstalkProcessor implements AppService {
 		private Client connection;
 		private Logger log = LoggerFactory.getLogger(BeanstalkProcessor.class.getName() + "." + tubeName);
 		private AtomicBoolean halted = new AtomicBoolean();
+		private SettableFuture<Boolean> finished = SettableFuture.create();
 
 		@Override
 		public void run() {
-			connect();
-			if (!tubeName.equals("default")) {
-				connection.watch(tubeName);
-				connection.ignore("default");
-			}
-			connection.useTube(tubeName);
 			try {
-				pollConnection();
-			} finally {
-				synchronized (this) {
-					connection = null;
+				connect();
+				if (!tubeName.equals("default")) {
+					connection.watch(tubeName);
+					connection.ignore("default");
 				}
+				connection.useTube(tubeName);
+				try {
+					pollConnection();
+				} finally {
+					synchronized (this) {
+						connection = null;
+					}
+				}
+			} finally {
+				finished.set(true);
 			}
 		}
 

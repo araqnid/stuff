@@ -1,11 +1,11 @@
 package org.araqnid.stuff.config;
 
-import org.araqnid.stuff.AppService;
 import org.araqnid.stuff.SomeQueueProcessor;
 import org.araqnid.stuff.activity.RequestActivity;
 import org.araqnid.stuff.workqueue.SqlWorkQueue;
 import org.araqnid.stuff.workqueue.WorkQueue;
 
+import com.google.common.util.concurrent.Service;
 import com.google.inject.Provides;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
@@ -13,7 +13,7 @@ import com.google.inject.name.Named;
 public final class WorkQueueModule extends BeanstalkWorkQueueModule {
 	@Override
 	protected void configureDelivery() {
-		into(Multibinder.newSetBinder(binder(), AppService.class));
+		into(Multibinder.newSetBinder(binder(), Service.class));
 		process("somequeue").with(SomeQueueProcessor.class);
 		process("otherqueue").with(SomeQueueProcessor.class);
 	}
