@@ -1,7 +1,7 @@
 <configuration>
 	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
 		<encoder>
-			<pattern>stuff %-5level %X{ruid} [%logger{0}] %m%n</pattern>
+			<pattern>stuff %-5level %X{ruid} [%t] [%logger{0}] %m%n</pattern>
 		</encoder>
 	</appender>
 

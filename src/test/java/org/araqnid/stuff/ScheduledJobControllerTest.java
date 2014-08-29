@@ -1,7 +1,5 @@
 package org.araqnid.stuff;
 
-import static org.araqnid.stuff.testutil.RandomData.randomString;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +33,8 @@ import com.google.inject.OutOfScopeException;
 import com.google.inject.Provider;
 import com.google.inject.ProvisionException;
 import com.google.inject.Scope;
+
+import static org.araqnid.stuff.testutil.RandomData.randomString;
 
 public class ScheduledJobControllerTest {
 	private final Provider<ScheduledExecutorService> executorProvider = new Provider<ScheduledExecutorService>() {
@@ -72,7 +72,7 @@ public class ScheduledJobControllerTest {
 			inScope = true;
 			mockScopeControl.beginRequest(ruid, type, description);
 		}
-		
+
 		@Override
 		public void beginRequest(AppRequestType type, String description) {
 			inScope = true;
@@ -119,7 +119,7 @@ public class ScheduledJobControllerTest {
 				Mockito.mock(Runnable.class), delay, interval);
 		ScheduledJobController controller = new ScheduledJobController(executorProvider, scopeControl,
 				ImmutableSet.of(job));
-		controller.start();
+		controller.startAsync().awaitRunning();
 		Mockito.verify(mockExecutor).scheduleAtFixedRate(Mockito.any(Runnable.class), Mockito.eq(delay),
 				Mockito.eq(interval), Mockito.eq(TimeUnit.MILLISECONDS));
 	}
@@ -128,8 +128,8 @@ public class ScheduledJobControllerTest {
 	public void executor_is_terminated_on_stop() throws Exception {
 		ScheduledJobController controller = new ScheduledJobController(executorProvider, scopeControl,
 				ImmutableSet.<JobDefinition> of());
-		controller.start();
-		controller.stop();
+		controller.startAsync().awaitRunning();
+		controller.stopAsync().awaitTerminated();
 		Mockito.verify(mockExecutor).shutdown();
 		Mockito.verify(mockExecutor).awaitTermination(Mockito.anyLong(), Mockito.any(TimeUnit.class));
 	}
@@ -143,7 +143,7 @@ public class ScheduledJobControllerTest {
 		ScheduledJobController controller = new ScheduledJobController(executorProvider, scopeControl,
 				ImmutableSet.of(job));
 		captureSubmittedJobs();
-		controller.start();
+		controller.startAsync().awaitRunning();
 		scheduledJobBodies.get(0).run();
 		Mockito.verify(jobBody).run();
 	}
@@ -170,9 +170,10 @@ public class ScheduledJobControllerTest {
 		ScheduledJobController controller = new ScheduledJobController(executorProvider, scopeControl,
 				ImmutableSet.of(job));
 		captureSubmittedJobs();
-		controller.start();
+		controller.startAsync().awaitRunning();
 		scheduledJobBodies.get(0).run();
-		MatcherAssert.assertThat(activityScopedThings, Matchers.contains(Matchers.instanceOf(ActivityScopedThing.class)));
+		MatcherAssert.assertThat(activityScopedThings,
+				Matchers.contains(Matchers.instanceOf(ActivityScopedThing.class)));
 	}
 
 	@Test
@@ -194,7 +195,7 @@ public class ScheduledJobControllerTest {
 		ScheduledJobController controller = new ScheduledJobController(executorProvider, scopeControl,
 				ImmutableSet.of(job));
 		captureSubmittedJobs();
-		controller.start();
+		controller.startAsync().awaitRunning();
 		scheduledJobBodies.get(0).run();
 		Mockito.verify(mockScopeControl).beginRequest(Mockito.eq(AppRequestType.ScheduledJob),
 				Mockito.argThat(Matchers.stringContainsInOrder(ImmutableList.of(jobString))));

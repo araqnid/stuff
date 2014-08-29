@@ -10,11 +10,12 @@ import org.araqnid.stuff.activity.AppRequestType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 
-public class ScheduledJobController implements AppService {
+public class ScheduledJobController extends AbstractIdleService {
 	private static final Logger LOG = LoggerFactory.getLogger(ScheduledJobController.class);
 	private static final Provider<ScheduledExecutorService> EXECUTOR_FACTORY = new Provider<ScheduledExecutorService>() {
 		@Override
@@ -33,7 +34,8 @@ public class ScheduledJobController implements AppService {
 		this(EXECUTOR_FACTORY, scopeControl, jobs);
 	}
 
-	public ScheduledJobController(Provider<ScheduledExecutorService> executorProvider, ActivityScopeControl scopeControl,
+	public ScheduledJobController(Provider<ScheduledExecutorService> executorProvider,
+			ActivityScopeControl scopeControl,
 			Set<JobDefinition> jobs) {
 		this.executorProvider = executorProvider;
 		this.scopeControl = scopeControl;
@@ -41,7 +43,7 @@ public class ScheduledJobController implements AppService {
 	}
 
 	@Override
-	public void start() {
+	protected void startUp() throws Exception {
 		executorService = executorProvider.get();
 		for (JobDefinition definition : jobs) {
 			executorService.scheduleAtFixedRate(withRequestScope(definition.body), definition.delay,
@@ -50,7 +52,7 @@ public class ScheduledJobController implements AppService {
 	}
 
 	@Override
-	public void stop() {
+	protected void shutDown() throws Exception {
 		executorService.shutdown();
 		try {
 			executorService.awaitTermination(2, TimeUnit.MINUTES);
