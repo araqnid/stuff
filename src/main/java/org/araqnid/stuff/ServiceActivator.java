@@ -101,6 +101,11 @@ public class ServiceActivator<T extends Service> extends AbstractService impleme
 		deactivate();
 	}
 
+	@Override
+	public String toString() {
+		return "ServiceActivator{ " + (service != null ? service.toString() : "<empty>") + " } [" + state() + "]";
+	}
+
 	private static class ListenerExecutor {
 		public final Activator.ActivationListener listener;
 		public final Executor executor;
