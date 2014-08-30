@@ -1,11 +1,14 @@
 package org.araqnid.stuff;
 
+import java.net.SocketException;
+
 import org.araqnid.stuff.activity.ActivityScopeControl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
@@ -20,6 +23,7 @@ public class RedisProcessor extends AbstractExecutionThreadService {
 	private final Provider<? extends DeliveryTarget> targetProvider;
 	private final Logger log;
 	private final ActivityScopeControl scopeControl;
+	private Jedis jedis;
 
 	public RedisProcessor(Provider<Jedis> connectionProvider,
 			String key,
@@ -33,13 +37,27 @@ public class RedisProcessor extends AbstractExecutionThreadService {
 	}
 
 	@Override
+	protected void startUp() throws Exception {
+		jedis = connectionProvider.get();
+		jedis.connect();
+	}
+
+	@Override
 	protected void run() throws Exception {
-		Jedis jedis = connectionProvider.get();
 		String inProgressKey = key + processingSuffix;
 		log.info("Consuming from Redis list \"{}\"", key);
 		while (isRunning()) {
 			log.debug("retrieving value from list");
-			String value = jedis.brpoplpush(key, inProgressKey, 1);
+			String value;
+			try {
+				value = jedis.brpoplpush(key, inProgressKey, 30);
+			} catch (JedisConnectionException e) {
+				if (!isRunning() && e.getCause() instanceof SocketException) {
+					log.debug("Ignoring network exception during shutdown: " + e);
+					return;
+				}
+				throw e;
+			}
 			if (value != null) {
 				log.debug("<{}> retrieved", value);
 				if (deliver(value)) {
@@ -53,7 +71,22 @@ public class RedisProcessor extends AbstractExecutionThreadService {
 				}
 			}
 		}
+	}
+
+	@Override
+	protected void shutDown() throws Exception {
 		log.info("Consumption stopped");
+		if (jedis.isConnected()) jedis.disconnect();
+	}
+
+	@Override
+	protected void triggerShutdown() {
+		jedis.disconnect();
+	}
+
+	@Override
+	protected String serviceName() {
+		return "RedisProcessor-" + key;
 	}
 
 	private boolean deliver(String value) {
