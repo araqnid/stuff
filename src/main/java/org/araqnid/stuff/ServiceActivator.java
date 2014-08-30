@@ -22,6 +22,8 @@ public class ServiceActivator<T extends Service> extends AbstractService {
 	private final boolean activateOnStartup;
 	private T service;
 	private List<ListenerExecutor> listeners = Lists.newLinkedList();
+	private boolean startupNotificationPending;
+	private boolean shutdownNotificationPending;
 
 	public ServiceActivator(Provider<T> provider, boolean activateOnStartup) {
 		this.provider = provider;
@@ -31,11 +33,13 @@ public class ServiceActivator<T extends Service> extends AbstractService {
 	public synchronized void activate() {
 		if (service != null) return;
 		service = provider.get();
-		service.startAsync();
 		service.addListener(new Listener() {
 			@Override
 			public void running() {
 				broadcastActivated();
+				synchronized (ServiceActivator.this) {
+					if (startupNotificationPending) notifyStarted();
+				}
 			}
 
 			@Override
@@ -43,9 +47,11 @@ public class ServiceActivator<T extends Service> extends AbstractService {
 				broadcastDeactivated();
 				synchronized (ServiceActivator.this) {
 					service = null;
+					if (shutdownNotificationPending) notifyStopped();
 				}
 			}
 		}, sameThreadExecutor());
+		service.startAsync();
 	}
 
 	public synchronized void deactivate() {
@@ -89,13 +95,8 @@ public class ServiceActivator<T extends Service> extends AbstractService {
 			notifyStarted();
 			return;
 		}
+		startupNotificationPending = true;
 		activate();
-		service.addListener(new Listener() {
-			@Override
-			public void running() {
-				notifyStarted();
-			}
-		}, sameThreadExecutor());
 	}
 
 	@Override
@@ -104,13 +105,8 @@ public class ServiceActivator<T extends Service> extends AbstractService {
 			notifyStopped();
 			return;
 		}
+		shutdownNotificationPending = true;
 		deactivate();
-		service.addListener(new Listener() {
-			@Override
-			public void terminated(State from) {
-				notifyStopped();
-			}
-		}, sameThreadExecutor());
 	}
 
 	private static class ListenerExecutor {
