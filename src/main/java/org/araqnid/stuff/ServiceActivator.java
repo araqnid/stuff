@@ -17,7 +17,7 @@ import com.google.inject.Provider;
 
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
-public class ServiceActivator<T extends Service> extends AbstractService {
+public class ServiceActivator<T extends Service> extends AbstractService implements Activator {
 	private final Provider<T> provider;
 	private final boolean activateOnStartup;
 	private T service;
@@ -30,6 +30,7 @@ public class ServiceActivator<T extends Service> extends AbstractService {
 		this.activateOnStartup = activateOnStartup;
 	}
 
+	@Override
 	public synchronized void activate() {
 		if (service != null) return;
 		service = provider.get();
@@ -54,23 +55,14 @@ public class ServiceActivator<T extends Service> extends AbstractService {
 		service.startAsync();
 	}
 
+	@Override
 	public synchronized void deactivate() {
 		if (service == null) return;
 		service.stopAsync();
 	}
 
-	public static abstract class ActivationListener {
-		public void created() {
-		}
-
-		public void activated() {
-		}
-
-		public void deactivated() {
-		}
-	}
-
-	public synchronized void addActivationListener(final ActivationListener listener, Executor executor) {
+	@Override
+	public synchronized void addActivationListener(final Activator.ActivationListener listener, Executor executor) {
 		ListenerExecutor pair = new ListenerExecutor(listener, executor);
 		boolean sendActivated = service.isRunning();
 		listeners.add(pair);
@@ -110,10 +102,10 @@ public class ServiceActivator<T extends Service> extends AbstractService {
 	}
 
 	private static class ListenerExecutor {
-		public final ActivationListener listener;
+		public final Activator.ActivationListener listener;
 		public final Executor executor;
 
-		public ListenerExecutor(ActivationListener listener, Executor executor) {
+		public ListenerExecutor(Activator.ActivationListener listener, Executor executor) {
 			this.listener = listener;
 			this.executor = executor;
 		}

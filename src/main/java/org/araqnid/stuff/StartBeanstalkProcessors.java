@@ -13,20 +13,20 @@ import com.google.inject.Singleton;
 
 @Singleton
 public class StartBeanstalkProcessors implements AppLifecycleEvent {
-	private final Set<ServiceActivator<?>> activators;
+	private final Set<Activator> activators;
 
 	@Inject
 	public StartBeanstalkProcessors(Set<Service> allServices) {
 		activators = ImmutableSet.copyOf(Iterables.transform(Sets.filter(allServices, new Predicate<Service>() {
 			@Override
 			public boolean apply(Service input) {
-				if (!(input instanceof ServiceActivator<?>)) return false;
+				if (!(input instanceof Activator)) return false;
 				return true;
 			}
-		}), new Function<Service, ServiceActivator<?>>() {
+		}), new Function<Service, Activator>() {
 			@Override
-			public ServiceActivator<?> apply(Service input) {
-				return (ServiceActivator<?>) input;
+			public Activator apply(Service input) {
+				return (Activator) input;
 			}
 		}));
 	}
@@ -37,7 +37,7 @@ public class StartBeanstalkProcessors implements AppLifecycleEvent {
 
 	@Override
 	public void started() {
-		for (ServiceActivator<?> activator : activators) {
+		for (Activator activator : activators) {
 			activator.activate();
 		}
 	}

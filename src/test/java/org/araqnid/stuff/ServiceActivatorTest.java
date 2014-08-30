@@ -2,7 +2,7 @@ package org.araqnid.stuff;
 
 import java.lang.reflect.Field;
 
-import org.araqnid.stuff.ServiceActivator.ActivationListener;
+import org.araqnid.stuff.Activator.ActivationListener;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
@@ -116,7 +116,7 @@ public class ServiceActivatorTest {
 		ServiceActivator<?> activator = new ServiceActivator<TestService>(Providers.of(testService), false);
 		activator.startAsync();
 		activator.activate();
-		ActivationListener listener = mock(ActivationListener.class);
+		Activator.ActivationListener listener = mock(Activator.ActivationListener.class);
 		activator.addActivationListener(listener, sameThreadExecutor());
 		testService.finishStarting();
 		verify(listener).activated();
@@ -127,7 +127,7 @@ public class ServiceActivatorTest {
 	public void activation_listener_called_after_autostart() {
 		ServiceActivator<?> activator = new ServiceActivator<TestService>(Providers.of(testService), true);
 		activator.startAsync();
-		ActivationListener listener = mock(ActivationListener.class);
+		Activator.ActivationListener listener = mock(Activator.ActivationListener.class);
 		activator.addActivationListener(listener, sameThreadExecutor());
 		testService.finishStarting();
 		verify(listener).activated();
@@ -140,7 +140,7 @@ public class ServiceActivatorTest {
 		activator.startAsync();
 		activator.activate();
 		testService.finishStarting();
-		ActivationListener listener = mock(ActivationListener.class);
+		Activator.ActivationListener listener = mock(Activator.ActivationListener.class);
 		activator.addActivationListener(listener, sameThreadExecutor());
 		verify(listener).activated();
 		verifyNoMoreInteractions(listener);
@@ -191,7 +191,7 @@ public class ServiceActivatorTest {
 		activator.startAsync();
 		activator.activate();
 		testService.finishStarting();
-		ActivationListener listener = mock(ActivationListener.class);
+		Activator.ActivationListener listener = mock(Activator.ActivationListener.class);
 		activator.addActivationListener(listener, sameThreadExecutor());
 		activator.deactivate();
 		testService.finishStopping();
@@ -204,7 +204,7 @@ public class ServiceActivatorTest {
 		ServiceActivator<?> activator = new ServiceActivator<TestService>(Providers.of(testService), true);
 		activator.startAsync();
 		testService.finishStarting();
-		ActivationListener listener = mock(ActivationListener.class);
+		Activator.ActivationListener listener = mock(Activator.ActivationListener.class);
 		activator.addActivationListener(listener, sameThreadExecutor());
 		activator.deactivate();
 		testService.finishStopping();
@@ -217,7 +217,7 @@ public class ServiceActivatorTest {
 		ServiceActivator<?> activator = new ServiceActivator<TestService>(Providers.of(testService), true);
 		activator.startAsync();
 		testService.finishStarting();
-		ActivationListener listener = mock(ActivationListener.class);
+		Activator.ActivationListener listener = mock(Activator.ActivationListener.class);
 		activator.addActivationListener(listener, sameThreadExecutor());
 		activator.stopAsync();
 		testService.finishStopping();
@@ -252,7 +252,7 @@ public class ServiceActivatorTest {
 		activator.activate();
 		testService.finishStarting();
 		activator.deactivate();
-		ActivationListener listener = mock(ActivationListener.class);
+		Activator.ActivationListener listener = mock(Activator.ActivationListener.class);
 		activator.addActivationListener(listener, sameThreadExecutor());
 		testService.finishStopping();
 		verify(listener, never()).activated();
@@ -266,7 +266,7 @@ public class ServiceActivatorTest {
 		activator.activate();
 		testService.finishStarting();
 		activator.deactivate();
-		ActivationListener listener = mock(ActivationListener.class);
+		Activator.ActivationListener listener = mock(Activator.ActivationListener.class);
 		activator.addActivationListener(listener, sameThreadExecutor());
 		testService.finishStopping();
 		verify(listener, never()).deactivated();
@@ -278,7 +278,7 @@ public class ServiceActivatorTest {
 		activator.startAsync();
 		activator.activate();
 		testService.finishStarting();
-		ActivationListener listener = mock(ActivationListener.class);
+		Activator.ActivationListener listener = mock(Activator.ActivationListener.class);
 		activator.addActivationListener(listener, sameThreadExecutor());
 		testService.stopAsync();
 		testService.finishStopping();
