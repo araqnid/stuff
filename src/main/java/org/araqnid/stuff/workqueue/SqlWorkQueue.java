@@ -61,4 +61,9 @@ public class SqlWorkQueue implements WorkQueue {
 			requestActivity.finishEvent(AppEventType.DatabaseTransaction);
 		}
 	}
+
+	@Override
+	public String toString() {
+		return queueCode;
+	}
 }

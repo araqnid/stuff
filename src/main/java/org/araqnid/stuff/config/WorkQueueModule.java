@@ -58,9 +58,9 @@ public final class WorkQueueModule extends AbstractModule {
 						public WorkQueueBeanstalkHandler get() {
 							RequestActivity requestActivity = requestActivityProvider.get();
 							SqlWorkQueue queueImpl = new SqlWorkQueue(queue.name, requestActivity);
-							WorkDispatcher dispatcher = new WorkDispatcher(queueImpl, processorProvider.get());
-							WorkQueueBeanstalkHandler beanstalkTarget = new WorkQueueBeanstalkHandler(queue.name,
-									dispatcher, requestActivity);
+							WorkDispatcher dispatcher = new WorkDispatcher(queueImpl, processorProvider.get(),
+									requestActivity);
+							WorkQueueBeanstalkHandler beanstalkTarget = new WorkQueueBeanstalkHandler(dispatcher);
 							return beanstalkTarget;
 						}
 					});
