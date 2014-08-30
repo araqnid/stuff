@@ -114,7 +114,7 @@ public class BeanstalkProcessor extends AbstractService {
 
 	@Override
 	public String toString() {
-		return "BeanstalkProcessor:" + tubeName + " => " + targetProvider;
+		return "BeanstalkProcessor:" + tubeName + " => " + targetProvider + " [" + state() + "]";
 	}
 
 	private final class TubeConsumer implements Runnable {

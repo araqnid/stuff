@@ -110,7 +110,7 @@ public class RedisProcessor extends AbstractExecutionThreadService {
 
 	@Override
 	public String toString() {
-		return "RedisProcessor:" + key + " => " + targetProvider;
+		return "RedisProcessor:" + key + " => " + targetProvider + " [" + state() + "]";
 	}
 
 	public interface DeliveryTarget {
