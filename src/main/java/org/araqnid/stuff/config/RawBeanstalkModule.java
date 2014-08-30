@@ -27,6 +27,7 @@ import com.surftools.BeanstalkClientImpl.ClientImpl;
 public final class RawBeanstalkModule extends AbstractModule {
 	private final Collection<TubeConfiguration> configurations = ImmutableSet.of(new TubeConfiguration("sometube", 1,
 			SometubeHandler.class));
+	private final boolean autostart = false;
 
 	@Override
 	protected void configure() {
@@ -66,7 +67,7 @@ public final class RawBeanstalkModule extends AbstractModule {
 
 				@Override
 				public ServiceActivator<BeanstalkProcessor> get() {
-					return new ServiceActivator<BeanstalkProcessor>(provider, true);
+					return new ServiceActivator<BeanstalkProcessor>(provider, autostart);
 				}
 			});
 		}

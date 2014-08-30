@@ -29,6 +29,7 @@ import com.surftools.BeanstalkClient.Client;
 public final class WorkQueueModule extends AbstractModule {
 	private final Collection<QueueConfiguration> configurations = ImmutableSet.of(new QueueConfiguration("somequeue",
 			1, SomeQueueProcessor.class), new QueueConfiguration("otherqueue", 1, SomeQueueProcessor.class));
+	private final boolean autostart = false;
 
 	@Override
 	protected void configure() {
@@ -86,7 +87,7 @@ public final class WorkQueueModule extends AbstractModule {
 
 				@Override
 				public ServiceActivator<BeanstalkProcessor> get() {
-					return new ServiceActivator<BeanstalkProcessor>(provider, true);
+					return new ServiceActivator<BeanstalkProcessor>(provider, autostart);
 				}
 			});
 		}
