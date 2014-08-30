@@ -20,6 +20,7 @@ import com.google.inject.Key;
 import com.google.inject.Provider;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
 import com.google.inject.spi.Dependency;
@@ -28,6 +29,8 @@ import com.surftools.BeanstalkClient.Client;
 import com.surftools.BeanstalkClientImpl.ClientImpl;
 
 public final class RawBeanstalkModule extends AbstractModule {
+	private static final TypeLiteral<ServiceActivator<BeanstalkProcessor>> BeanstalkProcessorActivator = new TypeLiteral<ServiceActivator<BeanstalkProcessor>>() {
+	};
 	private final Collection<TubeConfiguration> configurations = ImmutableSet.of(new TubeConfiguration("sometube", 1,
 			SometubeHandler.class));
 	private final boolean autostart = false;
@@ -60,7 +63,7 @@ public final class RawBeanstalkModule extends AbstractModule {
 									targetProvider);
 						}
 					});
-			bind(Key.get(ServiceActivator.class, tube.bindingAnnotation)).toProvider(
+			bind(Key.get(BeanstalkProcessorActivator, tube.bindingAnnotation)).toProvider(
 					new ProviderWithDependencies<ServiceActivator<BeanstalkProcessor>>() {
 						private final Provider<BeanstalkProcessor> provider = binder().getProvider(
 								Key.get(BeanstalkProcessor.class, tube.bindingAnnotation));
@@ -76,8 +79,8 @@ public final class RawBeanstalkModule extends AbstractModule {
 							return new ServiceActivator<BeanstalkProcessor>(provider, autostart);
 						}
 					}).in(Singleton.class);
-			services.addBinding().to(Key.get(ServiceActivator.class, tube.bindingAnnotation));
-			activateOnStartup.addBinding().to(Key.get(ServiceActivator.class, tube.bindingAnnotation));
+			services.addBinding().to(Key.get(BeanstalkProcessorActivator, tube.bindingAnnotation));
+			activateOnStartup.addBinding().to(Key.get(BeanstalkProcessorActivator, tube.bindingAnnotation));
 		}
 	}
 
