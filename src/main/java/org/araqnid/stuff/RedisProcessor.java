@@ -60,14 +60,18 @@ public class RedisProcessor extends AbstractExecutionThreadService {
 			}
 			if (value != null) {
 				log.debug("<{}> retrieved", value);
-				if (deliver(value)) {
-					jedis.lrem(inProgressKey, 0, value);
-					log.debug("<{}> removed", value);
-				}
-				else {
-					jedis.lrem(inProgressKey, 0, value);
-					jedis.lpush(key, value);
-					log.debug("<{}> recycled", value);
+				try {
+					if (deliver(value)) {
+						jedis.lrem(inProgressKey, 0, value);
+						log.debug("<{}> removed", value);
+					}
+					else {
+						jedis.lrem(inProgressKey, 0, value);
+						jedis.lpush(key, value);
+						log.debug("<{}> recycled", value);
+					}
+				} catch (Exception e) {
+					log.error("Unhandled exception delivering message, leaving it on in-progress key", e);
 				}
 			}
 		}
