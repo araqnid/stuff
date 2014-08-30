@@ -10,7 +10,7 @@ import org.araqnid.stuff.AppStateMonitor;
 import org.araqnid.stuff.AppVersion;
 import org.araqnid.stuff.MerlotRepository;
 import org.araqnid.stuff.ScheduledJobController;
-import org.araqnid.stuff.StartBeanstalkProcessors;
+import org.araqnid.stuff.ActivateOnStartup;
 import org.araqnid.stuff.activity.ActivityScope;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -31,7 +31,7 @@ public final class CoreModule extends AbstractModule {
 		services.addBinding().to(ScheduledJobController.class);
 		bind(AppVersion.class).toInstance(appVersion());
 		bind(AppStateMonitor.class);
-		bind(StartBeanstalkProcessors.class);
+		bind(ActivateOnStartup.class);
 		bind(JsonFactory.class).to(MappingJsonFactory.class).in(Singleton.class);
 		bindConstant().annotatedWith(ServerIdentity.class).to(gethostname());
 		bind(UUID.class).annotatedWith(ServerIdentity.class).toInstance(UUID.randomUUID());

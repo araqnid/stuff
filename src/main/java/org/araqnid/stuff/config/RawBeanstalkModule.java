@@ -4,6 +4,8 @@ import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.Set;
 
+import org.araqnid.stuff.ActivateOnStartup;
+import org.araqnid.stuff.Activator;
 import org.araqnid.stuff.BeanstalkProcessor;
 import org.araqnid.stuff.BeanstalkProcessor.DeliveryTarget;
 import org.araqnid.stuff.ServiceActivator;
@@ -17,6 +19,7 @@ import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.Provider;
 import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
 import com.google.inject.spi.Dependency;
@@ -32,6 +35,8 @@ public final class RawBeanstalkModule extends AbstractModule {
 	@Override
 	protected void configure() {
 		Multibinder<Service> services = Multibinder.newSetBinder(binder(), Service.class);
+		Multibinder<Activator> activateOnStartup = Multibinder.newSetBinder(binder(), Activator.class,
+				ActivateOnStartup.OnStartup.class);
 
 		for (final TubeConfiguration tube : configurations) {
 			bind(Key.get(BeanstalkProcessor.class, tube.bindingAnnotation)).toProvider(
@@ -55,21 +60,24 @@ public final class RawBeanstalkModule extends AbstractModule {
 									targetProvider);
 						}
 					});
-			services.addBinding().toProvider(new ProviderWithDependencies<ServiceActivator<BeanstalkProcessor>>() {
-				private final Provider<BeanstalkProcessor> provider = binder().getProvider(
-						Key.get(BeanstalkProcessor.class, tube.bindingAnnotation));
+			bind(Key.get(ServiceActivator.class, tube.bindingAnnotation)).toProvider(
+					new ProviderWithDependencies<ServiceActivator<BeanstalkProcessor>>() {
+						private final Provider<BeanstalkProcessor> provider = binder().getProvider(
+								Key.get(BeanstalkProcessor.class, tube.bindingAnnotation));
 
-				@Override
-				public Set<Dependency<?>> getDependencies() {
-					return ImmutableSet.<Dependency<?>> of(Dependency.get(Key.get(BeanstalkProcessor.class,
-							tube.bindingAnnotation)));
-				}
+						@Override
+						public Set<Dependency<?>> getDependencies() {
+							return ImmutableSet.<Dependency<?>> of(Dependency.get(Key.get(BeanstalkProcessor.class,
+									tube.bindingAnnotation)));
+						}
 
-				@Override
-				public ServiceActivator<BeanstalkProcessor> get() {
-					return new ServiceActivator<BeanstalkProcessor>(provider, autostart);
-				}
-			});
+						@Override
+						public ServiceActivator<BeanstalkProcessor> get() {
+							return new ServiceActivator<BeanstalkProcessor>(provider, autostart);
+						}
+					}).in(Singleton.class);
+			services.addBinding().to(Key.get(ServiceActivator.class, tube.bindingAnnotation));
+			activateOnStartup.addBinding().to(Key.get(ServiceActivator.class, tube.bindingAnnotation));
 		}
 	}
 

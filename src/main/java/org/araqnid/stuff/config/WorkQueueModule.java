@@ -4,6 +4,8 @@ import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.Set;
 
+import org.araqnid.stuff.ActivateOnStartup;
+import org.araqnid.stuff.Activator;
 import org.araqnid.stuff.BeanstalkProcessor;
 import org.araqnid.stuff.ServiceActivator;
 import org.araqnid.stuff.SomeQueueProcessor;
@@ -20,6 +22,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.Provider;
+import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
 import com.google.inject.spi.Dependency;
@@ -34,6 +37,8 @@ public final class WorkQueueModule extends AbstractModule {
 	@Override
 	protected void configure() {
 		Multibinder<Service> services = Multibinder.newSetBinder(binder(), Service.class);
+		Multibinder<Activator> activateOnStartup = Multibinder.newSetBinder(binder(), Activator.class,
+				ActivateOnStartup.OnStartup.class);
 
 		for (final QueueConfiguration queue : configurations) {
 			bind(Key.get(WorkQueueBeanstalkHandler.class, queue.bindingAnnotation)).toProvider(
@@ -81,15 +86,18 @@ public final class WorkQueueModule extends AbstractModule {
 									targetProvider);
 						}
 					});
-			services.addBinding().toProvider(new Provider<ServiceActivator<BeanstalkProcessor>>() {
-				private Provider<BeanstalkProcessor> provider = binder().getProvider(
-						Key.get(BeanstalkProcessor.class, queue.bindingAnnotation));
+			bind(Key.get(ServiceActivator.class, queue.bindingAnnotation)).toProvider(
+					new Provider<ServiceActivator<BeanstalkProcessor>>() {
+						private Provider<BeanstalkProcessor> provider = binder().getProvider(
+								Key.get(BeanstalkProcessor.class, queue.bindingAnnotation));
 
-				@Override
-				public ServiceActivator<BeanstalkProcessor> get() {
-					return new ServiceActivator<BeanstalkProcessor>(provider, autostart);
-				}
-			});
+						@Override
+						public ServiceActivator<BeanstalkProcessor> get() {
+							return new ServiceActivator<BeanstalkProcessor>(provider, autostart);
+						}
+					}).in(Singleton.class);
+			services.addBinding().to(Key.get(ServiceActivator.class, queue.bindingAnnotation));
+			activateOnStartup.addBinding().to(Key.get(ServiceActivator.class, queue.bindingAnnotation));
 		}
 	}
 
