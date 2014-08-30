@@ -4,9 +4,12 @@ import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.Set;
 
+import javax.sql.DataSource;
+
 import org.araqnid.stuff.ActivateOnStartup;
 import org.araqnid.stuff.Activator;
 import org.araqnid.stuff.BeanstalkProcessor;
+import org.araqnid.stuff.PostgresqlDataSourceProviderService;
 import org.araqnid.stuff.RedisProcessor;
 import org.araqnid.stuff.ServiceActivator;
 import org.araqnid.stuff.SomeQueueProcessor;
@@ -62,19 +65,21 @@ public final class WorkQueueModule extends AbstractModule {
 			bind(handlerKey).toProvider(new ProviderWithDependencies<WorkQueueBeanstalkHandler>() {
 				@Inject
 				private Provider<RequestActivity> requestActivityProvider;
+				@Inject
+				private DataSource dataSource;
 				private Provider<? extends WorkProcessor> processorProvider = binder()
 						.getProvider(queue.processorClass);
 
 				@Override
 				public Set<Dependency<?>> getDependencies() {
 					return ImmutableSet.<Dependency<?>> of(Dependency.get(Key.get(RequestActivity.class)),
-							Dependency.get(Key.get(queue.processorClass)));
+							Dependency.get(Key.get(DataSource.class)), Dependency.get(Key.get(queue.processorClass)));
 				}
 
 				@Override
 				public WorkQueueBeanstalkHandler get() {
 					RequestActivity requestActivity = requestActivityProvider.get();
-					SqlWorkQueue queueImpl = new SqlWorkQueue(queue.name, requestActivity);
+					SqlWorkQueue queueImpl = new SqlWorkQueue(queue.name, requestActivity, dataSource);
 					WorkDispatcher dispatcher = new WorkDispatcher(queueImpl, processorProvider.get(), requestActivity);
 					WorkQueueBeanstalkHandler beanstalkTarget = new WorkQueueBeanstalkHandler(dispatcher);
 					return beanstalkTarget;
@@ -119,19 +124,21 @@ public final class WorkQueueModule extends AbstractModule {
 			bind(handlerKey).toProvider(new ProviderWithDependencies<WorkQueueRedisHandler>() {
 				@Inject
 				private Provider<RequestActivity> requestActivityProvider;
+				@Inject
+				private DataSource dataSource;
 				private Provider<? extends WorkProcessor> processorProvider = binder()
 						.getProvider(queue.processorClass);
 
 				@Override
 				public Set<Dependency<?>> getDependencies() {
 					return ImmutableSet.<Dependency<?>> of(Dependency.get(Key.get(RequestActivity.class)),
-							Dependency.get(Key.get(queue.processorClass)));
+							Dependency.get(Key.get(DataSource.class)), Dependency.get(Key.get(queue.processorClass)));
 				}
 
 				@Override
 				public WorkQueueRedisHandler get() {
 					RequestActivity requestActivity = requestActivityProvider.get();
-					SqlWorkQueue queueImpl = new SqlWorkQueue(queue.name, requestActivity);
+					SqlWorkQueue queueImpl = new SqlWorkQueue(queue.name, requestActivity, dataSource);
 					WorkDispatcher dispatcher = new WorkDispatcher(queueImpl, processorProvider.get(), requestActivity);
 					return new WorkQueueRedisHandler(dispatcher);
 				}
@@ -165,6 +172,9 @@ public final class WorkQueueModule extends AbstractModule {
 			services.addBinding().to(activatorKey);
 			activateOnStartup.addBinding().to(activatorKey);
 		}
+
+		services.addBinding().to(PostgresqlDataSourceProviderService.class);
+		bind(DataSource.class).toProvider(PostgresqlDataSourceProviderService.class);
 	}
 
 	@Provides
