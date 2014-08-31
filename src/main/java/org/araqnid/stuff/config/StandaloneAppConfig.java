@@ -23,6 +23,8 @@ import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextList
 import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Service;
 import com.google.inject.AbstractModule;
@@ -30,12 +32,15 @@ import com.google.inject.Exposed;
 import com.google.inject.Module;
 import com.google.inject.PrivateModule;
 import com.google.inject.Provides;
+import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import com.google.inject.servlet.GuiceFilter;
 
 public class StandaloneAppConfig extends AbstractModule {
+	private static final TypeLiteral<Optional<String>> OptionalString = new TypeLiteral<Optional<String>>() {
+	};
 	private Map<String, String> environment;
 
 	public StandaloneAppConfig() {
@@ -53,12 +58,22 @@ public class StandaloneAppConfig extends AbstractModule {
 		install(new CoreModule());
 		install(new JettyModule());
 		bind(AppStartupBanner.class);
+		bind(OptionalString).annotatedWith(Names.named("pgUser")).toInstance(getenv("PGUSER"));
+		bind(OptionalString).annotatedWith(Names.named("pgPassword")).toInstance(getenv("PGPASSWORD"));
+		bind(OptionalString).annotatedWith(Names.named("pgDatabase")).toInstance(getenv("PGDATABASE"));
+	}
+
+	private Optional<String> getenv(String name) {
+		return Optional.fromNullable(environment.get(name));
 	}
 
 	private int port(int defaultPort) {
-		String envValue = environment.get("PORT");
-		if (envValue == null) return defaultPort;
-		return Integer.valueOf(envValue);
+		return getenv("PORT").transform(new Function<String, Integer>() {
+			@Override
+			public Integer apply(String input) {
+				return Integer.valueOf(input);
+			}
+		}).or(defaultPort);
 	}
 
 	public static final class JettyModule extends AbstractModule {
