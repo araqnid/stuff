@@ -172,13 +172,18 @@ public class BeanstalkProcessor extends AbstractService {
 				}
 				if (job == null) continue;
 				log.debug("<{}> reserved", job.getJobId());
-				if (deliver(job)) {
-					connection.delete(job.getJobId());
-					log.info("<{}> deleted", job.getJobId());
-				}
-				else {
+				try {
+					if (deliver(job)) {
+						connection.delete(job.getJobId());
+						log.info("<{}> deleted", job.getJobId());
+					}
+					else {
+						connection.release(job.getJobId(), 0, 5);
+						log.info("<{}> released", job.getJobId());
+					}
+				} catch (Exception e) {
 					connection.release(job.getJobId(), 0, 5);
-					log.info("<{}> released", job.getJobId());
+					log.info("<{}> released after unhandled exception", job.getJobId());
 				}
 			}
 			log.debug("Closing connection");
