@@ -117,7 +117,7 @@ public class SqlWorkQueue implements WorkQueue {
 	}
 
 	public void create(String entryId, byte[] payload) {
-		LOG.info("{} create {} {} bytes", queueCode, entryId, payload.length);
+		LOG.debug("{} create {} {} bytes", queueCode, entryId, payload.length);
 		accessor.doSql("SqlWorkQueue#create", Sql.exec(SqlCatalogue.CreateInsertItem).with("queue_code", queueCode)
 				.with("reference", entryId).with("payload", Optional.of(payload)),
 				Sql.exec(SqlCatalogue.CreateInsertItemEvent).with("queue_code", queueCode).with("reference", entryId)
@@ -126,7 +126,7 @@ public class SqlWorkQueue implements WorkQueue {
 
 	@Override
 	public void markInProgress(String entryId) {
-		LOG.info("{} in-progress {}", queueCode, entryId);
+		LOG.debug("{} in-progress {}", queueCode, entryId);
 		accessor.doSql(
 				"SqlWorkQueue#markInProgress",
 				Sql.exec(SqlCatalogue.MarkInProgressUpdateItem).with("queue_code", queueCode)
@@ -137,7 +137,7 @@ public class SqlWorkQueue implements WorkQueue {
 
 	@Override
 	public void markProcessed(String entryId) {
-		LOG.info("{} processed {}", queueCode, entryId);
+		LOG.debug("{} processed {}", queueCode, entryId);
 		accessor.doSql(
 				"SqlWorkQueue#markProcessed",
 				Sql.exec(SqlCatalogue.MarkProcessedUpdateItem).with("queue_code", queueCode).with("reference", entryId),
@@ -147,7 +147,7 @@ public class SqlWorkQueue implements WorkQueue {
 
 	@Override
 	public void markFailed(String entryId, boolean permanent, String message, Throwable t) {
-		LOG.info("{} failed {} {} {}", queueCode, entryId, permanent ? "permanent" : "temporary",
+		LOG.debug("{} failed {} {} {}", queueCode, entryId, permanent ? "permanent" : "temporary",
 				message != null ? message : t != null ? t.toString() : "<no message>");
 		accessor.doSql(
 				"SqlWorkQueue#markFailed",
@@ -195,17 +195,17 @@ public class SqlWorkQueue implements WorkQueue {
 		private void doSqlTransaction(String caller, Connection conn, Sql... commands) throws SQLException {
 			boolean completed = false;
 			try {
-				SQL_LOG.info("BEGIN");
+				SQL_LOG.debug("BEGIN");
 				conn.setAutoCommit(false);
 				doSqlInTransaction(caller, conn, commands);
 				completed = true;
 			} finally {
 				if (completed) {
-					SQL_LOG.info("COMMIT");
+					SQL_LOG.debug("COMMIT");
 					conn.commit();
 				}
 				else {
-					SQL_LOG.info("ROLLBACK");
+					SQL_LOG.debug("ROLLBACK");
 					conn.rollback();
 				}
 			}
@@ -225,7 +225,7 @@ public class SqlWorkQueue implements WorkQueue {
 		private void doSqlCommand(Connection conn, Sql command) throws SQLException {
 			final CompiledSql sql = command.sql();
 			try (PreparedStatement stmt = conn.prepareStatement(sql.edited)) {
-				SQL_LOG.info("{}", sql.edited);
+				SQL_LOG.debug("{}", sql.edited);
 				int index = 1;
 				for (String placeholder : sql.placeholders) {
 					Sql.Binder binder = command.values.get(placeholder);
@@ -259,7 +259,6 @@ public class SqlWorkQueue implements WorkQueue {
 			scopeControl.beginRequest(Initialisation, getClass().getName());
 			try {
 				Accessor accessor = accessorProvider.get();
-				LOG.info("Setup work queue schema");
 				ImmutableList<SqlCatalogue> commands = ImmutableList.of(SqlCatalogue.SetupCreateSchema,
 						SqlCatalogue.SetupCreateTableItemStatus, SqlCatalogue.SetupCreateTableItemEventType,
 						SqlCatalogue.SetupCreateTableItem, SqlCatalogue.SetupCreateTableItemEvent,
