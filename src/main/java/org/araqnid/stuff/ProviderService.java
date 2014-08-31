@@ -4,8 +4,6 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
-import org.araqnid.stuff.ServiceActivator.ServiceNotActiveException;
-
 import com.google.common.base.Optional;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.inject.Provider;
@@ -43,7 +41,7 @@ public abstract class ProviderService<T> extends AbstractIdleService implements 
 				return toString(activeService);
 			if (method.getName().equals("hashCode") && method.getParameterTypes().length == 0) return getHashCode();
 			if (method.getName().equals("equals") && method.getParameterTypes().length == 1) return isEqual(args[0]);
-			if (!activeService.isPresent()) throw new ServiceNotActiveException();
+			if (!activeService.isPresent()) throw new NotAvailableException();
 			return method.invoke(activeService.get(), args);
 		}
 
@@ -76,5 +74,12 @@ public abstract class ProviderService<T> extends AbstractIdleService implements 
 
 	public static class ValueNotPresentException extends IllegalStateException {
 		private static final long serialVersionUID = 1L;
+	}
+
+	public static class NotAvailableException extends IllegalStateException {
+		private static final long serialVersionUID = 1L;
+
+		public NotAvailableException() {
+		}
 	}
 }
