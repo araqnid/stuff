@@ -51,6 +51,15 @@ public class ServiceActivator<T extends Service> extends AbstractService impleme
 					if (shutdownNotificationPending) notifyStopped();
 				}
 			}
+
+			@Override
+			public void failed(State from, Throwable failure) {
+				broadcastDeactivated();
+				synchronized (ServiceActivator.this) {
+					service = null;
+				}
+				notifyFailed(failure);
+			}
 		}, sameThreadExecutor());
 		service.startAsync();
 	}

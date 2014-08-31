@@ -19,6 +19,7 @@ import com.google.inject.Provider;
 import com.google.inject.util.Providers;
 
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
+import static com.google.common.util.concurrent.Service.State.FAILED;
 import static com.google.common.util.concurrent.Service.State.RUNNING;
 import static com.google.common.util.concurrent.Service.State.STARTING;
 import static com.google.common.util.concurrent.Service.State.STOPPING;
@@ -65,6 +66,11 @@ public class ServiceActivatorTest {
 		public void finishStopping() {
 			assertEquals(state(), State.STOPPING);
 			notifyStopped();
+		}
+
+		public void failStarting(Throwable t) {
+			assertEquals(state(), State.STARTING);
+			notifyFailed(t);
 		}
 
 		@Override
@@ -294,6 +300,23 @@ public class ServiceActivatorTest {
 		testService.stopAsync();
 		testService.finishStopping();
 		assertThat(activator, hasServiceField(nullValue()));
+	}
+
+	@Test
+	public void activator_goes_straight_to_failed_if_autostarting_service_fails() {
+		ServiceActivator<?> activator = new ServiceActivator<TestService>(Providers.of(testService), true);
+		activator.startAsync();
+		testService.failStarting(new Exception());
+		assertThat(activator, isInState(FAILED));
+	}
+
+	@Test
+	public void activator_goes_to_failed_if_activating_service_fails() {
+		ServiceActivator<?> activator = new ServiceActivator<TestService>(Providers.of(testService), false);
+		activator.startAsync();
+		activator.activate();
+		testService.failStarting(new Exception());
+		assertThat(activator, isInState(FAILED));
 	}
 
 	@Test
