@@ -31,7 +31,7 @@ import com.surftools.BeanstalkClientImpl.ClientImpl;
 public final class RawBeanstalkModule extends AbstractModule {
 	private static final TypeLiteral<ServiceActivator<BeanstalkProcessor>> BeanstalkProcessorActivator = new TypeLiteral<ServiceActivator<BeanstalkProcessor>>() {
 	};
-	private final Collection<TubeConfiguration> configurations = ImmutableSet.of(new TubeConfiguration("sometube", 1,
+	private final Collection<TubeConfiguration> configurations = ImmutableSet.of(new TubeConfiguration("sometube",
 			SometubeHandler.class));
 	private final boolean autostart = false;
 
@@ -59,8 +59,7 @@ public final class RawBeanstalkModule extends AbstractModule {
 
 						@Override
 						public BeanstalkProcessor get() {
-							return new BeanstalkProcessor(connectionProvider, tube.name, tube.threads, scopeControl,
-									targetProvider);
+							return new BeanstalkProcessor(connectionProvider, tube.name, scopeControl, targetProvider);
 						}
 					});
 			bind(Key.get(BeanstalkProcessorActivator, tube.bindingAnnotation)).toProvider(
@@ -93,13 +92,11 @@ public final class RawBeanstalkModule extends AbstractModule {
 
 	private static class TubeConfiguration {
 		public final String name;
-		public final int threads;
 		public final Class<? extends DeliveryTarget> processorClass;
 		public final Annotation bindingAnnotation;
 
-		public TubeConfiguration(String name, int threads, Class<? extends DeliveryTarget> processorClass) {
+		public TubeConfiguration(String name, Class<? extends DeliveryTarget> processorClass) {
 			this.name = name;
-			this.threads = threads;
 			this.processorClass = processorClass;
 			this.bindingAnnotation = Names.named(name);
 		}

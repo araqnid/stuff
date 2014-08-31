@@ -48,10 +48,10 @@ public final class WorkQueueModule extends AbstractModule {
 	};
 	private static final TypeLiteral<ServiceActivator<RedisProcessor>> RedisProcessorActivator = new TypeLiteral<ServiceActivator<RedisProcessor>>() {
 	};
-	private final Collection<QueueConfiguration> beanstalk = ImmutableSet.of(new QueueConfiguration("somequeue", 1,
-			SomeQueueProcessor.class), new QueueConfiguration("otherqueue", 1, SomeQueueProcessor.class));
-	private final Collection<QueueConfiguration> redis = ImmutableSet.of(new QueueConfiguration("thisqueue", 1,
-			SomeQueueProcessor.class), new QueueConfiguration("thatqueue", 1, SomeQueueProcessor.class));
+	private final Collection<QueueConfiguration> beanstalk = ImmutableSet.of(new QueueConfiguration("somequeue",
+			SomeQueueProcessor.class), new QueueConfiguration("otherqueue", SomeQueueProcessor.class));
+	private final Collection<QueueConfiguration> redis = ImmutableSet.of(new QueueConfiguration("thisqueue",
+			SomeQueueProcessor.class), new QueueConfiguration("thatqueue", SomeQueueProcessor.class));
 	private final boolean autostart = false;
 
 	@Override
@@ -128,8 +128,7 @@ public final class WorkQueueModule extends AbstractModule {
 
 				@Override
 				public BeanstalkProcessor get() {
-					return new BeanstalkProcessor(connectionProvider, queue.name, queue.threads, scopeControl,
-							targetProvider);
+					return new BeanstalkProcessor(connectionProvider, queue.name, scopeControl, targetProvider);
 				}
 			});
 			bind(activatorKey).toProvider(new Provider<ServiceActivator<BeanstalkProcessor>>() {
@@ -211,13 +210,11 @@ public final class WorkQueueModule extends AbstractModule {
 
 	private static class QueueConfiguration {
 		public final String name;
-		public final int threads;
 		public final Class<? extends WorkProcessor> processorClass;
 		public final Annotation bindingAnnotation;
 
-		public QueueConfiguration(String name, int threads, Class<? extends WorkProcessor> processorClass) {
+		public QueueConfiguration(String name, Class<? extends WorkProcessor> processorClass) {
 			this.name = name;
-			this.threads = threads;
 			this.processorClass = processorClass;
 			this.bindingAnnotation = Names.named(name);
 		}
