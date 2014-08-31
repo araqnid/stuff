@@ -3,11 +3,13 @@ package org.araqnid.stuff.config;
 import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.Set;
+import java.util.UUID;
 
 import javax.sql.DataSource;
 
 import org.araqnid.stuff.ActivateOnStartup;
 import org.araqnid.stuff.Activator;
+import org.araqnid.stuff.AppVersion;
 import org.araqnid.stuff.BeanstalkProcessor;
 import org.araqnid.stuff.PostgresqlDataSourceProviderService;
 import org.araqnid.stuff.RedisProcessor;
@@ -18,12 +20,15 @@ import org.araqnid.stuff.activity.RequestActivity;
 import org.araqnid.stuff.workqueue.SqlWorkQueue;
 import org.araqnid.stuff.workqueue.WorkDispatcher;
 import org.araqnid.stuff.workqueue.WorkProcessor;
+import org.araqnid.stuff.workqueue.WorkQueue;
 import org.araqnid.stuff.workqueue.WorkQueueBeanstalkHandler;
 import org.araqnid.stuff.workqueue.WorkQueueRedisHandler;
 
 import redis.clients.jedis.Jedis;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Service;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -55,7 +60,34 @@ public final class WorkQueueModule extends AbstractModule {
 		Multibinder<Activator> activateOnStartup = Multibinder.newSetBinder(binder(), Activator.class,
 				ActivateOnStartup.OnStartup.class);
 
+		for (final QueueConfiguration queue : Iterables.concat(beanstalk, redis)) {
+			final Key<WorkQueue> queueKey = Key.get(WorkQueue.class, queue.bindingAnnotation);
+			bind(queueKey).toProvider(new Provider<SqlWorkQueue>() {
+				@Inject
+				private Provider<SqlWorkQueue.Accessor> accessorProvider;
+				@Inject
+				private ObjectMapper objectMapper;
+				@Inject
+				private AppVersion appVersion;
+				@Inject
+				@ServerIdentity
+				private UUID instanceId;
+				@Inject
+				@ServerIdentity
+				private String hostname;
+				@Inject
+				private Provider<RequestActivity> requestActivityProvider;
+
+				@Override
+				public SqlWorkQueue get() {
+					return new SqlWorkQueue(queue.name, accessorProvider.get(), objectMapper, appVersion, instanceId,
+							hostname, requestActivityProvider.get());
+				}
+			});
+		}
+
 		for (final QueueConfiguration queue : beanstalk) {
+			final Key<WorkQueue> queueKey = Key.get(WorkQueue.class, queue.bindingAnnotation);
 			final Key<WorkQueueBeanstalkHandler> handlerKey = Key.get(WorkQueueBeanstalkHandler.class,
 					queue.bindingAnnotation);
 			final Key<BeanstalkProcessor> consumerServiceKey = Key.get(BeanstalkProcessor.class,
@@ -65,24 +97,20 @@ public final class WorkQueueModule extends AbstractModule {
 			bind(handlerKey).toProvider(new ProviderWithDependencies<WorkQueueBeanstalkHandler>() {
 				@Inject
 				private Provider<RequestActivity> requestActivityProvider;
-				@Inject
-				private DataSource dataSource;
+				private Provider<WorkQueue> workQueueProvider = binder().getProvider(queueKey);
 				private Provider<? extends WorkProcessor> processorProvider = binder()
 						.getProvider(queue.processorClass);
 
 				@Override
 				public Set<Dependency<?>> getDependencies() {
 					return ImmutableSet.<Dependency<?>> of(Dependency.get(Key.get(RequestActivity.class)),
-							Dependency.get(Key.get(DataSource.class)), Dependency.get(Key.get(queue.processorClass)));
+							Dependency.get(queueKey), Dependency.get(Key.get(queue.processorClass)));
 				}
 
 				@Override
 				public WorkQueueBeanstalkHandler get() {
-					RequestActivity requestActivity = requestActivityProvider.get();
-					SqlWorkQueue queueImpl = new SqlWorkQueue(queue.name, requestActivity, dataSource);
-					WorkDispatcher dispatcher = new WorkDispatcher(queueImpl, processorProvider.get(), requestActivity);
-					WorkQueueBeanstalkHandler beanstalkTarget = new WorkQueueBeanstalkHandler(dispatcher);
-					return beanstalkTarget;
+					return new WorkQueueBeanstalkHandler(new WorkDispatcher(workQueueProvider.get(), processorProvider
+							.get(), requestActivityProvider.get()));
 				}
 			});
 			bind(consumerServiceKey).toProvider(new ProviderWithDependencies<BeanstalkProcessor>() {
@@ -117,6 +145,7 @@ public final class WorkQueueModule extends AbstractModule {
 		}
 
 		for (final QueueConfiguration queue : redis) {
+			final Key<WorkQueue> queueKey = Key.get(WorkQueue.class, queue.bindingAnnotation);
 			final Key<WorkQueueRedisHandler> handlerKey = Key.get(WorkQueueRedisHandler.class, queue.bindingAnnotation);
 			final Key<RedisProcessor> consumerServiceKey = Key.get(RedisProcessor.class, queue.bindingAnnotation);
 			final Key<ServiceActivator<RedisProcessor>> activatorKey = Key.get(RedisProcessorActivator,
@@ -124,23 +153,20 @@ public final class WorkQueueModule extends AbstractModule {
 			bind(handlerKey).toProvider(new ProviderWithDependencies<WorkQueueRedisHandler>() {
 				@Inject
 				private Provider<RequestActivity> requestActivityProvider;
-				@Inject
-				private DataSource dataSource;
+				private Provider<WorkQueue> workQueueProvider = binder().getProvider(queueKey);
 				private Provider<? extends WorkProcessor> processorProvider = binder()
 						.getProvider(queue.processorClass);
 
 				@Override
 				public Set<Dependency<?>> getDependencies() {
 					return ImmutableSet.<Dependency<?>> of(Dependency.get(Key.get(RequestActivity.class)),
-							Dependency.get(Key.get(DataSource.class)), Dependency.get(Key.get(queue.processorClass)));
+							Dependency.get(queueKey), Dependency.get(Key.get(queue.processorClass)));
 				}
 
 				@Override
 				public WorkQueueRedisHandler get() {
-					RequestActivity requestActivity = requestActivityProvider.get();
-					SqlWorkQueue queueImpl = new SqlWorkQueue(queue.name, requestActivity, dataSource);
-					WorkDispatcher dispatcher = new WorkDispatcher(queueImpl, processorProvider.get(), requestActivity);
-					return new WorkQueueRedisHandler(dispatcher);
+					return new WorkQueueRedisHandler(new WorkDispatcher(workQueueProvider.get(), processorProvider
+							.get(), requestActivityProvider.get()));
 				}
 			});
 			bind(consumerServiceKey).toProvider(new ProviderWithDependencies<RedisProcessor>() {
@@ -175,6 +201,7 @@ public final class WorkQueueModule extends AbstractModule {
 
 		services.addBinding().to(PostgresqlDataSourceProviderService.class);
 		bind(DataSource.class).toProvider(PostgresqlDataSourceProviderService.class);
+		services.addBinding().to(SqlWorkQueue.Setup.class);
 	}
 
 	@Provides
