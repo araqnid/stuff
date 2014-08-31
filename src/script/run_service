@@ -44,4 +44,8 @@ fi
 
 classpath="$latestjar$(while read file; do echo -n ":$file"; done < $depsfile)"
 
+if [ -f "environment" ]; then
+    . ./environment
+fi
+
 exec ${JAVA-java} ${JAVA_OPTS} -classpath "$classpath" "$mainclass"
