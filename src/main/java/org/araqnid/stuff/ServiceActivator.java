@@ -1,15 +1,9 @@
 package org.araqnid.stuff;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executor;
 
 import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.Service;
@@ -146,67 +140,5 @@ public class ServiceActivator<T extends Service> extends AbstractService impleme
 	public synchronized Optional<T> getActiveService() {
 		if (service == null || !service.isRunning()) return Optional.absent();
 		return Optional.of(service);
-	}
-
-	@SuppressWarnings("unchecked")
-	public <S> S getActiveServiceProxy(Class<S> serviceInterface) {
-		return (S) Proxy.newProxyInstance(getClass().getClassLoader(),
-				new Class<?>[] { serviceInterface, Service.class }, new ServiceProxyInvocationHandler());
-	}
-
-	public Service getActiveServiceProxy(Class<?> serviceInterface, Class<?>... additionalInterfaces) {
-		return (Service) Proxy
-				.newProxyInstance(
-						getClass().getClassLoader(),
-						Iterables.toArray(
-								Iterables.concat(ImmutableSet.of(serviceInterface, Service.class),
-										Arrays.asList(additionalInterfaces)), Class.class),
-						new ServiceProxyInvocationHandler());
-	}
-
-	private final class ServiceProxyInvocationHandler implements InvocationHandler {
-		@Override
-		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-			Optional<T> activeService = getActiveService();
-			if (method.getName().equals("toString") && method.getParameterTypes().length == 0)
-				return toString(activeService);
-			if (method.getName().equals("hashCode") && method.getParameterTypes().length == 0) return getHashCode();
-			if (method.getName().equals("equals") && method.getParameterTypes().length == 1) return isEqual(args[0]);
-			if (!activeService.isPresent()) throw new ServiceNotActiveException();
-			return method.invoke(activeService.get(), args);
-		}
-
-		private String toString(Optional<T> activeService) {
-			if (activeService.isPresent()) {
-				return "Activated: " + activeService.get();
-			}
-			else {
-				return "Inactive";
-			}
-		}
-
-		private int getHashCode() {
-			return ServiceActivator.this.hashCode();
-		}
-
-		private ServiceActivator<T> activator() {
-			return ServiceActivator.this;
-		}
-
-		private boolean isEqual(Object other) {
-			if (other == null) return false;
-			if (!Proxy.isProxyClass(other.getClass())) return false;
-			InvocationHandler invocationHandler = Proxy.getInvocationHandler(other);
-			if (!(invocationHandler instanceof ServiceActivator.ServiceProxyInvocationHandler)) return false;
-			return ServiceActivator.this.equals(((ServiceActivator<?>.ServiceProxyInvocationHandler) invocationHandler)
-					.activator());
-		}
-	}
-
-	public static class ServiceNotActiveException extends IllegalStateException {
-		private static final long serialVersionUID = 1L;
-
-		public ServiceNotActiveException() {
-		}
 	}
 }

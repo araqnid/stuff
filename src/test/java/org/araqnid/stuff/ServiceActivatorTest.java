@@ -5,7 +5,6 @@ import java.lang.reflect.Field;
 import org.araqnid.stuff.Activator.ActivationListener;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
-import org.hamcrest.Matchers;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -25,8 +24,6 @@ import static com.google.common.util.concurrent.Service.State.STARTING;
 import static com.google.common.util.concurrent.Service.State.STOPPING;
 import static com.google.common.util.concurrent.Service.State.TERMINATED;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertEquals;
@@ -43,13 +40,7 @@ public class ServiceActivatorTest {
 	private final Provider<Service> mockServiceProvider = mock(Provider.class);
 	private final TestService testService = new TestService();
 
-	private interface TestServiceInterface {
-		void someServiceMethod();
-	}
-
-	private final class TestService extends AbstractService implements TestServiceInterface {
-		private final TestServiceInterface backend = mock(TestServiceInterface.class);
-
+	private final class TestService extends AbstractService {
 		@Override
 		protected void doStop() {
 		}
@@ -71,11 +62,6 @@ public class ServiceActivatorTest {
 		public void failStarting(Throwable t) {
 			assertEquals(state(), State.STARTING);
 			notifyFailed(t);
-		}
-
-		@Override
-		public void someServiceMethod() {
-			backend.someServiceMethod();
 		}
 	}
 
@@ -330,58 +316,6 @@ public class ServiceActivatorTest {
 		assertThat(activator.getActiveService(), isPresent(sameInstance(testService)));
 		activator.deactivate();
 		assertThat(activator.getActiveService(), isAbsent());
-	}
-
-	@Test
-	public void service_proxy_can_be_obtained_immediately() {
-		ServiceActivator<?> activator = new ServiceActivator<Service>(mockServiceProvider, false);
-		assertThat(activator.getActiveServiceProxy(TestServiceInterface.class),
-				Matchers.instanceOf(TestServiceInterface.class));
-		assertThat(activator.getActiveServiceProxy(TestServiceInterface.class), Matchers.instanceOf(Service.class));
-	}
-
-	@Test(expected = ServiceActivator.ServiceNotActiveException.class)
-	public void initial_service_proxy_is_unusable() {
-		ServiceActivator<?> activator = new ServiceActivator<Service>(mockServiceProvider, false);
-		TestServiceInterface proxy = activator.getActiveServiceProxy(TestServiceInterface.class);
-		proxy.someServiceMethod();
-	}
-
-	@Test
-	public void after_activation_service_proxy_delegates_calls_to_service() {
-		ServiceActivator<?> activator = new ServiceActivator<TestService>(Providers.of(testService), false);
-		TestServiceInterface proxy = activator.getActiveServiceProxy(TestServiceInterface.class);
-		activator.startAsync();
-		activator.activate();
-		testService.finishStarting();
-		proxy.someServiceMethod();
-		verify(testService.backend).someServiceMethod();
-	}
-
-	@Test(expected = ServiceActivator.ServiceNotActiveException.class)
-	public void after_deactivation_starts_service_proxy_is_unusable() {
-		ServiceActivator<?> activator = new ServiceActivator<TestService>(Providers.of(testService), false);
-		TestServiceInterface proxy = activator.getActiveServiceProxy(TestServiceInterface.class);
-		activator.startAsync();
-		activator.activate();
-		testService.finishStarting();
-		activator.deactivate();
-		proxy.someServiceMethod();
-	}
-
-	@Test
-	public void service_proxies_have_usable_tostring_even_when_not_delegating() {
-		ServiceActivator<?> activator = new ServiceActivator<Service>(mockServiceProvider, false);
-		TestServiceInterface proxy = activator.getActiveServiceProxy(TestServiceInterface.class);
-		assertThat(proxy.toString(), notNullValue());
-	}
-
-	@Test
-	public void service_proxies_are_considered_equal() {
-		ServiceActivator<?> activator = new ServiceActivator<Service>(mockServiceProvider, false);
-		TestServiceInterface proxy1 = activator.getActiveServiceProxy(TestServiceInterface.class);
-		TestServiceInterface proxy2 = activator.getActiveServiceProxy(TestServiceInterface.class);
-		assertThat(proxy1, equalTo(proxy2));
 	}
 
 	private static Matcher<Optional<?>> isAbsent() {
