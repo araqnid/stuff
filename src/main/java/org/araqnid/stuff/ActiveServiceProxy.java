@@ -3,24 +3,56 @@ package org.araqnid.stuff;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Arrays;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Supplier;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Service;
 
 public final class ActiveServiceProxy {
 	private ActiveServiceProxy() {
 	}
 
-	@SuppressWarnings("unchecked")
 	public static <S, T extends Service> S create(final ServiceActivator<T> activator, Class<S> serviceInterface) {
-		return (S) Proxy.newProxyInstance(serviceInterface.getClassLoader(), new Class<?>[] { serviceInterface, Service.class },
-				new ServiceProxyInvocationHandler<T>(new Supplier<Optional<T>>(){
-					@Override
-					public Optional<T> get() {
-						return activator.getActiveService();
-					}
-				}));
+		return create(new ServiceActivatorSupplier<T>(activator), serviceInterface, Service.class);
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <S, T> S create(final Supplier<Optional<T>> supplier, Class<S> serviceInterface, Class<?>... additionalInterfaces) {
+		return (S) Proxy.newProxyInstance(serviceInterface.getClassLoader(),
+				Iterables.toArray(Iterables.concat(ImmutableSet.of(serviceInterface), Arrays.asList(additionalInterfaces)), Class.class),
+				new ServiceProxyInvocationHandler<T>(supplier));
+	}
+
+	private static final class ServiceActivatorSupplier<T extends Service> implements Supplier<Optional<T>> {
+		private final ServiceActivator<T> activator;
+
+		private ServiceActivatorSupplier(ServiceActivator<T> activator) {
+			this.activator = activator;
+		}
+
+		@Override
+		public Optional<T> get() {
+			return activator.getActiveService();
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (!(obj instanceof ServiceActivatorSupplier)) return false;
+			return activator.equals(((ServiceActivatorSupplier<?>) obj).activator);
+		}
+
+		@Override
+		public int hashCode() {
+			return activator.hashCode();
+		}
+
+		@Override
+		public String toString() {
+			return activator.toString();
+		}
 	}
 
 	private static final class ServiceProxyInvocationHandler<T> implements InvocationHandler {
