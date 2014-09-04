@@ -38,8 +38,7 @@ public class SynchronisingReferenceDataFinder<K, V> implements AsyncReferenceDat
 		try {
 			ImmutableMap.Builder<K, V> mapBuilder = ImmutableMap.builder();
 			if (lookup.newRequest.isPresent()) {
-				Request request = lookup.newRequest.get();
-				Map<K, V> newValues = Futures.getUnchecked(request.future);
+				Map<K, V> newValues = Futures.getUnchecked(lookup.future());
 				for (K key : keys) {
 					V value = newValues.get(key);
 					if (value != null) mapBuilder.put(key, value);
@@ -64,9 +63,8 @@ public class SynchronisingReferenceDataFinder<K, V> implements AsyncReferenceDat
 		List<Set<K>> keyLists = new ArrayList<>(lookup.joinRequests.size());
 		List<ListenableFuture<Map<K, V>>> futures = new ArrayList<>(lookup.joinRequests.size());
 		if (lookup.newRequest.isPresent()) {
-			Request newRequest = lookup.newRequest.get();
-			keyLists.add(newRequest.keys);
-			futures.add(newRequest.future);
+			keyLists.add(lookup.newRequest.get().keys);
+			futures.add(lookup.future());
 		}
 		for (Map.Entry<Request, Collection<K>> e : lookup.joinRequests.asMap().entrySet()) {
 			keyLists.add(ImmutableSet.copyOf(e.getValue()));
@@ -105,21 +103,24 @@ public class SynchronisingReferenceDataFinder<K, V> implements AsyncReferenceDat
 		}
 		if (newKeys.isEmpty()) return new RequestLookupResult(joinRequests);
 
-		Request request = new Request(newKeys, futureFor(newKeys));
+		ListenableFuture<Map<K, V>> future;
+		Optional<Runnable> execution;
+		if (underlying instanceof AsyncReferenceDataFinder) {
+			future = ((AsyncReferenceDataFinder<K, V>) underlying).future(newKeys);
+			execution = Optional.absent();
+		}
+		else {
+			ListenableFutureTask<Map<K, V>> futureTask = ListenableFutureTask.create(new Invocation(newKeys));
+			future = futureTask;
+			execution = Optional.<Runnable> of(futureTask);
+		}
+
+		Request request = new Request(newKeys, future);
 		for (K key : newKeys) {
 			ongoing.put(key, request);
 		}
 
-		return new RequestLookupResult(request, joinRequests);
-	}
-
-	private ListenableFuture<Map<K, V>> futureFor(Set<K> newKeys) {
-		if (underlying instanceof AsyncReferenceDataFinder)
-			return ((AsyncReferenceDataFinder<K, V>) underlying).future(newKeys);
-
-		ListenableFutureTask<Map<K, V>> futureTask = ListenableFutureTask.create(new Invocation(newKeys));
-		executor.execute(futureTask);
-		return futureTask;
+		return new RequestLookupResult(request, execution, joinRequests);
 	}
 
 	private synchronized void release(Request request) {
@@ -143,16 +144,24 @@ public class SynchronisingReferenceDataFinder<K, V> implements AsyncReferenceDat
 
 	private class RequestLookupResult {
 		private final Optional<Request> newRequest;
+		private final Optional<Runnable> execution;
 		private final Multimap<Request, K> joinRequests;
 
-		public RequestLookupResult(Request newRequest, Multimap<Request, K> joinRequests) {
+		public RequestLookupResult(Request newRequest, Optional<Runnable> execution, Multimap<Request, K> joinRequests) {
+			this.execution = execution;
 			this.newRequest = Optional.of(newRequest);
 			this.joinRequests = ImmutableMultimap.copyOf(joinRequests);
 		}
 
 		public RequestLookupResult(Multimap<Request, K> joinRequests) {
 			this.newRequest = Optional.absent();
+			this.execution = Optional.absent();
 			this.joinRequests = ImmutableMultimap.copyOf(joinRequests);
+		}
+
+		public ListenableFuture<Map<K, V>> future() {
+			if (execution.isPresent()) executor.execute(execution.get());
+			return newRequest.get().future;
 		}
 
 		public void release() {
