@@ -41,7 +41,7 @@ public class SynchronisingReferenceDataFinderTest {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void passes_through_to_underlying_fetcher() {
-		Executor executor = MoreExecutors.sameThreadExecutor();
+		Executor executor = MoreExecutors.directExecutor();
 		ReferenceDataFinder<String, String> underlying = mock(ReferenceDataFinder.class);
 		ReferenceDataFinder<String, String> syncer = new SynchronisingReferenceDataFinder<>(underlying, executor);
 
@@ -79,7 +79,7 @@ public class SynchronisingReferenceDataFinderTest {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void unknown_items_are_dropped() {
-		Executor executor = MoreExecutors.sameThreadExecutor();
+		Executor executor = MoreExecutors.directExecutor();
 		ReferenceDataFinder<String, String> underlying = mock(ReferenceDataFinder.class);
 		ReferenceDataFinder<String, String> syncer = new SynchronisingReferenceDataFinder<>(underlying, executor);
 
@@ -93,7 +93,7 @@ public class SynchronisingReferenceDataFinderTest {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void unexpected_items_are_ignored() {
-		Executor executor = MoreExecutors.sameThreadExecutor();
+		Executor executor = MoreExecutors.directExecutor();
 		ReferenceDataFinder<String, String> underlying = mock(ReferenceDataFinder.class);
 		ReferenceDataFinder<String, String> syncer = new SynchronisingReferenceDataFinder<>(underlying, executor);
 
@@ -126,7 +126,7 @@ public class SynchronisingReferenceDataFinderTest {
 			}
 		};
 		final ReferenceDataFinder<String, String> syncer = new SynchronisingReferenceDataFinder<>(latcher,
-				MoreExecutors.sameThreadExecutor());
+				MoreExecutors.directExecutor());
 		final ListeningExecutorService localExecutor = MoreExecutors
 				.listeningDecorator(Executors.newCachedThreadPool());
 		ListenableFuture<List<Map<String, String>>> futures = Futures.allAsList(Iterables.transform(

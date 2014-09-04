@@ -9,7 +9,7 @@ import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.Service;
 import com.google.inject.Provider;
 
-import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
+import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 
 public class ServiceActivator<T extends Service> extends AbstractService implements Activator {
 	private final Provider<T> provider;
@@ -54,7 +54,7 @@ public class ServiceActivator<T extends Service> extends AbstractService impleme
 				}
 				notifyFailed(failure);
 			}
-		}, sameThreadExecutor());
+		}, directExecutor());
 		service.startAsync();
 	}
 

@@ -17,7 +17,7 @@ import com.google.common.util.concurrent.Service.State;
 import com.google.inject.Provider;
 import com.google.inject.util.Providers;
 
-import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
+import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static com.google.common.util.concurrent.Service.State.FAILED;
 import static com.google.common.util.concurrent.Service.State.RUNNING;
 import static com.google.common.util.concurrent.Service.State.STARTING;
@@ -109,7 +109,7 @@ public class ServiceActivatorTest {
 		activator.startAsync();
 		activator.activate();
 		ActivationListener listener = mock(ActivationListener.class);
-		activator.addActivationListener(listener, sameThreadExecutor());
+		activator.addActivationListener(listener, directExecutor());
 		testService.finishStarting();
 		verify(listener).activated();
 		verifyNoMoreInteractions(listener);
@@ -120,7 +120,7 @@ public class ServiceActivatorTest {
 		ServiceActivator<?> activator = new ServiceActivator<TestService>(Providers.of(testService), true);
 		activator.startAsync();
 		ActivationListener listener = mock(ActivationListener.class);
-		activator.addActivationListener(listener, sameThreadExecutor());
+		activator.addActivationListener(listener, directExecutor());
 		testService.finishStarting();
 		verify(listener).activated();
 		verifyNoMoreInteractions(listener);
@@ -133,7 +133,7 @@ public class ServiceActivatorTest {
 		activator.activate();
 		testService.finishStarting();
 		ActivationListener listener = mock(ActivationListener.class);
-		activator.addActivationListener(listener, sameThreadExecutor());
+		activator.addActivationListener(listener, directExecutor());
 		verify(listener).activated();
 		verifyNoMoreInteractions(listener);
 	}
@@ -184,7 +184,7 @@ public class ServiceActivatorTest {
 		activator.activate();
 		testService.finishStarting();
 		ActivationListener listener = mock(ActivationListener.class);
-		activator.addActivationListener(listener, sameThreadExecutor());
+		activator.addActivationListener(listener, directExecutor());
 		activator.deactivate();
 		testService.finishStopping();
 		verify(listener).activated();
@@ -197,7 +197,7 @@ public class ServiceActivatorTest {
 		activator.startAsync();
 		testService.finishStarting();
 		ActivationListener listener = mock(ActivationListener.class);
-		activator.addActivationListener(listener, sameThreadExecutor());
+		activator.addActivationListener(listener, directExecutor());
 		activator.deactivate();
 		testService.finishStopping();
 		verify(listener).activated();
@@ -210,7 +210,7 @@ public class ServiceActivatorTest {
 		activator.startAsync();
 		testService.finishStarting();
 		ActivationListener listener = mock(ActivationListener.class);
-		activator.addActivationListener(listener, sameThreadExecutor());
+		activator.addActivationListener(listener, directExecutor());
 		activator.stopAsync();
 		testService.finishStopping();
 		verify(listener).activated();
@@ -245,7 +245,7 @@ public class ServiceActivatorTest {
 		testService.finishStarting();
 		activator.deactivate();
 		ActivationListener listener = mock(ActivationListener.class);
-		activator.addActivationListener(listener, sameThreadExecutor());
+		activator.addActivationListener(listener, directExecutor());
 		testService.finishStopping();
 		verify(listener, never()).activated();
 	}
@@ -259,7 +259,7 @@ public class ServiceActivatorTest {
 		testService.finishStarting();
 		activator.deactivate();
 		ActivationListener listener = mock(ActivationListener.class);
-		activator.addActivationListener(listener, sameThreadExecutor());
+		activator.addActivationListener(listener, directExecutor());
 		testService.finishStopping();
 		verify(listener, never()).deactivated();
 	}
@@ -271,7 +271,7 @@ public class ServiceActivatorTest {
 		activator.activate();
 		testService.finishStarting();
 		ActivationListener listener = mock(ActivationListener.class);
-		activator.addActivationListener(listener, sameThreadExecutor());
+		activator.addActivationListener(listener, directExecutor());
 		testService.stopAsync();
 		testService.finishStopping();
 		verify(listener).deactivated();
