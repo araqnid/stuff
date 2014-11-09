@@ -73,7 +73,7 @@ task runtimeDeps(dependsOn: 'processResources') << {
     def sha1 = java.security.MessageDigest.getInstance("SHA-1");
     def metainf = new File("$buildDir/resources/main/META-INF");
     metainf.mkdirs()
-    def depsFile = new File(metainf, "stuff.deps.txt");
+    def depsFile = new File(metainf, project.name + ".deps.txt");
     depsFile.text = ''
     configurations.runtime.resolvedConfiguration.resolvedArtifacts.each { artifact ->
         depsFile.text += sha1.digest(artifact.file.bytes).collect {String.format "%02x", it}.join() + ' ' + artifact.moduleVersion.id + ' ' + artifact.type + '\n'
