@@ -18,7 +18,7 @@ latestjar="packages/$artifact-0.0.$BUILD_NUMBER.jar"
 
 unzip -qc "$latestjar" "META-INF/$artifact.deps.txt" > $tmpdir/deps
 
-while read id type; do
+while read sha1 id type; do
     set -- $(echo $id | tr ':' ' ')
     group="$1"
     name="$2"
