@@ -56,7 +56,6 @@ dependencies {
     compile 'com.fasterxml.jackson.module:jackson-module-guice:2.4.1'
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-guava:2.4.2'
     compile 'com.lexicalscope.eventcast:eventcast:1.0.2'
-    compile 'org.apache.httpcomponents:httpclient:4.3.3'
     compile 'joda-time:joda-time:2.4'
     compile 'org.postgresql:postgresql:9.3-1102-jdbc41'
     runtime 'ch.qos.logback:logback-classic:1.1.2'
@@ -67,6 +66,7 @@ dependencies {
     browserTestCompile ('org.seleniumhq.selenium:selenium-java:2.42.2') {
         exclude module: 'httpclient'
     }
+    integrationTestCompile 'org.apache.httpcomponents:httpclient:4.3.5'
 }
 
 task runtimeDeps(dependsOn: 'processResources') << {
