@@ -27,11 +27,14 @@ while read sha1 id type; do
     file="$name-$version.jar"
     [ -f "$cache_dir/$file" ] || echo $url >> $tmpdir/urls
     echo "$cache_dir/$file" >> $tmpdir/files
+    echo "$sha1  $cache_dir/$file" >> $tmpdir/digests
 done < $tmpdir/deps
 
 if [ -f $tmpdir/urls ]; then
     wget -P "$cache_dir" -c -nd $(cat $tmpdir/urls)
 fi
+
+shasum -c $tmpdir/digests
 
 cp $tmpdir/files packages/$artifact-0.0.$BUILD_NUMBER.deps
 ln -sfvn $artifact-0.0.$BUILD_NUMBER.jar packages/$artifact-latest.jar
