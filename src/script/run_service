@@ -48,4 +48,4 @@ if [ -f "environment" ]; then
     . ./environment
 fi
 
-exec ${JAVA-java} ${JAVA_OPTS} -classpath "$classpath" "$mainclass"
+exec env CLASSPATH="$classpath" ${JAVA-java} ${JAVA_OPTS} "$mainclass"
