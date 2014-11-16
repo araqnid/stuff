@@ -25,6 +25,7 @@ import com.google.inject.Key;
 import com.google.inject.PrivateModule;
 import com.google.inject.Provider;
 import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
 import com.google.inject.spi.Dependency;
@@ -61,7 +62,7 @@ public class SpooledEventsModule extends AbstractModule {
 			public Set<Dependency<?>> getDependencies() {
 				return ImmutableSet.<Dependency<?>> of(Dependency.get(serviceKey));
 			}
-		});
+		}).in(Singleton.class);
 		services.addBinding().to(activatorKey);
 		activateOnStartup.addBinding().to(activatorKey);
 	}
