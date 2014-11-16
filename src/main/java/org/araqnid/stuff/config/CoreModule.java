@@ -5,12 +5,12 @@ import java.net.UnknownHostException;
 import java.util.Set;
 import java.util.UUID;
 
+import org.araqnid.stuff.ActivateOnStartup;
 import org.araqnid.stuff.AppLifecycleEvent;
 import org.araqnid.stuff.AppStateMonitor;
 import org.araqnid.stuff.AppVersion;
 import org.araqnid.stuff.MerlotRepository;
 import org.araqnid.stuff.ScheduledJobController;
-import org.araqnid.stuff.ActivateOnStartup;
 import org.araqnid.stuff.activity.ActivityScope;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -41,6 +41,7 @@ public final class CoreModule extends AbstractModule {
 		install(new ScheduledModule());
 		install(new SynchronousActivityEventsModule());
 		install(new JacksonModule());
+		install(new SpooledEventsModule());
 		bind(MerlotRepository.class);
 	}
 

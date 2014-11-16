@@ -12,6 +12,7 @@ import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
+import com.google.common.util.concurrent.Monitor;
 import com.google.inject.Provider;
 
 import static org.araqnid.stuff.activity.AppRequestType.RedisMessage;
@@ -23,7 +24,15 @@ public class RedisProcessor extends AbstractExecutionThreadService {
 	private final Provider<? extends DeliveryTarget> targetProvider;
 	private final Logger log;
 	private final ActivityScopeControl scopeControl;
+	private final Monitor monitor = new Monitor();
+	private final Monitor.Guard notCurrentlyDelivering = new Monitor.Guard(monitor) {
+		@Override
+		public boolean isSatisfied() {
+			return !delivering;
+		}
+	};
 	private Jedis jedis;
+	private boolean delivering;
 
 	public RedisProcessor(Provider<Jedis> connectionProvider,
 			String key,
@@ -59,7 +68,19 @@ public class RedisProcessor extends AbstractExecutionThreadService {
 				throw e;
 			}
 			if (value != null) {
-				log.debug("<{}> retrieved", value);
+				monitor.enter();
+				try {
+					if (isRunning()) {
+						log.error("<{}> aborting delivery due to shutdown", value);
+						jedis.rpush(key, value);
+						jedis.lrem(inProgressKey, 0, value);
+						return;
+					}
+					log.debug("<{}> retrieved", value);
+					delivering = true;
+				} finally {
+					monitor.leave();
+				}
 				try {
 					if (deliver(value)) {
 						jedis.lrem(inProgressKey, 0, value);
@@ -73,6 +94,12 @@ public class RedisProcessor extends AbstractExecutionThreadService {
 				} catch (Exception e) {
 					log.error("Unhandled exception delivering message, leaving it on in-progress key", e);
 				}
+				monitor.enter();
+				try {
+					delivering = false;
+				} finally {
+					monitor.leave();
+				}
 			}
 		}
 	}
@@ -85,7 +112,9 @@ public class RedisProcessor extends AbstractExecutionThreadService {
 
 	@Override
 	protected void triggerShutdown() {
-		jedis.disconnect();
+		if (monitor.enterIf(notCurrentlyDelivering)) {
+			jedis.disconnect();
+		}
 	}
 
 	@Override
