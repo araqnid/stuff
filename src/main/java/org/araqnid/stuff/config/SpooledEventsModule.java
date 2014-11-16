@@ -91,8 +91,10 @@ public class SpooledEventsModule extends AbstractModule {
 		}
 
 		@Provides
-		public RedisEventLoader loader(Provider<Jedis> redisProvider, RedisEventLoader.EventTarget eventTarget) {
-			return new RedisEventLoader(eventTarget, redisProvider, queueName + ".spool", 1000);
+		public RedisEventLoader loader(Provider<Jedis> redisProvider,
+				RedisEventLoader.EventTarget eventTarget,
+				ActivityScopeControl scopeControl) {
+			return new RedisEventLoader(eventTarget, redisProvider, queueName + ".spool", scopeControl, 1000);
 		}
 
 		@Provides
