@@ -1,0 +1,94 @@
+#!/usr/bin/perl -w
+
+require 5;
+use Modern::Perl qw(2012);
+use Log::Log4perl;
+use JSON;
+use Getopt::Std;
+use DateTime;
+use UUID;
+use Time::HiRes;
+use Sys::Hostname;
+use vars qw($opt_Q);
+
+{
+  package XBeanstalk::Connection;
+  use Modern::Perl '2012';
+  use IO::Socket::INET;
+
+  our $logger = Log::Log4perl->get_logger();
+
+  sub new {
+    my $pkg = shift;
+    my $host = shift || 'localhost';
+    my $port = shift || 11300;
+    my $socket = IO::Socket::INET->new(PeerHost => $host, PeerPort => $port) or die "Unable to connect to $host:$port: $!\n";
+    return bless({ io => $socket }, $pkg);
+  }
+
+  sub cmd {
+    my $this = shift;
+    my $command = shift;
+    my $payload = shift;
+    $logger->info("-> $command");
+    my $io = $this->{io};
+    $io->print($command);
+    $io->print("\r\n");
+    if (defined($payload)) {
+      $io->print($payload);
+      $io->print("\r\n");
+    }
+    my $response = <$io>;
+    if ($response) {
+      $response =~ s/\r?\n$//;
+      $logger->info("<- $response");
+    }
+    return $response;
+  }
+
+  sub DESTROY {
+    my $this = shift;
+    if ($this->{io}) {
+      $this->cmd("quit");
+      $this->{io}->close();
+      delete $this->{io};
+    }
+  }
+}
+
+Log::Log4perl->init(&{ sub { my $conf; $conf = <<EOF; \$conf } });
+log4perl.rootLogger = INFO, Console
+
+log4perl.appender.Console = Log::Log4perl::Appender::Screen
+log4perl.appender.Console.layout = Log::Log4perl::Layout::PatternLayout
+log4perl.appender.Console.layout.ConversionPattern = %d{ABSOLUTE} (+%-8r) %-5p [%c{1}] %m%n
+EOF
+
+getopts('Q:') && (@ARGV == 1 || @ARGV == 2) or die "Syntax: $0 [-Q queue-name] event-type [event-data]\n";
+
+my($event_type, $data) = @ARGV;
+
+if ($data) {
+  $data = decode_json($data) or die "Invalid JSON data\n";
+}
+
+my $now = DateTime->from_epoch(epoch => Time::HiRes::time);
+my $timestamp = sprintf("%sT%s.%03dZ", $now->ymd("-"), $now->hms(":"), $now->millisecond);
+
+my $uuid;
+my $uuid_string;
+UUID::generate($uuid);
+UUID::unparse($uuid, $uuid_string);
+
+my $event = { id => $uuid_string, type => $event_type, timestamp => $timestamp, hostname => hostname, pid => $$, data => ( $data || {} ) };
+
+my $payload = encode_json($event);
+my $pri = 0;
+my $delay = 0;
+my $ttr = 30;
+my $len = length($payload);
+
+my $conn = XBeanstalk::Connection->new();
+$opt_Q and $conn->cmd("use $opt_Q");
+my $response = $conn->cmd("put $pri $delay $ttr $len", $payload);
+$response =~ /^INSERTED\b/ or die "Failed to write job to Beanstalk: $response\n";

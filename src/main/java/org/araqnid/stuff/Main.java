@@ -28,7 +28,7 @@ public class Main {
 
 			@Override
 			public void failure(Service service) {
-				LOG.error("Failed to start service: {}", service);
+				LOG.error("Failed to start service: {}", service, service.failureCause());
 				System.exit(1);
 			}
 
