@@ -67,6 +67,8 @@ dependencies {
         exclude module: 'httpclient'
     }
     integrationTestCompile 'org.apache.httpcomponents:httpclient:4.3.5'
+    // marking this as integrationTestCompile causes a conflict for Eclipse which tries to take the transitive 4.2 version via resteasy too
+    compile 'org.apache.httpcomponents:httpclient:4.3.5'
 }
 
 task runtimeDeps(dependsOn: 'processResources') << {
