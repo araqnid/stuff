@@ -6,7 +6,7 @@ deploy:
     secure: RrLFKbPsPY5rhwHMeBB6g8napoC0ZYYMcqWi3nqzeiiTAW+92T89J6EpZhNaL7/zW1iGvN882GNgr+7uKi99VWEUL3CPiCBd95Ue6OaHuE1/hRZcjuuK2D2vebvUUKwq7plSPLd+8p4VCN3O8/AvpSf4nR0MyH4VSQBEDxCHR3w=
   bucket: zinfandel-test
   upload-dir: stuff
-  local-dir: build/libs
+  local-dir: build
   region: eu-west-1
   acl: public_read
   on:
