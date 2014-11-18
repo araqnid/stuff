@@ -1,1 +1,11 @@
 language: java
+deploy:
+  provider: s3
+  access_key_id: AKIAJRWBLDL3QSCBN76Q
+  secret_access_key:
+    secure: RrLFKbPsPY5rhwHMeBB6g8napoC0ZYYMcqWi3nqzeiiTAW+92T89J6EpZhNaL7/zW1iGvN882GNgr+7uKi99VWEUL3CPiCBd95Ue6OaHuE1/hRZcjuuK2D2vebvUUKwq7plSPLd+8p4VCN3O8/AvpSf4nR0MyH4VSQBEDxCHR3w=
+  bucket: zinfandel-test
+  upload-dir: stuff
+  acl: public_read
+  on:
+    repo: araqnid/stuff
