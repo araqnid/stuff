@@ -31,7 +31,7 @@ public class MerlotResourcesIntegrationTest extends IntegrationTest {
 		assertThat(
 				doGet("/_api/merlot/"),
 				is(both(ok()).and(
-						responseWithJsonContent(jsonObject().withProperty("userInfo", jsonNull()).withProperty(
+						responseWithJsonContent(jsonObject().withProperty("user_info", jsonNull()).withProperty(
 								"version", jsonNull())))));
 	}
 
@@ -44,7 +44,7 @@ public class MerlotResourcesIntegrationTest extends IntegrationTest {
 				doGetWithHeaders("/_api/merlot/", ImmutableMultimap.of("Cookie", "ATKT=" + authTicket(userId))),
 				is(both(ok()).and(
 						responseWithJsonContent(jsonObject().withProperty(
-								"userInfo",
+								"user_info",
 								jsonObject().withProperty("commonName", jsonString(userCN)).withProperty("username",
 										jsonString(username))).withProperty("version", jsonNull())))));
 	}
@@ -63,7 +63,7 @@ public class MerlotResourcesIntegrationTest extends IntegrationTest {
 		assertThat(
 				doGetWithHeaders("/_api/merlot/", ImmutableMultimap.of("Cookie", "ATKT=" + authTicket(userId))),
 				is(both(ok()).and(
-						responseWithJsonContent(jsonObject().withProperty("userInfo", jsonNull()).withProperty(
+						responseWithJsonContent(jsonObject().withProperty("user_info", jsonNull()).withProperty(
 								"version", jsonAny())))));
 	}
 
