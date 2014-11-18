@@ -23,6 +23,7 @@ public class JacksonModule extends PrivateModule {
 				com.fasterxml.jackson.databind.Module.class);
 		jacksonModules.addBinding().to(JodaModule.class);
 		jacksonModules.addBinding().to(GuavaModule.class);
+		jacksonModules.addBinding().to(NamingJacksonModule.class);
 	}
 
 	@Provides
