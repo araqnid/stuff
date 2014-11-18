@@ -4,7 +4,7 @@ apply plugin: 'application'
 
 mainClassName = 'org.araqnid.stuff.Main'
 sourceCompatibility = 1.7
-version = '0.0.' + (System.getenv("BUILD_NUMBER") ?: "0")
+version = '0.0.' + (System.getenv("BUILD_NUMBER") ?: System.getenv("TRAVIS_BUILD_NUMBER") ?: "0")
 
 jar {
     manifest {
