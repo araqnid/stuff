@@ -59,7 +59,7 @@ public class SpooledEventHandler {
 	private <T> void dispatch(EventHandlerRef<T> ref, Event event) {
 		T data;
 		try {
-			data = objectMapper.reader(ref.clazz).readValue(event.data);
+			data = ref.clazz.cast(objectMapper.reader(ref.clazz).readValue(event.data));
 		} catch (IOException e) {
 			LOG.error("{} {} unable to parse data", event.type, event.id, e);
 			return;
@@ -72,7 +72,7 @@ public class SpooledEventHandler {
 		for (Method method : methods) {
 			Class<?>[] parameterTypes = method.getParameterTypes();
 			if (method.getName().equals("handleEvent") && parameterTypes.length == 3 && parameterTypes[0] == UUID.class
-					&& parameterTypes[1] == DateTime.class) {
+					&& parameterTypes[1] == DateTime.class && parameterTypes[2] != Object.class) {
 				@SuppressWarnings("unchecked")
 				Class<T> eventDataType = (Class<T>) parameterTypes[2];
 				return new EventHandlerRef<T>(eventDataType, handler);
