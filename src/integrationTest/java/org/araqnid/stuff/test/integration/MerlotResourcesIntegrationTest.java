@@ -45,7 +45,7 @@ public class MerlotResourcesIntegrationTest extends IntegrationTest {
 				is(both(ok()).and(
 						responseWithJsonContent(jsonObject().withProperty(
 								"user_info",
-								jsonObject().withProperty("commonName", jsonString(userCN)).withProperty("username",
+								jsonObject().withProperty("common_name", jsonString(userCN)).withProperty("username",
 										jsonString(username))).withProperty("version", jsonNull())))));
 	}
 
