@@ -6,13 +6,13 @@ import java.util.Set;
 
 import org.araqnid.stuff.ActivateOnStartup;
 import org.araqnid.stuff.RedisEventLoader;
-import org.araqnid.stuff.SpooledEventHandler;
-import org.araqnid.stuff.SpooledEventProcessor;
-import org.araqnid.stuff.SpooledEventSpooler;
 import org.araqnid.stuff.activity.ActivityScopeControl;
 import org.araqnid.stuff.messages.BeanstalkProcessor;
+import org.araqnid.stuff.messages.SpooledEventHandler;
+import org.araqnid.stuff.messages.SpooledEventSpooler;
 import org.araqnid.stuff.services.Activator;
 import org.araqnid.stuff.services.ServiceActivator;
+import org.araqnid.stuff.services.SpooledEventProcessor;
 
 import redis.clients.jedis.Jedis;
 

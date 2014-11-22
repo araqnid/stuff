@@ -1,4 +1,4 @@
-package org.araqnid.stuff;
+package org.araqnid.stuff.services;
 
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.Service;
@@ -10,6 +10,7 @@ public class SpooledEventProcessor extends AbstractService {
 	private final Service loader;
 	private final Service processor;
 	private boolean finishedLoading;
+	private boolean finishedProcessing;
 
 	public SpooledEventProcessor(Service loader, Service processor) {
 		this.loader = loader;
@@ -58,7 +59,7 @@ public class SpooledEventProcessor extends AbstractService {
 			}, directExecutor());
 			loader.stopAsync();
 		}
-		else {
+		else if (!finishedProcessing) {
 			processor.addListener(new Service.Listener() {
 				@Override
 				public void terminated(State from) {
@@ -72,11 +73,26 @@ public class SpooledEventProcessor extends AbstractService {
 			}, directExecutor());
 			processor.stopAsync();
 		}
+		else {
+			notifyStopped();
+		}
 	}
 
 	private synchronized void loadingComplete() {
+		if (finishedLoading) return;
 		finishedLoading = true;
 		if (state().compareTo(State.STOPPING) < 0) {
+			processor.addListener(new Service.Listener() {
+				@Override
+				public void terminated(State from) {
+					finishedProcessing = true;
+				}
+
+				@Override
+				public void failed(State from, Throwable failure) {
+					finishedProcessing = true;
+				}
+			}, directExecutor());
 			processor.startAsync();
 		}
 	}

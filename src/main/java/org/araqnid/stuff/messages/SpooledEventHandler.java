@@ -1,4 +1,4 @@
-package org.araqnid.stuff;
+package org.araqnid.stuff.messages;
 
 import java.io.IOException;
 import java.lang.reflect.Method;

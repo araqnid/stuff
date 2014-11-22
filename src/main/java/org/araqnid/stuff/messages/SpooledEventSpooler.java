@@ -1,4 +1,4 @@
-package org.araqnid.stuff;
+package org.araqnid.stuff.messages;
 
 import redis.clients.jedis.Jedis;
 
