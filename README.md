@@ -17,5 +17,7 @@ bits of wiring that may not be an artifact in their own right.
 * A work-in-progress attempt to add auditing/logging around message delivery ("work queue")
 * Integration tests run the server and provides HTTP client access
 * Browser tests (very few, but they can run)
+* Scripts to run the server via Jetty/Tomcat (or run with Jetty through Gradle)
+* Inclusion of runtime dependency *list* in built jar with scripts to fetch dependencies for deployment (alternative to fat jars)
 
 [![Build Status](https://travis-ci.org/araqnid/stuff.svg?branch=master)](https://travis-ci.org/araqnid/stuff)
