@@ -5,12 +5,12 @@ import java.util.Collection;
 import java.util.Set;
 
 import org.araqnid.stuff.ActivateOnStartup;
-import org.araqnid.stuff.Activator;
-import org.araqnid.stuff.ServiceActivator;
 import org.araqnid.stuff.SometubeHandler;
 import org.araqnid.stuff.activity.ActivityScopeControl;
 import org.araqnid.stuff.messages.BeanstalkProcessor;
 import org.araqnid.stuff.messages.BeanstalkProcessor.DeliveryTarget;
+import org.araqnid.stuff.services.Activator;
+import org.araqnid.stuff.services.ServiceActivator;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Service;

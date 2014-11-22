@@ -8,15 +8,15 @@ import java.util.UUID;
 import javax.sql.DataSource;
 
 import org.araqnid.stuff.ActivateOnStartup;
-import org.araqnid.stuff.Activator;
 import org.araqnid.stuff.AppVersion;
 import org.araqnid.stuff.PostgresqlDataSourceProviderService;
-import org.araqnid.stuff.ServiceActivator;
 import org.araqnid.stuff.SomeQueueProcessor;
 import org.araqnid.stuff.activity.ActivityScopeControl;
 import org.araqnid.stuff.activity.RequestActivity;
 import org.araqnid.stuff.messages.BeanstalkProcessor;
 import org.araqnid.stuff.messages.RedisProcessor;
+import org.araqnid.stuff.services.Activator;
+import org.araqnid.stuff.services.ServiceActivator;
 import org.araqnid.stuff.workqueue.SqlWorkQueue;
 import org.araqnid.stuff.workqueue.WorkDispatcher;
 import org.araqnid.stuff.workqueue.WorkProcessor;

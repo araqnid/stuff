@@ -1,4 +1,4 @@
-package org.araqnid.stuff;
+package org.araqnid.stuff.services;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;

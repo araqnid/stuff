@@ -1,8 +1,9 @@
-package org.araqnid.stuff;
+package org.araqnid.stuff.services;
 
 import java.lang.reflect.Field;
 
-import org.araqnid.stuff.Activator.ActivationListener;
+import org.araqnid.stuff.services.ServiceActivator;
+import org.araqnid.stuff.services.Activator.ActivationListener;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;

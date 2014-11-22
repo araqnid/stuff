@@ -1,4 +1,4 @@
-package org.araqnid.stuff;
+package org.araqnid.stuff.services;
 
 import java.util.List;
 import java.util.concurrent.Executor;

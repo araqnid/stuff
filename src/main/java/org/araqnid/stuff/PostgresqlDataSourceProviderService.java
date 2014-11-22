@@ -2,6 +2,7 @@ package org.araqnid.stuff;
 
 import javax.sql.DataSource;
 
+import org.araqnid.stuff.services.ProviderService;
 import org.postgresql.ds.PGPoolingDataSource;
 
 import com.google.common.base.Optional;

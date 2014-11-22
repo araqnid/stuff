@@ -1,5 +1,7 @@
-package org.araqnid.stuff;
+package org.araqnid.stuff.services;
 
+import org.araqnid.stuff.services.ActiveServiceProxy;
+import org.araqnid.stuff.services.ServiceActivator;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 
