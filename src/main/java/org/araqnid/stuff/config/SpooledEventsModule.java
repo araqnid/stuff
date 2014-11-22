@@ -69,14 +69,20 @@ public class SpooledEventsModule extends AbstractModule {
 
 	public static class SpooledQueueModule extends PrivateModule {
 		private final String queueName;
+		private final Annotation bindingAnnotation;
+
+		public SpooledQueueModule(String queueName, Annotation bindingAnnotation) {
+			this.queueName = queueName;
+			this.bindingAnnotation = bindingAnnotation;
+		}
 
 		public SpooledQueueModule(String queueName) {
-			this.queueName = queueName;
+			this(queueName, Names.named(queueName));
 		}
 
 		@Override
 		protected void configure() {
-			bind(SpooledEventProcessor.class).annotatedWith(Names.named(queueName)).toProvider(
+			bind(SpooledEventProcessor.class).annotatedWith(bindingAnnotation).toProvider(
 					new Provider<SpooledEventProcessor>() {
 						@Inject
 						private Provider<RedisEventLoader> loader;
@@ -88,7 +94,7 @@ public class SpooledEventsModule extends AbstractModule {
 							return new SpooledEventProcessor(loader.get(), processor.get());
 						}
 					});
-			expose(Key.get(SpooledEventProcessor.class, Names.named(queueName)));
+			expose(Key.get(SpooledEventProcessor.class, bindingAnnotation));
 		}
 
 		@Provides
