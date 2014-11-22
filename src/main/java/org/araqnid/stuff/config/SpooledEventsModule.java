@@ -1,6 +1,7 @@
 package org.araqnid.stuff.config;
 
 import java.lang.annotation.Annotation;
+import java.util.Set;
 
 import org.araqnid.stuff.ActivateOnStartup;
 import org.araqnid.stuff.RedisEventLoader;
@@ -20,6 +21,8 @@ import redis.clients.jedis.Jedis;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Service;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -29,14 +32,16 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
+import com.google.inject.spi.Dependency;
+import com.google.inject.spi.InjectionPoint;
+import com.google.inject.spi.ProviderWithDependencies;
 import com.google.inject.util.Types;
 import com.surftools.BeanstalkClient.Client;
 
 public class SpooledEventsModule extends AbstractModule {
 	@Override
 	protected void configure() {
-		String queueName = "spooledqueue";
-		registerQueueProcessor(queueName, Key.get(DispatchingMessageHandler.class));
+		registerQueueProcessor("spooledqueue", Key.get(DispatchingMessageHandler.class));
 	}
 
 	@Provides
@@ -49,17 +54,18 @@ public class SpooledEventsModule extends AbstractModule {
 
 	private <T extends MessageHandler> void registerQueueProcessor(String queueName, Key<T> handlerKey) {
 		SpooledQueueProvider<T> spooledQueueProvider = new SpooledQueueProvider<T>(false, queueName + ".incoming",
-				queueName + ".spool", 1000, binder().getProvider(handlerKey));
+				queueName + ".spool", 1000, binder().getProvider(handlerKey), Dependency.get(handlerKey));
 		bindLateService(SpooledEventProcessor.class, Names.named(queueName), spooledQueueProvider);
 	}
 
 	public static class SpooledQueueProvider<T extends MessageHandler> implements
-			Provider<ServiceActivator<SpooledEventProcessor>> {
+			ProviderWithDependencies<ServiceActivator<SpooledEventProcessor>> {
 		private final boolean activateOnStartup;
 		private final String tubeName;
 		private final String redisKeyName;
 		private final int redisLoaderPageSize;
 		private final Provider<T> messageHandlerProvider;
+		private final Dependency<T> messageHandlerDependency;
 		@Inject
 		private ActivityScopeControl scopeControl;
 		@Inject
@@ -71,12 +77,22 @@ public class SpooledEventsModule extends AbstractModule {
 				String tubeName,
 				String redisKeyName,
 				int redisLoaderPageSize,
-				Provider<T> messageHandlerProvider) {
+				Provider<T> messageHandlerProvider,
+				Dependency<T> messageHandlerDependency) {
 			this.activateOnStartup = activateOnStartup;
 			this.tubeName = tubeName;
 			this.redisKeyName = redisKeyName;
 			this.redisLoaderPageSize = redisLoaderPageSize;
 			this.messageHandlerProvider = messageHandlerProvider;
+			this.messageHandlerDependency = messageHandlerDependency;
+		}
+
+		@Override
+		public Set<Dependency<?>> getDependencies() {
+			Set<Dependency<?>> staticDependencies = Dependency.forInjectionPoints(InjectionPoint
+					.forInstanceMethodsAndFields(SpooledQueueProvider.class));
+			Set<Dependency<?>> dynamicDependencies = ImmutableSet.<Dependency<?>> of(messageHandlerDependency);
+			return ImmutableSet.copyOf(Sets.union(staticDependencies, dynamicDependencies));
 		}
 
 		@Override
