@@ -15,19 +15,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import com.google.inject.Inject;
 
-public class SpooledEventHandler {
-	private static final Logger LOG = LoggerFactory.getLogger(SpooledEventHandler.class);
+public class DispatchingMessageHandler implements MessageHandler {
+	static final Logger LOG = LoggerFactory.getLogger(DispatchingMessageHandler.class);
 	private final ObjectMapper objectMapper;
 	private final Map<String, EventHandlerRef<?>> eventHandlers;
 
-	@Inject
-	public SpooledEventHandler(ObjectMapper objectMapper, TestEventHandler testEventHandler) {
-		this(objectMapper, ImmutableMap.<String, EventHandler<?>> of("test", testEventHandler));
-	}
-
-	public SpooledEventHandler(ObjectMapper objectMapper, ImmutableMap<String, EventHandler<?>> handlers) {
+	public DispatchingMessageHandler(ObjectMapper objectMapper, ImmutableMap<String, EventHandler<?>> handlers) {
 		this.objectMapper = objectMapper;
 		this.eventHandlers = ImmutableMap.copyOf(Maps.transformValues(handlers,
 				new Function<EventHandler<?>, EventHandlerRef<?>>() {
@@ -38,7 +32,8 @@ public class SpooledEventHandler {
 				}));
 	}
 
-	public void handleEvent(String message) {
+	@Override
+	public void handleMessage(String message) {
 		Event event = parseJson(message);
 		EventHandlerRef<?> handlerRef = eventHandlers.get(event.type);
 		if (handlerRef == null) {
@@ -101,16 +96,5 @@ public class SpooledEventHandler {
 
 	public interface EventHandler<T> {
 		void handleEvent(UUID id, DateTime timestamp, T data);
-	}
-
-	public static class TestEventHandler implements EventHandler<TestEventHandler.Data> {
-		@Override
-		public void handleEvent(UUID id, DateTime timestamp, Data data) {
-			LOG.info("{} test event at {}: {}", id, timestamp, data.name);
-		}
-
-		public static class Data {
-			public String name;
-		}
 	}
 }
