@@ -2,7 +2,7 @@ package org.araqnid.stuff.workqueue;
 
 import java.nio.charset.Charset;
 
-import org.araqnid.stuff.BeanstalkProcessor.DeliveryTarget;
+import org.araqnid.stuff.messages.BeanstalkProcessor.DeliveryTarget;
 
 public class WorkQueueBeanstalkHandler implements DeliveryTarget {
 	private static final Charset UTF8 = Charset.forName("UTF-8");

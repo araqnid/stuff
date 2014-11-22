@@ -1,6 +1,6 @@
 package org.araqnid.stuff.workqueue;
 
-import org.araqnid.stuff.RedisProcessor.DeliveryTarget;
+import org.araqnid.stuff.messages.RedisProcessor.DeliveryTarget;
 
 public class WorkQueueRedisHandler implements DeliveryTarget {
 	private final WorkDispatcher dispatcher;

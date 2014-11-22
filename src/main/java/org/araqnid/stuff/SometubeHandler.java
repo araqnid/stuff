@@ -2,7 +2,7 @@ package org.araqnid.stuff;
 
 import java.io.IOException;
 
-import org.araqnid.stuff.BeanstalkProcessor.DeliveryTarget;
+import org.araqnid.stuff.messages.BeanstalkProcessor.DeliveryTarget;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

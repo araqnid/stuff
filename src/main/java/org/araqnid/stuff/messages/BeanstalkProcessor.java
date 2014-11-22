@@ -1,4 +1,4 @@
-package org.araqnid.stuff;
+package org.araqnid.stuff.messages;
 
 import org.araqnid.stuff.activity.ActivityScopeControl;
 import org.araqnid.stuff.activity.AppRequestType;
