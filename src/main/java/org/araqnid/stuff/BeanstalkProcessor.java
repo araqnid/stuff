@@ -13,12 +13,12 @@ import com.surftools.BeanstalkClient.BeanstalkException;
 import com.surftools.BeanstalkClient.Client;
 import com.surftools.BeanstalkClient.Job;
 
-public class BeanstalkProcessor extends AbstractExecutionThreadService {
+public class BeanstalkProcessor<T extends BeanstalkProcessor.DeliveryTarget> extends AbstractExecutionThreadService {
 	private static final Logger LOG = LoggerFactory.getLogger(BeanstalkProcessor.class);
 	private final Provider<Client> connectionProvider;
 	private final String tubeName;
 	private final ActivityScopeControl scopeControl;
-	private final Provider<? extends DeliveryTarget> targetProvider;
+	private final Provider<T> targetProvider;
 	private final Logger log;
 	private boolean completed = false;
 	private boolean haltRequested = false;
@@ -27,7 +27,7 @@ public class BeanstalkProcessor extends AbstractExecutionThreadService {
 	public BeanstalkProcessor(Provider<Client> connectionProvider,
 			String tubeName,
 			ActivityScopeControl scopeControl,
-			Provider<? extends DeliveryTarget> targetProvider) {
+			Provider<T> targetProvider) {
 		this.connectionProvider = connectionProvider;
 		this.tubeName = tubeName;
 		this.scopeControl = scopeControl;

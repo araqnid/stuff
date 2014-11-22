@@ -17,11 +17,11 @@ import com.google.inject.Provider;
 
 import static org.araqnid.stuff.activity.AppRequestType.RedisMessage;
 
-public class RedisProcessor extends AbstractExecutionThreadService {
+public class RedisProcessor<T extends RedisProcessor.DeliveryTarget> extends AbstractExecutionThreadService {
 	private final Provider<Jedis> connectionProvider;
 	private final String key;
 	private final String processingSuffix = ".working";
-	private final Provider<? extends DeliveryTarget> targetProvider;
+	private final Provider<T> targetProvider;
 	private final Logger log;
 	private final ActivityScopeControl scopeControl;
 	private final Monitor monitor = new Monitor();
@@ -37,7 +37,7 @@ public class RedisProcessor extends AbstractExecutionThreadService {
 	public RedisProcessor(Provider<Jedis> connectionProvider,
 			String key,
 			ActivityScopeControl scopeControl,
-			Provider<? extends DeliveryTarget> targetProvider) {
+			Provider<T> targetProvider) {
 		this.connectionProvider = connectionProvider;
 		this.key = key;
 		this.targetProvider = targetProvider;
