@@ -32,6 +32,7 @@ import com.google.inject.Exposed;
 import com.google.inject.Module;
 import com.google.inject.PrivateModule;
 import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
@@ -54,9 +55,8 @@ public class StandaloneAppConfig extends AbstractModule {
 
 	@Override
 	protected void configure() {
-		bindConstant().annotatedWith(Names.named("http_port")).to(port(61000));
 		install(new CoreModule());
-		install(new JettyModule());
+		install(new JettyModule(port(61000)));
 		bind(AppStartupBanner.class);
 		bind(OptionalString).annotatedWith(Names.named("pgUser")).toInstance(getenv("PGUSER"));
 		bind(OptionalString).annotatedWith(Names.named("pgPassword")).toInstance(getenv("PGPASSWORD"));
@@ -77,6 +77,12 @@ public class StandaloneAppConfig extends AbstractModule {
 	}
 
 	public static final class JettyModule extends AbstractModule {
+		private final int port;
+
+		public JettyModule(int port) {
+			this.port = port;
+		}
+
 		@Override
 		protected void configure() {
 			bind(GuiceResteasyBootstrapServletContextListener.class).toInstance(
@@ -147,7 +153,8 @@ public class StandaloneAppConfig extends AbstractModule {
 		}
 
 		@Provides
-		public Server server(Handler handler, @Named("http_port") int port) {
+		@Singleton
+		public Server server(Handler handler) {
 			Server server = new Server();
 			ServerConnector connector = new ServerConnector(server);
 			connector.setPort(port);
