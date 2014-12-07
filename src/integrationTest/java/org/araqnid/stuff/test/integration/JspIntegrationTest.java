@@ -29,6 +29,16 @@ public class JspIntegrationTest extends IntegrationTest {
 	}
 
 	@Test
+	public void jsp_page_uses_custom_tag() throws Exception {
+		try (CloseableHttpResponse response = doGet("/test_jsp_tag.jsp")) {
+			assertThat(
+					response,
+					is(allOf(ok(), responseWithTextContent(stringContainsInOrder(ImmutableList.of("This page uses",
+							"<span id=\"test\">a custom tag</span>"))))));
+		}
+	}
+
+	@Test
 	public void jsp_page_uses_tag_file() throws Exception {
 		try (CloseableHttpResponse response = doGet("/test_jsp_tag_file.jsp")) {
 			assertThat(
