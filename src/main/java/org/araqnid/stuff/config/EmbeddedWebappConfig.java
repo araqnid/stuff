@@ -7,7 +7,6 @@ import javax.servlet.ServletContextListener;
 import javax.servlet.http.HttpServletResponse;
 
 import org.araqnid.stuff.EmbeddedAppStartupBanner;
-import org.araqnid.stuff.ScheduledJobController;
 import org.araqnid.stuff.activity.RequestActivityFilter;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
 
@@ -27,8 +26,8 @@ public class EmbeddedWebappConfig extends AbstractModule {
 	@Override
 	protected void configure() {
 		bindConstant().annotatedWith(Names.named("context_path")).to(context.getContextPath());
-		Multibinder.newSetBinder(binder(), ScheduledJobController.JobDefinition.class);
-		Multibinder<ServletContextListener> servletContextListeners = Multibinder.newSetBinder(binder(), ServletContextListener.class);
+		Multibinder<ServletContextListener> servletContextListeners = Multibinder.newSetBinder(binder(),
+				ServletContextListener.class);
 		servletContextListeners.addBinding().toInstance(new GuiceResteasyBootstrapServletContextListener() {
 			@Override
 			protected List<? extends Module> getModules(ServletContext context) {
@@ -39,7 +38,8 @@ public class EmbeddedWebappConfig extends AbstractModule {
 		install(new ResteasyServletModule());
 		if (servletApiSupportsRequestGetStatus()) {
 			bind(RequestActivityFilter.RequestLogger.class).to(RequestActivityFilter.BasicRequestLogger.class);
-		} else {
+		}
+		else {
 			bind(RequestActivityFilter.RequestLogger.class).to(RequestActivityFilter.NoStatusRequestLogger.class);
 		}
 		bind(EmbeddedAppStartupBanner.class);

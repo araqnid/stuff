@@ -10,7 +10,6 @@ import org.araqnid.stuff.AppLifecycleEvent;
 import org.araqnid.stuff.AppStateMonitor;
 import org.araqnid.stuff.AppVersion;
 import org.araqnid.stuff.MerlotRepository;
-import org.araqnid.stuff.ScheduledJobController;
 import org.araqnid.stuff.activity.ActivityScope;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -20,15 +19,12 @@ import com.google.common.util.concurrent.ServiceManager;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
-import com.google.inject.multibindings.Multibinder;
 import com.lexicalscope.eventcast.EventCast;
 
 public final class CoreModule extends AbstractModule {
 	@Override
 	protected void configure() {
 		install(EventCast.eventCastModuleBuilder().implement(AppLifecycleEvent.class).build());
-		Multibinder<Service> services = Multibinder.newSetBinder(binder(), Service.class);
-		services.addBinding().to(ScheduledJobController.class);
 		bind(AppVersion.class).toInstance(appVersion());
 		bind(AppStateMonitor.class);
 		bind(ActivateOnStartup.class);
@@ -38,7 +34,6 @@ public final class CoreModule extends AbstractModule {
 		install(new ActivityScope.Module());
 		install(new RawBeanstalkModule());
 		install(new WorkQueueModule());
-		install(new ScheduledModule());
 		install(new SynchronousActivityEventsModule());
 		install(new JacksonModule());
 		install(new SpooledEventsModule());
