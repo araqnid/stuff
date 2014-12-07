@@ -12,7 +12,7 @@
 	<tag>
 		<name>thing</name>
 		<tag-class>org.araqnid.stuff.jsp.ThingTag</tag-class>
-		<body-content>TAGDEPENDENT</body-content>
+		<body-content>SCRIPTLESS</body-content>
 		<description>Test tag</description>
 		<attribute>
 			<name>id</name>
