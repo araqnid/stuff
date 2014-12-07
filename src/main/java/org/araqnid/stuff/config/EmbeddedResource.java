@@ -6,16 +6,25 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.ReadableByteChannel;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.eclipse.jetty.util.resource.Resource;
+
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.reflect.ClassPath;
+import com.google.common.reflect.ClassPath.ResourceInfo;
 
 public class EmbeddedResource extends Resource {
 	private final ClassLoader classLoader;
 	private final String path;
+	private final ClassPath classPath;
 
-	public EmbeddedResource(ClassLoader classLoader, String path) {
+	public EmbeddedResource(ClassLoader classLoader, String path, ClassPath classPath) {
 		this.classLoader = classLoader;
 		this.path = path;
+		this.classPath = classPath;
 	}
 
 	@Override
@@ -85,11 +94,30 @@ public class EmbeddedResource extends Resource {
 
 	@Override
 	public String[] list() {
-		return null;
+		String prefix = path;
+		if (!prefix.endsWith("/")) {
+			prefix = prefix + "/";
+		}
+		Set<String> matching = new HashSet<>();
+		ImmutableSet<ResourceInfo> resources = classPath.getResources();
+		for (ResourceInfo resource : resources) {
+			String name = resource.getResourceName();
+			if (name.startsWith(prefix)) {
+				String tail = name.substring(prefix.length());
+				Iterable<String> parts = Splitter.on('/').split(tail);
+				matching.add(parts.iterator().next());
+			}
+		}
+		return matching.toArray(new String[matching.size()]);
 	}
 
 	@Override
 	public Resource addPath(String path) throws IOException, MalformedURLException {
-		return new EmbeddedResource(classLoader, this.path + path);
+		return new EmbeddedResource(classLoader, this.path + path, classPath);
+	}
+
+	@Override
+	public String toString() {
+		return "Classpath:/" + path;
 	}
 }

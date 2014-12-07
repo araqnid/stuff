@@ -1,6 +1,7 @@
 package org.araqnid.stuff.config;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.EnumSet;
@@ -31,6 +32,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
+import com.google.common.reflect.ClassPath;
 import com.google.common.util.concurrent.Service;
 import com.google.inject.AbstractModule;
 import com.google.inject.Exposed;
@@ -135,8 +137,9 @@ public class StandaloneAppConfig extends AbstractModule {
 
 			@Provides
 			@Named("webapp-root")
-			public Resource webappRoot() {
-				return new EmbeddedResource(getClass().getClassLoader(), "web");
+			public Resource webappRoot() throws IOException {
+				ClassLoader classLoader = getClass().getClassLoader();
+				return new EmbeddedResource(classLoader, "web", ClassPath.from(classLoader));
 			}
 
 		}
