@@ -1,3 +1,3 @@
-<%@ page contentType="text/plain; charset=UTF-8" session="false" %>
+<%@ page contentType="text/plain" pageEncoding="UTF-8" session="false" %>
 
 This page <% out.print("has a "); %><%= "scriptlet" %>
