@@ -12,9 +12,11 @@ import javax.servlet.DispatcherType;
 import javax.servlet.ServletContext;
 
 import org.apache.jasper.servlet.JspServlet;
+import org.apache.tomcat.InstanceManager;
 import org.araqnid.stuff.AppStartupBanner;
 import org.araqnid.stuff.JettyAppService;
 import org.araqnid.stuff.activity.RequestActivityFilter;
+import org.araqnid.stuff.jsp.InjectedInstanceManager;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
@@ -110,12 +112,15 @@ public class StandaloneAppConfig extends AbstractModule {
 			@Override
 			protected void configure() {
 				install(new VanillaServletModule());
+				bind(InstanceManager.class).to(InjectedInstanceManager.class);
 			}
 
 			@Provides
 			@Named("vanilla")
 			@Exposed
-			public Handler vanillaContext(GuiceFilter guiceFilter, @Named("webapp-root") Resource baseResource) {
+			public Handler vanillaContext(GuiceFilter guiceFilter,
+					@Named("webapp-root") Resource baseResource,
+					InstanceManager instanceManager) {
 				// Set Classloader of Context to be sane (needed for JSTL)
 				// JSP requires a non-System classloader, this simply wraps the
 				// embedded System classloader in a way that makes it suitable
@@ -131,6 +136,7 @@ public class StandaloneAppConfig extends AbstractModule {
 				context.setBaseResource(baseResource);
 				context.setClassLoader(jspClassLoader);
 				context.setAttribute("javax.servlet.context.tempdir", jspTempDir);
+				context.setAttribute(InstanceManager.class.getName(), instanceManager);
 				context.addEventListener(new JettyJspServletContextListener(jspTempDir));
 				return context;
 			}

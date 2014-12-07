@@ -19,4 +19,11 @@
 			<required>true</required>
 		</attribute>
 	</tag>
+
+	<tag>
+		<name>server-identity</name>
+		<tag-class>org.araqnid.stuff.jsp.ServerIdentityTag</tag-class>
+		<body-content>EMPTY</body-content>
+		<description>Print server identity</description>
+	</tag>
 </taglib>
