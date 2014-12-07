@@ -17,4 +17,11 @@ public class JspIntegrationTest extends IntegrationTest {
 			assertThat(response, is(allOf(ok(), responseWithTextContent(containsString("This page has a scriptlet")))));
 		}
 	}
+
+	@Test
+	public void jsp_page_uses_jstl_tag() throws Exception {
+		try (CloseableHttpResponse response = doGet("/test_jstl.jsp")) {
+			assertThat(response, is(allOf(ok(), responseWithTextContent(containsString("This page uses JSTL")))));
+		}
+	}
 }
