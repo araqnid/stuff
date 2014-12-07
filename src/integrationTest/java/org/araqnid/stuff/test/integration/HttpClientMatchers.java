@@ -1,10 +1,8 @@
 package org.araqnid.stuff.test.integration;
 
-import static org.hamcrest.Matchers.either;
-import static org.hamcrest.Matchers.equalTo;
-
 import java.io.IOException;
 import java.net.HttpCookie;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -23,6 +21,10 @@ import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
+import com.google.common.io.ByteStreams;
+
+import static org.hamcrest.Matchers.either;
+import static org.hamcrest.Matchers.equalTo;
 
 public final class HttpClientMatchers {
 	private HttpClientMatchers() {
@@ -101,10 +103,10 @@ public final class HttpClientMatchers {
 
 		@Override
 		protected boolean matchesSafely(HttpEntity item, Description mismatchDescription) {
-			ContentType contentType = ContentType.parse(item.getContentType().getValue());
-			if (!contentTypeMatcher.matches(contentType.getMimeType())) {
+			String mimeType = mimeTypeOf(item);
+			if (!contentTypeMatcher.matches(mimeType)) {
 				mismatchDescription.appendText("content type ");
-				contentTypeMatcher.describeMismatch(contentType.getMimeType(), mismatchDescription);
+				contentTypeMatcher.describeMismatch(mimeType, mismatchDescription);
 				return false;
 			}
 			T value = parse(item);
@@ -114,6 +116,14 @@ public final class HttpClientMatchers {
 				return false;
 			}
 			return true;
+		}
+
+		private String mimeTypeOf(HttpEntity item) {
+			Header contentTypeHeader = item.getContentType();
+			if (contentTypeHeader == null) return null;
+			ContentType contentType = ContentType.parse(contentTypeHeader.getValue());
+			if (contentType == null) return null;
+			return contentType.getMimeType();
 		}
 
 		protected T parse(HttpEntity item) {
@@ -166,6 +176,16 @@ public final class HttpClientMatchers {
 			@Override
 			protected T doParse(HttpEntity item) throws IOException {
 				return new MappingJsonFactory().createParser(item.getContent()).readValueAsTree();
+			}
+		});
+	}
+
+	public static Matcher<HttpResponse> responseWithTextContent(final Matcher<String> contentMatcher) {
+		return responseWithContent(new HttpContentMatcher<String>(equalTo("text/plain"), contentMatcher) {
+			@Override
+			protected String doParse(HttpEntity item) throws IOException {
+				byte[] bytes = ByteStreams.toByteArray(item.getContent());
+				return new String(bytes, StandardCharsets.UTF_8);
 			}
 		});
 	}

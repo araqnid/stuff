@@ -7,6 +7,7 @@ bits of wiring that may not be an artifact in their own right.
 
 * Wired up with Guice
 * Runs either Standalone with Jetty or as a webapp (specfically, within Tomcat)
+* Jetty webapp supports JSP rendering (greatly aided by [embedded-jetty-jsp](https://github.com/jetty-project/embedded-jetty-jsp))
 * Most things are Guava services, aggregated into a ServiceManager
   * Service activator allows services to be stopped/started dynamically
   * Provider service allows a service to provide an implementation of some interface only when it is running

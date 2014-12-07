@@ -1,5 +1,8 @@
 package org.araqnid.stuff.config;
 
+import java.io.File;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -7,6 +10,7 @@ import java.util.Map;
 import javax.servlet.DispatcherType;
 import javax.servlet.ServletContext;
 
+import org.apache.jasper.servlet.JspServlet;
 import org.araqnid.stuff.AppStartupBanner;
 import org.araqnid.stuff.JettyAppService;
 import org.araqnid.stuff.activity.RequestActivityFilter;
@@ -26,6 +30,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
+import com.google.common.io.Files;
 import com.google.common.util.concurrent.Service;
 import com.google.inject.AbstractModule;
 import com.google.inject.Exposed;
@@ -109,11 +114,22 @@ public class StandaloneAppConfig extends AbstractModule {
 			@Named("vanilla")
 			@Exposed
 			public Handler vanillaContext(GuiceFilter guiceFilter, @Named("webapp-root") Resource baseResource) {
+				// Set Classloader of Context to be sane (needed for JSTL)
+				// JSP requires a non-System classloader, this simply wraps the
+				// embedded System classloader in a way that makes it suitable
+				// for JSP to use
+				ClassLoader jspClassLoader = new URLClassLoader(new URL[0], this.getClass().getClassLoader());
+
+				final File jspTempDir = Files.createTempDir();
 				ServletContextHandler context = new ServletContextHandler();
 				context.setContextPath("/");
 				context.addFilter(new FilterHolder(guiceFilter), "/*", EnumSet.of(DispatcherType.REQUEST));
 				context.addServlet(DefaultServlet.class, "/");
+				context.addServlet(JspServlet.class, "*.jsp");
 				context.setBaseResource(baseResource);
+				context.setClassLoader(jspClassLoader);
+				context.setAttribute("javax.servlet.context.tempdir", jspTempDir);
+				context.addEventListener(new JettyJspServletContextListener(jspTempDir));
 				return context;
 			}
 
@@ -122,6 +138,7 @@ public class StandaloneAppConfig extends AbstractModule {
 			public Resource webappRoot() {
 				return new EmbeddedResource(getClass().getClassLoader(), "web");
 			}
+
 		}
 
 		public static final class ResteasyContextModule extends PrivateModule {
