@@ -37,24 +37,28 @@ repositories {
 }
 
 dependencies {
+    def jettyVersion = '9.2.5.v20141112'
+    def jacksonVersion = '2.4.4'
+    def resteasyVersion = '3.0.10.Final'
+
     compile 'com.google.guava:guava:18.0'
     compile 'com.google.inject:guice:3.0'
     compile 'com.google.inject.extensions:guice-servlet:3.0'
     compile 'com.google.inject.extensions:guice-multibindings:3.0'
     compile 'org.slf4j:slf4j-api:1.7.7'
-    compile 'org.eclipse.jetty:jetty-server:9.2.5.v20141112'
-    compile 'org.eclipse.jetty:jetty-servlet:9.2.5.v20141112'
+    compile 'org.eclipse.jetty:jetty-server:' + jettyVersion
+    compile 'org.eclipse.jetty:jetty-servlet:' + jettyVersion
     compile 'com.surftools:BeanstalkClient:1.4.6'
     compile 'redis.clients:jedis:2.6.0'
     //compile 'org.hibernate:hibernate-core:4.3.6.Final'
     //compile 'org.hibernate:hibernate-entitymanager:4.3.6.Final'
-    compile 'org.jboss.resteasy:resteasy-jaxrs:3.0.10.Final'
-    compile 'org.jboss.resteasy:resteasy-guice:3.0.10.Final'
-    compile 'org.jboss.resteasy:resteasy-jackson2-provider:3.0.10.Final'
-    compile 'com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:2.4.3'
-    compile 'com.fasterxml.jackson.datatype:jackson-datatype-joda:2.4.3'
-    compile 'com.fasterxml.jackson.module:jackson-module-guice:2.4.3'
-    compile 'com.fasterxml.jackson.datatype:jackson-datatype-guava:2.4.3'
+    compile 'org.jboss.resteasy:resteasy-jaxrs:' + resteasyVersion
+    compile 'org.jboss.resteasy:resteasy-guice:' + resteasyVersion
+    compile 'org.jboss.resteasy:resteasy-jackson2-provider:' + resteasyVersion
+    compile 'com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:' + jacksonVersion
+    compile 'com.fasterxml.jackson.datatype:jackson-datatype-joda:' + jacksonVersion
+    compile 'com.fasterxml.jackson.module:jackson-module-guice:' + jacksonVersion
+    compile 'com.fasterxml.jackson.datatype:jackson-datatype-guava:' + jacksonVersion
     compile 'com.lexicalscope.eventcast:eventcast:1.0.2'
     compile 'joda-time:joda-time:2.4'
     compile 'org.postgresql:postgresql:9.3-1102-jdbc41'
