@@ -21,6 +21,8 @@ import org.araqnid.stuff.JettyAppService;
 import org.araqnid.stuff.activity.RequestActivityFilter;
 import org.araqnid.stuff.jsp.InjectedInstanceManager;
 import org.araqnid.stuff.jsp.ThingTag;
+import org.araqnid.stuff.jsp.ThingTagInfo;
+import org.araqnid.stuff.jsp.UUIDPropertyEditor;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
@@ -111,6 +113,7 @@ public class StandaloneAppConfig extends AbstractModule {
 			services.addBinding().to(JettyAppService.class);
 			install(new VanillaContextModule());
 			install(new ResteasyContextModule());
+			requestStaticInjection(UUIDPropertyEditor.class);
 		}
 
 		public static final class VanillaContextModule extends PrivateModule {
@@ -167,6 +170,7 @@ public class StandaloneAppConfig extends AbstractModule {
 				TagXml tagXml = new TagXml();
 				tagXml.setName("thing");
 				tagXml.setTagClass(ThingTag.class.getName());
+				tagXml.setTeiClass(ThingTagInfo.class.getName());
 				tagXml.setBodyContent("scriptless");
 				tagXml.setInfo("Test tag");
 				TagAttributeInfo attr = new TagAttributeInfo("id", true, null, false);

@@ -1,15 +1,16 @@
 package org.araqnid.stuff.jsp;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import javax.servlet.jsp.tagext.SimpleTagSupport;
 
 public class ThingTag extends SimpleTagSupport {
-	private String id;
+	private UUID id;
 
-	public void setId(String id) {
+	public void setId(UUID id) {
 		this.id = id;
 	}
 

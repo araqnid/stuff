@@ -12,6 +12,7 @@
 	<tag>
 		<name>thing</name>
 		<tag-class>org.araqnid.stuff.jsp.ThingTag</tag-class>
+		<tei-class>org.araqnid.stuff.jsp.ThingTagInfo</tei-class>
 		<body-content>SCRIPTLESS</body-content>
 		<description>Test tag</description>
 		<attribute>

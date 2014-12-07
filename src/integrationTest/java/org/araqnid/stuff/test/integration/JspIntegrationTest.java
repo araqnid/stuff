@@ -38,7 +38,7 @@ public class JspIntegrationTest extends IntegrationTest {
 			assertThat(
 					response,
 					is(allOf(ok(), responseWithTextContent(stringContainsInOrder(ImmutableList.of("This page uses",
-							"<span id=\"test\">a custom tag</span>"))))));
+							"<span id=\"63f863dc-63f9-4567-a0ef-30417687cd1c\">a custom tag</span>"))))));
 		}
 	}
 
@@ -67,7 +67,7 @@ public class JspIntegrationTest extends IntegrationTest {
 			assertThat(
 					response,
 					is(allOf(ok(), responseWithTextContent(stringContainsInOrder(ImmutableList.of("This page uses",
-							"<span id=\"test\">an embedded tag</span>"))))));
+							"<span id=\"63f863dc-63f9-4567-a0ef-30417687cd1c\">an embedded tag</span>"))))));
 		}
 	}
 }
