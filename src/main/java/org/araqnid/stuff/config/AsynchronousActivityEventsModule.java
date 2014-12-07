@@ -7,6 +7,7 @@ import org.araqnid.stuff.activity.ActivityEventSink;
 import org.araqnid.stuff.activity.AsyncActivityEventSink;
 import org.araqnid.stuff.activity.AsyncActivityEventsProcessor;
 import org.araqnid.stuff.activity.LogActivityEvents;
+import org.araqnid.stuff.activity.MDCPopulatingEventSink;
 
 import com.google.common.util.concurrent.Service;
 import com.google.inject.AbstractModule;

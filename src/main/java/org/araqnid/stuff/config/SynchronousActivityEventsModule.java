@@ -2,6 +2,7 @@ package org.araqnid.stuff.config;
 
 import org.araqnid.stuff.activity.ActivityEventSink;
 import org.araqnid.stuff.activity.LogActivityEvents;
+import org.araqnid.stuff.activity.MDCPopulatingEventSink;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;

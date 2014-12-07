@@ -1,6 +1,5 @@
-package org.araqnid.stuff.config;
+package org.araqnid.stuff.activity;
 
-import org.araqnid.stuff.activity.ActivityEventSink;
 import org.slf4j.MDC;
 
 import com.google.inject.Inject;
