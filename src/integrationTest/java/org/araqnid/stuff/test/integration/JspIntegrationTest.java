@@ -60,4 +60,14 @@ public class JspIntegrationTest extends IntegrationTest {
 							"<span id=\"test\">a tag file</span>"))))));
 		}
 	}
+
+	@Test
+	public void jsp_page_uses_embedded_tag() throws Exception {
+		try (CloseableHttpResponse response = doGet("/test_jsp_embedded_tag.jsp")) {
+			assertThat(
+					response,
+					is(allOf(ok(), responseWithTextContent(stringContainsInOrder(ImmutableList.of("This page uses",
+							"<span id=\"test\">an embedded tag</span>"))))));
+		}
+	}
 }

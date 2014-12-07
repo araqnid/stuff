@@ -10,13 +10,17 @@ import java.util.Map;
 
 import javax.servlet.DispatcherType;
 import javax.servlet.ServletContext;
+import javax.servlet.jsp.tagext.TagAttributeInfo;
 
 import org.apache.jasper.servlet.JspServlet;
 import org.apache.tomcat.InstanceManager;
+import org.apache.tomcat.util.descriptor.tld.TagXml;
+import org.apache.tomcat.util.descriptor.tld.TaglibXml;
 import org.araqnid.stuff.AppStartupBanner;
 import org.araqnid.stuff.JettyAppService;
 import org.araqnid.stuff.activity.RequestActivityFilter;
 import org.araqnid.stuff.jsp.InjectedInstanceManager;
+import org.araqnid.stuff.jsp.ThingTag;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
@@ -33,6 +37,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 import com.google.common.reflect.ClassPath;
 import com.google.common.util.concurrent.Service;
@@ -120,7 +125,8 @@ public class StandaloneAppConfig extends AbstractModule {
 			@Exposed
 			public Handler vanillaContext(GuiceFilter guiceFilter,
 					@Named("webapp-root") Resource baseResource,
-					InstanceManager instanceManager) {
+					InstanceManager instanceManager,
+					Map<String, TaglibXml> embeddedTaglibs) {
 				// Set Classloader of Context to be sane (needed for JSTL)
 				// JSP requires a non-System classloader, this simply wraps the
 				// embedded System classloader in a way that makes it suitable
@@ -137,7 +143,7 @@ public class StandaloneAppConfig extends AbstractModule {
 				context.setClassLoader(jspClassLoader);
 				context.setAttribute("javax.servlet.context.tempdir", jspTempDir);
 				context.setAttribute(InstanceManager.class.getName(), instanceManager);
-				context.addEventListener(new JettyJspServletContextListener(jspTempDir));
+				context.addEventListener(new JettyJspServletContextListener(jspTempDir, embeddedTaglibs));
 				return context;
 			}
 
@@ -148,6 +154,27 @@ public class StandaloneAppConfig extends AbstractModule {
 				return new EmbeddedResource(classLoader, "web", ClassPath.from(classLoader));
 			}
 
+			@Provides
+			public Map<String, TaglibXml> embeddedTaglibs() {
+				String uri = "http://github.com/araqnid/stuff/embedded";
+				TaglibXml taglibXml = new TaglibXml();
+				taglibXml.setTlibVersion("1.0");
+				taglibXml.setJspVersion("1.2");
+				taglibXml.setShortName("embd");
+				taglibXml.setUri(uri);
+				taglibXml.setInfo("embedded taglib");
+
+				TagXml tagXml = new TagXml();
+				tagXml.setName("thing");
+				tagXml.setTagClass(ThingTag.class.getName());
+				tagXml.setBodyContent("scriptless");
+				tagXml.setInfo("Test tag");
+				TagAttributeInfo attr = new TagAttributeInfo("id", true, null, false);
+				tagXml.getAttributes().add(attr);
+				taglibXml.addTag(tagXml);
+
+				return ImmutableMap.of(uri, taglibXml);
+			}
 		}
 
 		public static final class ResteasyContextModule extends PrivateModule {
