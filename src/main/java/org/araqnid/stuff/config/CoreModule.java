@@ -12,6 +12,8 @@ import org.araqnid.stuff.AppVersion;
 import org.araqnid.stuff.MerlotRepository;
 import org.araqnid.stuff.activity.ActivityScope;
 
+import redis.clients.jedis.Jedis;
+
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
 import com.google.common.util.concurrent.Service;
@@ -38,6 +40,11 @@ public final class CoreModule extends AbstractModule {
 		install(new JacksonModule());
 		install(new SpooledEventsModule());
 		bind(MerlotRepository.class);
+	}
+
+	@Provides
+	public Jedis jedis() {
+		return new Jedis("localhost");
 	}
 
 	@Provides
