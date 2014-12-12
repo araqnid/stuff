@@ -9,6 +9,7 @@ import javax.sql.DataSource;
 
 import org.araqnid.stuff.ActivateOnStartup;
 import org.araqnid.stuff.AppVersion;
+import org.araqnid.stuff.HibernateService;
 import org.araqnid.stuff.PostgresqlDataSourceProviderService;
 import org.araqnid.stuff.SomeQueueProcessor;
 import org.araqnid.stuff.activity.ActivityScopeControl;
@@ -19,11 +20,13 @@ import org.araqnid.stuff.services.Activator;
 import org.araqnid.stuff.services.ServiceActivator;
 import org.araqnid.stuff.workqueue.SqlWorkQueue;
 import org.araqnid.stuff.workqueue.SqlWorkQueue.Accessor;
+import org.araqnid.stuff.workqueue.HibernateWorkQueue;
 import org.araqnid.stuff.workqueue.WorkDispatcher;
 import org.araqnid.stuff.workqueue.WorkProcessor;
 import org.araqnid.stuff.workqueue.WorkQueue;
 import org.araqnid.stuff.workqueue.WorkQueueBeanstalkHandler;
 import org.araqnid.stuff.workqueue.WorkQueueRedisHandler;
+import org.hibernate.SessionFactory;
 
 import redis.clients.jedis.Jedis;
 
@@ -50,6 +53,7 @@ public final class WorkQueueModule extends AbstractModule {
 	private final Collection<QueueConfiguration> redis = ImmutableSet.of(new QueueConfiguration("thisqueue",
 			SomeQueueProcessor.class), new QueueConfiguration("thatqueue", SomeQueueProcessor.class));
 	private final boolean autostart = false;
+	private boolean hibernate = true;
 
 	@Override
 	protected void configure() {
@@ -58,29 +62,41 @@ public final class WorkQueueModule extends AbstractModule {
 				ActivateOnStartup.OnStartup.class);
 
 		for (final QueueConfiguration queue : Iterables.concat(beanstalk, redis)) {
-			bind(WorkQueue.class).annotatedWith(queue.bindingAnnotation).toProvider(new Provider<SqlWorkQueue>() {
-				@Inject
-				private Provider<SqlWorkQueue.Accessor> accessorProvider;
-				@Inject
-				private ObjectMapper objectMapper;
-				@Inject
-				private AppVersion appVersion;
-				@Inject
-				@ServerIdentity
-				private UUID instanceId;
-				@Inject
-				@ServerIdentity
-				private String hostname;
-				@Inject
-				private Provider<RequestActivity> requestActivityProvider;
+			if (hibernate) {
+				bind(WorkQueue.class).annotatedWith(queue.bindingAnnotation).toProvider(new Provider<HibernateWorkQueue>() {
+					@Inject
+					private SessionFactory sessionFactory;
 
-				@Override
-				public SqlWorkQueue get() {
-					Accessor accessor = accessorProvider.get();
-					RequestActivity requestActivity = requestActivityProvider.get();
-					return new SqlWorkQueue(queue.name, accessor, objectMapper, appVersion, instanceId, hostname, requestActivity);
-				}
-			});
+					@Override
+					public HibernateWorkQueue get() {
+						return new HibernateWorkQueue(queue.name, sessionFactory);
+					}
+				});
+			} else {
+				bind(WorkQueue.class).annotatedWith(queue.bindingAnnotation).toProvider(new Provider<SqlWorkQueue>() {
+					@Inject
+					private Provider<SqlWorkQueue.Accessor> accessorProvider;
+					@Inject
+					private ObjectMapper objectMapper;
+					@Inject
+					private AppVersion appVersion;
+					@Inject
+					@ServerIdentity
+					private UUID instanceId;
+					@Inject
+					@ServerIdentity
+					private String hostname;
+					@Inject
+					private Provider<RequestActivity> requestActivityProvider;
+					
+					@Override
+					public SqlWorkQueue get() {
+						Accessor accessor = accessorProvider.get();
+						RequestActivity requestActivity = requestActivityProvider.get();
+						return new SqlWorkQueue(queue.name, accessor, objectMapper, appVersion, instanceId, hostname, requestActivity);
+					}
+				});
+			}
 
 			bind(WorkDispatcher.class).annotatedWith(queue.bindingAnnotation).toProvider(new ProviderWithDependencies<WorkDispatcher>() {
 				private final Key<WorkQueue> queueKey = Key.get(WorkQueue.class, queue.bindingAnnotation);
@@ -223,7 +239,17 @@ public final class WorkQueueModule extends AbstractModule {
 
 		services.addBinding().to(PostgresqlDataSourceProviderService.class);
 		bind(DataSource.class).toProvider(PostgresqlDataSourceProviderService.class);
-		services.addBinding().to(SqlWorkQueue.Setup.class);
+		//services.addBinding().to(SqlWorkQueue.Setup.class);
+		services.addBinding().to(HibernateService.class).in(Singleton.class);
+		bind(SessionFactory.class).toProvider(new Provider<SessionFactory>() {
+			@Inject
+			private HibernateService hibernateService;
+
+			@Override
+			public SessionFactory get() {
+				return hibernateService.getProxy();
+			}
+		});
 	}
 
 	private static class QueueConfiguration {
