@@ -17,4 +17,5 @@
 	<logger name="org.araqnid.stuff.activity.LogActivityEvents" additivity="false" level="error">
 		<appender-ref ref="STDOUT_ACTIVITY" />
 	</logger>
+	<logger name="org.hibernate.SQL" level="debug" />
 </configuration>
