@@ -1,4 +1,6 @@
 language: java
+jdk:
+  - oraclejdk8
 deploy:
   provider: s3
   access_key_id: AKIAJRWBLDL3QSCBN76Q
