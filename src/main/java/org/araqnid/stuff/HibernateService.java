@@ -14,7 +14,6 @@ public class HibernateService extends ProviderService<SessionFactory> {
 		super(SessionFactory.class);
 	}
 
-	private StandardServiceRegistry serviceRegistry;
 	private SessionFactory sessionFactory;
 
 	@Override
@@ -30,7 +29,6 @@ public class HibernateService extends ProviderService<SessionFactory> {
 		sessionFactory.close();
 	}
 
-	
 	@Override
 	protected SessionFactory getValue() {
 		return sessionFactory;
