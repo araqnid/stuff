@@ -18,9 +18,9 @@ import org.araqnid.stuff.messages.BeanstalkProcessor;
 import org.araqnid.stuff.messages.RedisProcessor;
 import org.araqnid.stuff.services.Activator;
 import org.araqnid.stuff.services.ServiceActivator;
-import org.araqnid.stuff.workqueue.HibernateWorkQueue;
 import org.araqnid.stuff.workqueue.SqlWorkQueue;
 import org.araqnid.stuff.workqueue.SqlWorkQueue.Accessor;
+import org.araqnid.stuff.workqueue.HibernateWorkQueue;
 import org.araqnid.stuff.workqueue.WorkDispatcher;
 import org.araqnid.stuff.workqueue.WorkProcessor;
 import org.araqnid.stuff.workqueue.WorkQueue;
@@ -38,7 +38,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.Provider;
-import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
@@ -64,18 +63,16 @@ public final class WorkQueueModule extends AbstractModule {
 
 		for (final QueueConfiguration queue : Iterables.concat(beanstalk, redis)) {
 			if (hibernate) {
-				bind(WorkQueue.class).annotatedWith(queue.bindingAnnotation).toProvider(
-						new Provider<HibernateWorkQueue>() {
-							@Inject
-							private SessionFactory sessionFactory;
+				bind(WorkQueue.class).annotatedWith(queue.bindingAnnotation).toProvider(new Provider<HibernateWorkQueue>() {
+					@Inject
+					private SessionFactory sessionFactory;
 
-							@Override
-							public HibernateWorkQueue get() {
-								return new HibernateWorkQueue(queue.name, sessionFactory);
-							}
-						});
-			}
-			else {
+					@Override
+					public HibernateWorkQueue get() {
+						return new HibernateWorkQueue(queue.name, sessionFactory);
+					}
+				});
+			} else {
 				bind(WorkQueue.class).annotatedWith(queue.bindingAnnotation).toProvider(new Provider<SqlWorkQueue>() {
 					@Inject
 					private Provider<SqlWorkQueue.Accessor> accessorProvider;
@@ -91,199 +88,168 @@ public final class WorkQueueModule extends AbstractModule {
 					private String hostname;
 					@Inject
 					private Provider<RequestActivity> requestActivityProvider;
-
+					
 					@Override
 					public SqlWorkQueue get() {
 						Accessor accessor = accessorProvider.get();
 						RequestActivity requestActivity = requestActivityProvider.get();
-						return new SqlWorkQueue(queue.name, accessor, objectMapper, appVersion, instanceId, hostname,
-								requestActivity);
+						return new SqlWorkQueue(queue.name, accessor, objectMapper, appVersion, instanceId, hostname, requestActivity);
 					}
 				});
 			}
 
-			bind(WorkDispatcher.class).annotatedWith(queue.bindingAnnotation).toProvider(
-					new ProviderWithDependencies<WorkDispatcher>() {
-						private final Key<WorkQueue> queueKey = Key.get(WorkQueue.class, queue.bindingAnnotation);
-						private final Provider<WorkQueue> workQueueProvider = binder().getProvider(queueKey);
-						private final Provider<? extends WorkProcessor> processorProvider = binder().getProvider(
-								queue.processorClass);
-						@Inject
-						private Provider<RequestActivity> requestActivityProvider;
+			bind(WorkDispatcher.class).annotatedWith(queue.bindingAnnotation).toProvider(new ProviderWithDependencies<WorkDispatcher>() {
+				private final Key<WorkQueue> queueKey = Key.get(WorkQueue.class, queue.bindingAnnotation);
+				private final Provider<WorkQueue> workQueueProvider = binder().getProvider(queueKey);
+				private final Provider<? extends WorkProcessor> processorProvider = binder().getProvider(queue.processorClass);
+				@Inject
+				private Provider<RequestActivity> requestActivityProvider;
 
-						@Override
-						public WorkDispatcher get() {
-							WorkQueue workQueue = workQueueProvider.get();
-							WorkProcessor queueProcessor = processorProvider.get();
-							RequestActivity requestActivity = requestActivityProvider.get();
-							return new WorkDispatcher(workQueue, queueProcessor, requestActivity);
-						}
+				@Override
+				public WorkDispatcher get() {
+					WorkQueue workQueue = workQueueProvider.get();
+					WorkProcessor queueProcessor = processorProvider.get();
+					RequestActivity requestActivity = requestActivityProvider.get();
+					return new WorkDispatcher(workQueue, queueProcessor, requestActivity);
+				}
 
-						@Override
-						public Set<Dependency<?>> getDependencies() {
-							return ImmutableSet
-									.<Dependency<?>> builder()
-									.addAll(Dependency.forInjectionPoints(InjectionPoint
-											.forInstanceMethodsAndFields(getClass()))).add(Dependency.get(queueKey))
-									.add(Dependency.get(Key.get(queue.processorClass))).build();
-						}
-					});
+				@Override
+				public Set<Dependency<?>> getDependencies() {
+					return ImmutableSet.<Dependency<?>> builder()
+							.addAll(Dependency.forInjectionPoints(InjectionPoint.forInstanceMethodsAndFields(getClass())))
+							.add(Dependency.get(queueKey))
+							.add(Dependency.get(Key.get(queue.processorClass)))
+							.build();
+				}
+			});
 		}
 
 		for (final QueueConfiguration queue : beanstalk) {
-			final TypeLiteral<BeanstalkProcessor<WorkQueueBeanstalkHandler>> processorType = new TypeLiteral<BeanstalkProcessor<WorkQueueBeanstalkHandler>>() {
-			};
-			final TypeLiteral<ServiceActivator<BeanstalkProcessor<WorkQueueBeanstalkHandler>>> activatorType = new TypeLiteral<ServiceActivator<BeanstalkProcessor<WorkQueueBeanstalkHandler>>>() {
-			};
-			bind(WorkQueueBeanstalkHandler.class).annotatedWith(queue.bindingAnnotation).toProvider(
-					new ProviderWithDependencies<WorkQueueBeanstalkHandler>() {
-						private Provider<WorkDispatcher> dispatcherProvider = binder().getProvider(
-								Key.get(WorkDispatcher.class, queue.bindingAnnotation));
+			final TypeLiteral<BeanstalkProcessor<WorkQueueBeanstalkHandler>> processorType = new TypeLiteral<BeanstalkProcessor<WorkQueueBeanstalkHandler>>(){};
+			final TypeLiteral<ServiceActivator<BeanstalkProcessor<WorkQueueBeanstalkHandler>>> activatorType = new TypeLiteral<ServiceActivator<BeanstalkProcessor<WorkQueueBeanstalkHandler>>>(){};
+			bind(WorkQueueBeanstalkHandler.class).annotatedWith(queue.bindingAnnotation).toProvider(new ProviderWithDependencies<WorkQueueBeanstalkHandler>() {
+				private Provider<WorkDispatcher> dispatcherProvider = binder().getProvider(Key.get(WorkDispatcher.class, queue.bindingAnnotation));
 
-						@Override
-						public Set<Dependency<?>> getDependencies() {
-							return ImmutableSet.<Dependency<?>> of(Dependency.get(Key.get(WorkDispatcher.class,
-									queue.bindingAnnotation)));
-						}
+				@Override
+				public Set<Dependency<?>> getDependencies() {
+					return ImmutableSet.<Dependency<?>> of(Dependency.get(Key.get(WorkDispatcher.class, queue.bindingAnnotation)));
+				}
 
-						@Override
-						public WorkQueueBeanstalkHandler get() {
-							return new WorkQueueBeanstalkHandler(dispatcherProvider.get());
-						}
-					});
-			bind(processorType).annotatedWith(queue.bindingAnnotation).toProvider(
-					new ProviderWithDependencies<BeanstalkProcessor<WorkQueueBeanstalkHandler>>() {
-						private final Key<WorkQueueBeanstalkHandler> handlerKey = Key.get(
-								WorkQueueBeanstalkHandler.class, queue.bindingAnnotation);
-						@Inject
-						private Provider<Client> connectionProvider;
-						@Inject
-						private ActivityScopeControl scopeControl;
-						private Provider<WorkQueueBeanstalkHandler> targetProvider = binder().getProvider(handlerKey);
+				@Override
+				public WorkQueueBeanstalkHandler get() {
+					return new WorkQueueBeanstalkHandler(dispatcherProvider.get());
+				}
+			});
+			bind(processorType).annotatedWith(queue.bindingAnnotation).toProvider(new ProviderWithDependencies<BeanstalkProcessor<WorkQueueBeanstalkHandler>>() {
+				private final Key<WorkQueueBeanstalkHandler> handlerKey = Key.get(WorkQueueBeanstalkHandler.class, queue.bindingAnnotation);
+				@Inject
+				private Provider<Client> connectionProvider;
+				@Inject
+				private ActivityScopeControl scopeControl;
+				private Provider<WorkQueueBeanstalkHandler> targetProvider = binder().getProvider(handlerKey);
 
-						@Override
-						public Set<Dependency<?>> getDependencies() {
-							return ImmutableSet
-									.<Dependency<?>> builder()
-									.addAll(Dependency.forInjectionPoints(InjectionPoint
-											.forInstanceMethodsAndFields(getClass()))).add(Dependency.get(handlerKey))
-									.build();
-						}
+				@Override
+				public Set<Dependency<?>> getDependencies() {
+					return ImmutableSet.<Dependency<?>> builder()
+							.addAll(Dependency.forInjectionPoints(InjectionPoint.forInstanceMethodsAndFields(getClass())))
+							.add(Dependency.get(handlerKey))
+							.build();
+				}
 
-						@Override
-						public BeanstalkProcessor<WorkQueueBeanstalkHandler> get() {
-							return new BeanstalkProcessor<WorkQueueBeanstalkHandler>(connectionProvider, queue.name,
-									scopeControl, targetProvider);
-						}
-					});
-			bind(activatorType)
-					.annotatedWith(queue.bindingAnnotation)
-					.toProvider(
-							new ProviderWithDependencies<ServiceActivator<BeanstalkProcessor<WorkQueueBeanstalkHandler>>>() {
-								private final Key<BeanstalkProcessor<WorkQueueBeanstalkHandler>> consumerServiceKey = Key
-										.get(processorType, queue.bindingAnnotation);
-								private final Provider<BeanstalkProcessor<WorkQueueBeanstalkHandler>> provider = binder()
-										.getProvider(consumerServiceKey);
+				@Override
+				public BeanstalkProcessor<WorkQueueBeanstalkHandler> get() {
+					return new BeanstalkProcessor<WorkQueueBeanstalkHandler>(connectionProvider, queue.name, scopeControl, targetProvider);
+				}
+			});
+			bind(activatorType).annotatedWith(queue.bindingAnnotation).toProvider(new ProviderWithDependencies<ServiceActivator<BeanstalkProcessor<WorkQueueBeanstalkHandler>>>() {
+				private final Key<BeanstalkProcessor<WorkQueueBeanstalkHandler>> consumerServiceKey = Key.get(processorType, queue.bindingAnnotation);
+				private final Provider<BeanstalkProcessor<WorkQueueBeanstalkHandler>> provider = binder().getProvider(consumerServiceKey);
 
-								@Override
-								public ServiceActivator<BeanstalkProcessor<WorkQueueBeanstalkHandler>> get() {
-									return new ServiceActivator<BeanstalkProcessor<WorkQueueBeanstalkHandler>>(
-											provider, autostart);
-								}
+				@Override
+				public ServiceActivator<BeanstalkProcessor<WorkQueueBeanstalkHandler>> get() {
+					return new ServiceActivator<BeanstalkProcessor<WorkQueueBeanstalkHandler>>(provider, autostart);
+				}
 
-								@Override
-								public Set<Dependency<?>> getDependencies() {
-									return ImmutableSet.<Dependency<?>> of(Dependency.get(consumerServiceKey));
-								}
-							}).in(Singleton.class);
+				@Override
+				public Set<Dependency<?>> getDependencies() {
+					return ImmutableSet.<Dependency<?>> of(Dependency.get(consumerServiceKey));
+				}
+			}).in(Singleton.class);
 
-			final Key<ServiceActivator<BeanstalkProcessor<WorkQueueBeanstalkHandler>>> activatorKey = Key.get(
-					activatorType, queue.bindingAnnotation);
+			final Key<ServiceActivator<BeanstalkProcessor<WorkQueueBeanstalkHandler>>> activatorKey = Key.get(activatorType, queue.bindingAnnotation);
 			services.addBinding().to(activatorKey);
 			activateOnStartup.addBinding().to(activatorKey);
 		}
 
 		for (final QueueConfiguration queue : redis) {
-			final TypeLiteral<RedisProcessor<WorkQueueRedisHandler>> processorType = new TypeLiteral<RedisProcessor<WorkQueueRedisHandler>>() {
-			};
-			final TypeLiteral<ServiceActivator<RedisProcessor<WorkQueueRedisHandler>>> activatorType = new TypeLiteral<ServiceActivator<RedisProcessor<WorkQueueRedisHandler>>>() {
-			};
-			bind(WorkQueueRedisHandler.class).annotatedWith(queue.bindingAnnotation).toProvider(
-					new ProviderWithDependencies<WorkQueueRedisHandler>() {
-						private Provider<WorkDispatcher> dispatcherProvider = binder().getProvider(
-								Key.get(WorkDispatcher.class, queue.bindingAnnotation));
+			final TypeLiteral<RedisProcessor<WorkQueueRedisHandler>> processorType = new TypeLiteral<RedisProcessor<WorkQueueRedisHandler>>(){};
+			final TypeLiteral<ServiceActivator<RedisProcessor<WorkQueueRedisHandler>>> activatorType = new TypeLiteral<ServiceActivator<RedisProcessor<WorkQueueRedisHandler>>>(){};
+			bind(WorkQueueRedisHandler.class).annotatedWith(queue.bindingAnnotation).toProvider(new ProviderWithDependencies<WorkQueueRedisHandler>() {
+				private Provider<WorkDispatcher> dispatcherProvider = binder().getProvider(Key.get(WorkDispatcher.class, queue.bindingAnnotation));
 
-						@Override
-						public Set<Dependency<?>> getDependencies() {
-							return ImmutableSet.<Dependency<?>> of(Dependency.get(Key.get(WorkDispatcher.class,
-									queue.bindingAnnotation)));
-						}
+				@Override
+				public Set<Dependency<?>> getDependencies() {
+					return ImmutableSet.<Dependency<?>> of(Dependency.get(Key.get(WorkDispatcher.class, queue.bindingAnnotation)));
+				}
 
-						@Override
-						public WorkQueueRedisHandler get() {
-							return new WorkQueueRedisHandler(dispatcherProvider.get());
-						}
-					});
-			bind(processorType).annotatedWith(queue.bindingAnnotation).toProvider(
-					new ProviderWithDependencies<RedisProcessor<WorkQueueRedisHandler>>() {
-						private final Key<WorkQueueRedisHandler> handlerKey = Key.get(WorkQueueRedisHandler.class,
-								queue.bindingAnnotation);
-						private final Provider<WorkQueueRedisHandler> targetProvider = binder().getProvider(handlerKey);
-						@Inject
-						private Provider<Jedis> connectionProvider;
-						@Inject
-						private ActivityScopeControl scopeControl;
+				@Override
+				public WorkQueueRedisHandler get() {
+					return new WorkQueueRedisHandler(dispatcherProvider.get());
+				}
+			});
+			bind(processorType).annotatedWith(queue.bindingAnnotation).toProvider(new ProviderWithDependencies<RedisProcessor<WorkQueueRedisHandler>>() {
+				private final Key<WorkQueueRedisHandler> handlerKey = Key.get(WorkQueueRedisHandler.class, queue.bindingAnnotation);
+				private final Provider<WorkQueueRedisHandler> targetProvider = binder().getProvider(handlerKey);
+				@Inject
+				private Provider<Jedis> connectionProvider;
+				@Inject
+				private ActivityScopeControl scopeControl;
 
-						@Override
-						public Set<Dependency<?>> getDependencies() {
-							return ImmutableSet
-									.<Dependency<?>> builder()
-									.addAll(Dependency.forInjectionPoints(InjectionPoint
-											.forInstanceMethodsAndFields(getClass()))).add(Dependency.get(handlerKey))
-									.build();
-						}
+				@Override
+				public Set<Dependency<?>> getDependencies() {
+					return ImmutableSet.<Dependency<?>> builder()
+							.addAll(Dependency.forInjectionPoints(InjectionPoint.forInstanceMethodsAndFields(getClass())))
+							.add(Dependency.get(handlerKey))
+							.build();
+				}
 
-						@Override
-						public RedisProcessor<WorkQueueRedisHandler> get() {
-							return new RedisProcessor<WorkQueueRedisHandler>(connectionProvider, queue.name,
-									scopeControl, targetProvider);
-						}
-					});
-			bind(activatorType)
-					.annotatedWith(queue.bindingAnnotation)
-					.toProvider(
-							new ProviderWithDependencies<ServiceActivator<RedisProcessor<WorkQueueRedisHandler>>>() {
-								private final Key<RedisProcessor<WorkQueueRedisHandler>> consumerServiceKey = Key.get(
-										processorType, queue.bindingAnnotation);
-								private final Provider<RedisProcessor<WorkQueueRedisHandler>> provider = binder()
-										.getProvider(consumerServiceKey);
+				@Override
+				public RedisProcessor<WorkQueueRedisHandler> get() {
+					return new RedisProcessor<WorkQueueRedisHandler>(connectionProvider, queue.name, scopeControl, targetProvider);
+				}
+			});
+			bind(activatorType).annotatedWith(queue.bindingAnnotation).toProvider(new ProviderWithDependencies<ServiceActivator<RedisProcessor<WorkQueueRedisHandler>>>() {
+				private final Key<RedisProcessor<WorkQueueRedisHandler>> consumerServiceKey = Key.get(processorType, queue.bindingAnnotation);
+				private final Provider<RedisProcessor<WorkQueueRedisHandler>> provider = binder().getProvider(consumerServiceKey);
 
-								@Override
-								public ServiceActivator<RedisProcessor<WorkQueueRedisHandler>> get() {
-									return new ServiceActivator<RedisProcessor<WorkQueueRedisHandler>>(provider,
-											autostart);
-								}
+				@Override
+				public ServiceActivator<RedisProcessor<WorkQueueRedisHandler>> get() {
+					return new ServiceActivator<RedisProcessor<WorkQueueRedisHandler>>(provider, autostart);
+				}
 
-								@Override
-								public Set<Dependency<?>> getDependencies() {
-									return ImmutableSet.<Dependency<?>> of(Dependency.get(consumerServiceKey));
-								}
-							}).in(Singleton.class);
-			final Key<ServiceActivator<RedisProcessor<WorkQueueRedisHandler>>> activatorKey = Key.get(activatorType,
-					queue.bindingAnnotation);
+				@Override
+				public Set<Dependency<?>> getDependencies() {
+					return ImmutableSet.<Dependency<?>> of(Dependency.get(consumerServiceKey));
+				}
+			}).in(Singleton.class);
+			final Key<ServiceActivator<RedisProcessor<WorkQueueRedisHandler>>> activatorKey = Key.get(activatorType, queue.bindingAnnotation);
 			services.addBinding().to(activatorKey);
 			activateOnStartup.addBinding().to(activatorKey);
 		}
 
 		services.addBinding().to(PostgresqlDataSourceProviderService.class);
-		bind(DataSource.class).toProvider(PostgresqlDataSourceProviderService.class).in(Singleton.class);
-		// services.addBinding().to(SqlWorkQueue.Setup.class);
+		bind(DataSource.class).toProvider(PostgresqlDataSourceProviderService.class);
+		//services.addBinding().to(SqlWorkQueue.Setup.class);
 		services.addBinding().to(HibernateService.class).in(Singleton.class);
-	}
+		bind(SessionFactory.class).toProvider(new Provider<SessionFactory>() {
+			@Inject
+			private HibernateService hibernateService;
 
-	@Provides
-	private SessionFactory sessionFactory(HibernateService hibernateService) {
-		return hibernateService.getProxy();
+			@Override
+			public SessionFactory get() {
+				return hibernateService.getProxy();
+			}
+		});
 	}
 
 	private static class QueueConfiguration {

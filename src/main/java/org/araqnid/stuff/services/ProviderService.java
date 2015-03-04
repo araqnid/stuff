@@ -1,12 +1,10 @@
 package org.araqnid.stuff.services;
 
 import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
 import com.google.common.base.Optional;
-import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.inject.Provider;
 
@@ -44,11 +42,7 @@ public abstract class ProviderService<T> extends AbstractIdleService implements 
 			if (method.getName().equals("hashCode") && method.getParameterTypes().length == 0) return getHashCode();
 			if (method.getName().equals("equals") && method.getParameterTypes().length == 1) return isEqual(args[0]);
 			if (!activeService.isPresent()) throw new NotAvailableException();
-			try {
-				return method.invoke(activeService.get(), args);
-			} catch (InvocationTargetException e) {
-				throw Throwables.propagate(e.getCause());
-			}
+			return method.invoke(activeService.get(), args);
 		}
 
 		private String toString(Optional<T> activeService) {
@@ -76,6 +70,10 @@ public abstract class ProviderService<T> extends AbstractIdleService implements 
 			return ProviderService.this.equals(((ProviderService<?>.ValueProxyInvocationHandler) invocationHandler)
 					.provider());
 		}
+	}
+
+	public static class ValueNotPresentException extends IllegalStateException {
+		private static final long serialVersionUID = 1L;
 	}
 
 	public static class NotAvailableException extends IllegalStateException {

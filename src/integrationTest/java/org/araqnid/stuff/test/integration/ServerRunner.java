@@ -5,7 +5,6 @@ import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.araqnid.stuff.HibernateService;
 import org.araqnid.stuff.activity.ActivityEventSink;
 import org.araqnid.stuff.config.StandaloneAppConfig;
 import org.araqnid.stuff.test.integration.CollectActivityEvents.ActivityEventRecord;
@@ -28,7 +27,6 @@ import com.google.inject.util.Modules;
 
 public class ServerRunner {
 	private Set<Module> additionalConfig = new HashSet<>();
-	private HibernateService hibernateService;
 	private Server server;
 	private Injector injector;
 	private int port;
@@ -61,8 +59,6 @@ public class ServerRunner {
 		};
 		injector = Guice.createInjector(Modules.override(new StandaloneAppConfig()).with(
 				Iterables.<Module> concat(ImmutableSet.of(jettyConfig), additionalConfig)));
-		hibernateService = injector.getInstance(HibernateService.class);
-		hibernateService.startAsync().awaitRunning();
 		server = injector.getInstance(Server.class);
 		server.start();
 		port = injector.getInstance(ServerConnector.class).getLocalPort();
@@ -70,7 +66,6 @@ public class ServerRunner {
 
 	public void stop() throws Exception {
 		if (server != null) server.stop();
-		if (hibernateService != null) hibernateService.stopAsync().awaitTerminated();
 	}
 
 	public void reset() throws Exception {

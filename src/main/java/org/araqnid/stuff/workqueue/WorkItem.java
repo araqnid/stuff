@@ -1,24 +1,17 @@
 package org.araqnid.stuff.workqueue;
 
-import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.Table;
 
 @Entity
-@Table(schema = "work")
 public class WorkItem {
 	@Id
 	@GeneratedValue
 	private Integer id;
-	@Column(nullable = false)
 	private String queueCode;
-	@Column(nullable = false)
 	private String reference;
-	@Column(nullable = false)
-	private Status status;
-	@Column(nullable = false)
+	private WorkItemStatus status;
 	private byte[] payload;
 
 	public Integer getId() {
@@ -45,11 +38,11 @@ public class WorkItem {
 		this.reference = reference;
 	}
 
-	public Status getStatus() {
+	public WorkItemStatus getStatus() {
 		return status;
 	}
 
-	public void setStatus(Status status) {
+	public void setStatus(WorkItemStatus status) {
 		this.status = status;
 	}
 
@@ -64,9 +57,5 @@ public class WorkItem {
 	@Override
 	public String toString() {
 		return "WorkItem#" + id;
-	}
-
-	public enum Status {
-		READY
 	}
 }
