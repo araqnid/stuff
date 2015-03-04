@@ -1,22 +1,25 @@
 package org.araqnid.stuff.jsp;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.Map;
 
 import javax.naming.NamingException;
 
 import org.apache.tomcat.InstanceManager;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import com.google.inject.MembersInjector;
+import com.google.inject.Injector;
+import com.google.inject.matcher.Matcher;
+import com.google.inject.matcher.Matchers;
 
 public class InjectedInstanceManager implements InstanceManager {
-	private final Map<Class<?>, MembersInjector<?>> specificInjectors;
+	private final Injector injector;
+	@SuppressWarnings("rawtypes")
+	private final Matcher<Class> classMatcher;
 
 	@Inject
-	public InjectedInstanceManager(MembersInjector<ServerIdentityTag> tagInjector) {
-		this.specificInjectors = ImmutableMap.<Class<?>, MembersInjector<?>> of(ServerIdentityTag.class, tagInjector);
+	public InjectedInstanceManager(Injector injector) {
+		this.injector = injector;
+		this.classMatcher = Matchers.inSubpackage("org.araqnid.stuff");
 	}
 
 	@Override
@@ -48,11 +51,9 @@ public class InjectedInstanceManager implements InstanceManager {
 	public void destroyInstance(Object o) throws IllegalAccessException, InvocationTargetException {
 	}
 
-	@SuppressWarnings("unchecked")
 	private Object prepareInstance(Object o) {
-		MembersInjector<Object> specificInjector = (MembersInjector<Object>) specificInjectors.get(o.getClass());
-		if (specificInjector != null) {
-			specificInjector.injectMembers(o);
+		if (classMatcher.matches(o.getClass())) {
+			injector.injectMembers(o);
 		}
 		return o;
 	}
