@@ -38,7 +38,7 @@ repositories {
 
 dependencies {
     def jettyVersion = '9.2.5.v20141112'
-    def jacksonVersion = '2.4.4'
+    def jacksonVersion = '2.5.1'
     def resteasyVersion = '3.0.10.Final'
     def hibernateVersion = '4.3.7.Final'
 
