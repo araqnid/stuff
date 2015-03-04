@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.introspect.AnnotationIntrospectorPair;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import com.fasterxml.jackson.datatype.jdk7.Jdk7Module;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.fasterxml.jackson.module.guice.GuiceAnnotationIntrospector;
 import com.fasterxml.jackson.module.guice.GuiceInjectableValues;
@@ -24,6 +26,9 @@ public class JacksonModule extends PrivateModule {
 		jacksonModules.addBinding().to(JodaModule.class);
 		jacksonModules.addBinding().to(GuavaModule.class);
 		jacksonModules.addBinding().to(NamingJacksonModule.class);
+		jacksonModules.addBinding().to(Jdk7Module.class);
+		jacksonModules.addBinding().to(Jdk8Module.class);
+		jacksonModules.addBinding().to(JavaTimeModule.class);
 	}
 
 	@Provides

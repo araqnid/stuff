@@ -16,10 +16,6 @@ import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
-import org.joda.time.DateTime;
-import org.joda.time.LocalDate;
-import org.joda.time.LocalDateTime;
-import org.joda.time.LocalTime;
 import org.junit.Test;
 
 import com.google.common.base.Joiner;
@@ -99,6 +95,34 @@ public class JsonMarshallingTest extends IntegrationTest {
 					is(both(ok())
 							.and(responseWithJsonContent(jsonString(like("\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(\\.\\d\\d\\d)?"))))));
 		}
+	}
+
+	@Test
+	public void jdk_instant_is_marshalled_as_a_nice_string() throws Exception {
+		assertThat(
+				doGet("/_api/test/jdk/instant"),
+				is(both(ok())
+						.and(responseWithJsonContent(jsonString(like("\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(\\.\\d\\d\\d)?Z"))))));
+	}
+
+	@Test
+	public void jdk_localdate_is_marshalled_as_a_nice_string() throws Exception {
+		assertThat(doGet("/_api/test/jdk/localdate"),
+				is(both(ok()).and(responseWithJsonContent(jsonString(like("\\d\\d\\d\\d-\\d\\d-\\d\\d"))))));
+	}
+
+	@Test
+	public void jdk_localtime_is_marshalled_as_a_nice_string() throws Exception {
+		assertThat(doGet("/_api/test/jdk/localtime"),
+				is(both(ok()).and(responseWithJsonContent(jsonString(like("\\d\\d:\\d\\d:\\d\\d(\\.\\d\\d\\d)?"))))));
+	}
+
+	@Test
+	public void jdk_localdatetime_is_marshalled_as_a_nice_string() throws Exception {
+		assertThat(
+				doGet("/_api/test/jdk/localdatetime"),
+				is(both(ok())
+						.and(responseWithJsonContent(jsonString(like("\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(\\.\\d\\d\\d)?"))))));
 	}
 
 	@Test
@@ -183,26 +207,50 @@ public class JsonMarshallingTest extends IntegrationTest {
 	public static class TestResource {
 		@GET
 		@Path("joda/datetime")
-		public DateTime dateTime() {
-			return new DateTime();
+		public org.joda.time.DateTime dateTime() {
+			return new org.joda.time.DateTime();
 		}
 
 		@GET
 		@Path("joda/localdate")
-		public LocalDate localDate() {
-			return new LocalDate();
+		public org.joda.time.LocalDate localDate() {
+			return new org.joda.time.LocalDate();
 		}
 
 		@GET
 		@Path("joda/localtime")
-		public LocalTime localTime() {
-			return new LocalTime();
+		public org.joda.time.LocalTime localTime() {
+			return new org.joda.time.LocalTime();
 		}
 
 		@GET
 		@Path("joda/localdatetime")
-		public LocalDateTime localDateTime() {
-			return new LocalDateTime();
+		public org.joda.time.LocalDateTime localDateTime() {
+			return new org.joda.time.LocalDateTime();
+		}
+
+		@GET
+		@Path("jdk/instant")
+		public java.time.Instant jdkInstant() {
+			return java.time.Instant.now();
+		}
+
+		@GET
+		@Path("jdk/localdate")
+		public java.time.LocalDate jdkLocalDate() {
+			return java.time.LocalDate.now();
+		}
+
+		@GET
+		@Path("jdk/localtime")
+		public java.time.LocalTime jdkLocalTime() {
+			return java.time.LocalTime.now();
+		}
+
+		@GET
+		@Path("jdk/localdatetime")
+		public java.time.LocalDateTime jdkLocalDateTime() {
+			return java.time.LocalDateTime.now();
 		}
 
 		@GET
