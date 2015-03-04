@@ -1,7 +1,6 @@
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'application'
-apply plugin: 'ivy-publish'
 
 mainClassName = 'org.araqnid.stuff.Main'
 sourceCompatibility = 1.7
@@ -110,21 +109,5 @@ eclipse {
     classpath {
         plusConfigurations += configurations.integrationTestCompile;
         plusConfigurations += configurations.browserTestCompile;
-    }
-}
-
-publishing {
-    publications {
-        ivyJava(IvyPublication) {
-            organisation 'org.araqnid'
-            module 'stuff'
-            revision project.version
-            from components.java
-        }
-    }
-    repositories {
-        ivy {
-            url "$buildDir/repo"
-        }
     }
 }
