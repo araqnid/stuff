@@ -49,15 +49,11 @@ import com.google.inject.Module;
 import com.google.inject.PrivateModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
-import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
-import com.google.inject.name.Names;
 import com.google.inject.servlet.GuiceFilter;
 
 public class StandaloneAppConfig extends AbstractModule {
-	private static final TypeLiteral<Optional<String>> OptionalString = new TypeLiteral<Optional<String>>() {
-	};
 	private Map<String, String> environment;
 
 	public StandaloneAppConfig() {
@@ -74,9 +70,24 @@ public class StandaloneAppConfig extends AbstractModule {
 		install(new CoreModule());
 		install(new JettyModule(port(61000)));
 		bind(AppStartupBanner.class);
-		bind(OptionalString).annotatedWith(Names.named("pgUser")).toInstance(getenv("PGUSER"));
-		bind(OptionalString).annotatedWith(Names.named("pgPassword")).toInstance(getenv("PGPASSWORD"));
-		bind(OptionalString).annotatedWith(Names.named("pgDatabase")).toInstance(getenv("PGDATABASE"));
+	}
+
+	@Provides
+	@Named("pgUser")
+	public Optional<String> pgUser() {
+		return getenv("PGUSER");
+	}
+
+	@Provides
+	@Named("pgPassword")
+	public Optional<String> pgPassword() {
+		return getenv("PGPASSWORD");
+	}
+
+	@Provides
+	@Named("pgDatabase")
+	public Optional<String> pgDatabase() {
+		return getenv("PGDATABASE");
 	}
 
 	private Optional<String> getenv(String name) {
