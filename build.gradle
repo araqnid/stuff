@@ -40,7 +40,7 @@ dependencies {
     def jettyVersion = '9.2.5.v20141112'
     def jacksonVersion = '2.5.1'
     def resteasyVersion = '3.0.10.Final'
-    def hibernateVersion = '4.3.7.Final'
+    def hibernateVersion = '4.3.8.Final'
 
     compile 'com.google.guava:guava:18.0'
     compile 'com.google.inject:guice:3.0'
