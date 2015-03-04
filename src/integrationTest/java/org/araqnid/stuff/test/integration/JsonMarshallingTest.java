@@ -47,63 +47,71 @@ public class JsonMarshallingTest extends IntegrationTest {
 		return new AbstractModule() {
 			@Override
 			protected void configure() {
-				bind(GuiceResteasyBootstrapServletContextListener.class).toInstance(new GuiceResteasyBootstrapServletContextListener() {
-					@Override
-					protected List<? extends Module> getModules(ServletContext context) {
-						return ImmutableList.of(new AbstractModule() {
+				bind(GuiceResteasyBootstrapServletContextListener.class).toInstance(
+						new GuiceResteasyBootstrapServletContextListener() {
 							@Override
-							protected void configure() {
-								bind(TestResource.class);
-								bind(JacksonContextResolver.class);
+							protected List<? extends Module> getModules(ServletContext context) {
+								return ImmutableList.of(new AbstractModule() {
+									@Override
+									protected void configure() {
+										bind(TestResource.class);
+										bind(JacksonContextResolver.class);
+									}
+								});
 							}
 						});
-					}
-				});
 			}
 		};
 	}
 
 	@Test
 	public void joda_datetime_is_marshalled_as_a_nice_string() throws Exception {
-		try (CloseableHttpResponse response = doGet("/_api/test/datetime")) {
-			assertThat(response,
-					is(both(ok()).and(responseWithJsonContent(jsonString(like("\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(\\.\\d\\d\\d)?Z"))))));
+		try (CloseableHttpResponse response = doGet("/_api/test/joda/datetime")) {
+			assertThat(
+					response,
+					is(both(ok())
+							.and(responseWithJsonContent(jsonString(like("\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(\\.\\d\\d\\d)?Z"))))));
 		}
 	}
 
 	@Test
 	public void joda_localdate_is_marshalled_as_a_nice_string() throws Exception {
-		try (CloseableHttpResponse response = doGet("/_api/test/localdate")) {
-			assertThat(response, is(both(ok()).and(responseWithJsonContent(jsonString(like("\\d\\d\\d\\d-\\d\\d-\\d\\d"))))));
+		try (CloseableHttpResponse response = doGet("/_api/test/joda/localdate")) {
+			assertThat(response,
+					is(both(ok()).and(responseWithJsonContent(jsonString(like("\\d\\d\\d\\d-\\d\\d-\\d\\d"))))));
 		}
 	}
 
 	@Test
 	public void joda_localtime_is_marshalled_as_a_nice_string() throws Exception {
-		try (CloseableHttpResponse response = doGet("/_api/test/localtime")) {
-			assertThat(response, is(both(ok()).and(responseWithJsonContent(jsonString(like("\\d\\d:\\d\\d:\\d\\d(\\.\\d\\d\\d)?"))))));
+		try (CloseableHttpResponse response = doGet("/_api/test/joda/localtime")) {
+			assertThat(
+					response,
+					is(both(ok()).and(responseWithJsonContent(jsonString(like("\\d\\d:\\d\\d:\\d\\d(\\.\\d\\d\\d)?"))))));
 		}
 	}
 
 	@Test
 	public void joda_localdatetime_is_marshalled_as_a_nice_string() throws Exception {
-		try (CloseableHttpResponse response = doGet("/_api/test/localdatetime")) {
-			assertThat(response,
-					is(both(ok()).and(responseWithJsonContent(jsonString(like("\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(\\.\\d\\d\\d)?"))))));
+		try (CloseableHttpResponse response = doGet("/_api/test/joda/localdatetime")) {
+			assertThat(
+					response,
+					is(both(ok())
+							.and(responseWithJsonContent(jsonString(like("\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(\\.\\d\\d\\d)?"))))));
 		}
 	}
 
 	@Test
 	public void present_optional_is_marshalled_directly() throws Exception {
 		String value = randomString();
-		try (CloseableHttpResponse response = doGet("/_api/test/optional/present/" + value)) {
+		try (CloseableHttpResponse response = doGet("/_api/test/guava/optional/present/" + value)) {
 			assertThat(response, is(both(ok()).and(responseWithJsonContent(jsonString(value)))));
 		}
 	}
 
 	@Test
 	public void absent_optional_is_marshalled_as_null() throws Exception {
-		try (CloseableHttpResponse response = doGet("/_api/test/optional/absent")) {
+		try (CloseableHttpResponse response = doGet("/_api/test/guava/optional/absent")) {
 			assertThat(response, is(both(ok()).and(responseWithJsonContent(jsonNull()))));
 		}
 	}
@@ -111,15 +119,17 @@ public class JsonMarshallingTest extends IntegrationTest {
 	@Test
 	public void present_optional_property_is_marshalled_directly() throws Exception {
 		String value = randomString();
-		try (CloseableHttpResponse response = doGet("/_api/test/object-with-optional/present/" + value)) {
-			assertThat(response, is(both(ok()).and(responseWithJsonContent(jsonObject().withProperty("value", jsonString(value))))));
+		try (CloseableHttpResponse response = doGet("/_api/test/guava/object-with-optional/present/" + value)) {
+			assertThat(response,
+					is(both(ok()).and(responseWithJsonContent(jsonObject().withProperty("value", jsonString(value))))));
 		}
 	}
 
 	@Test
 	public void absent_optional_property_is_marshalled_as_null() throws Exception {
-		try (CloseableHttpResponse response = doGet("/_api/test/object-with-optional/absent")) {
-			assertThat(response, is(both(ok()).and(responseWithJsonContent(jsonObject().withProperty("value", jsonNull())))));
+		try (CloseableHttpResponse response = doGet("/_api/test/guava/object-with-optional/absent")) {
+			assertThat(response,
+					is(both(ok()).and(responseWithJsonContent(jsonObject().withProperty("value", jsonNull())))));
 		}
 	}
 
@@ -129,18 +139,21 @@ public class JsonMarshallingTest extends IntegrationTest {
 		String key2 = randomString();
 		String value1 = randomString();
 		String value2 = randomString();
-		try (CloseableHttpResponse response = doGet("/_api/test/multimap/" + Joiner.on('/').join(key1, value1, value2))) {
+		try (CloseableHttpResponse response = doGet("/_api/test/guava/multimap/"
+				+ Joiner.on('/').join(key1, value1, value2))) {
 			assertThat(
 					response,
 					is(both(ok()).and(
-							responseWithJsonContent(jsonObject().withProperty(key1, jsonArray().of(jsonString(value1), jsonString(value2)))))));
+							responseWithJsonContent(jsonObject().withProperty(key1,
+									jsonArray().of(jsonString(value1), jsonString(value2)))))));
 		}
-		try (CloseableHttpResponse response = doGet("/_api/test/multimap/" + Joiner.on('/').join(key1, value1, key2, value2))) {
+		try (CloseableHttpResponse response = doGet("/_api/test/guava/multimap/"
+				+ Joiner.on('/').join(key1, value1, key2, value2))) {
 			assertThat(
 					response,
 					is(both(ok()).and(
-							responseWithJsonContent(jsonObject().withProperty(key1, jsonArray().of(jsonString(value1))).withProperty(key2,
-									jsonArray().of(jsonString(value2)))))));
+							responseWithJsonContent(jsonObject().withProperty(key1, jsonArray().of(jsonString(value1)))
+									.withProperty(key2, jsonArray().of(jsonString(value2)))))));
 		}
 	}
 
@@ -169,64 +182,67 @@ public class JsonMarshallingTest extends IntegrationTest {
 	@Produces("application/json")
 	public static class TestResource {
 		@GET
-		@Path("datetime")
+		@Path("joda/datetime")
 		public DateTime dateTime() {
 			return new DateTime();
 		}
 
 		@GET
-		@Path("localdate")
+		@Path("joda/localdate")
 		public LocalDate localDate() {
 			return new LocalDate();
 		}
 
 		@GET
-		@Path("localtime")
+		@Path("joda/localtime")
 		public LocalTime localTime() {
 			return new LocalTime();
 		}
 
 		@GET
-		@Path("localdatetime")
+		@Path("joda/localdatetime")
 		public LocalDateTime localDateTime() {
 			return new LocalDateTime();
 		}
 
 		@GET
-		@Path("optional/present/{value}")
+		@Path("guava/optional/present/{value}")
 		public Optional<String> optional(@PathParam("value") String value) {
 			return Optional.of(value);
 		}
 
 		@GET
-		@Path("optional/absent")
+		@Path("guava/optional/absent")
 		public Optional<String> optional() {
 			return Optional.absent();
 		}
 
 		@GET
-		@Path("object-with-optional/present/{value}")
+		@Path("guava/object-with-optional/present/{value}")
 		public ValueWithOptional valueWithOptional(@PathParam("value") String value) {
 			return new ValueWithOptional(value);
 		}
 
 		@GET
-		@Path("object-with-optional/absent")
+		@Path("guava/object-with-optional/absent")
 		public ValueWithOptional valueWithOptional() {
 			return new ValueWithOptional();
 		}
 
 		@GET
-		@Path("multimap/{key}/{value1}/{value2}")
-		public Multimap<String, String> multimapWithOneKey(@PathParam("key") String key, @PathParam("value1") String value1,
+		@Path("guava/multimap/{key}/{value1}/{value2}")
+		public Multimap<String, String> multimapWithOneKey(@PathParam("key") String key,
+				@PathParam("value1") String value1,
 				@PathParam("value2") String value2) {
 			return ImmutableMultimap.of(key, value1, key, value2);
 		}
 
 		@GET
-		@Path("multimap/{key1}/{value1}/{key2}/{value2}")
-		public Multimap<String, String> multimapWithTwoKeys(@PathParam("key1") String key1, @PathParam("key2") String key2,
-				@PathParam("value1") String value1, @PathParam("value2") String value2) {
+		@Path("guava/multimap/{key1}/{value1}/{key2}/{value2}")
+		public Multimap<String, String> multimapWithTwoKeys(@PathParam("key1") String key1,
+				@PathParam("key2") String key2,
+				@PathParam("value1") String value1,
+				@PathParam("value2") String value2) {
 			return ImmutableMultimap.of(key1, value1, key2, value2);
 		}
 	}
