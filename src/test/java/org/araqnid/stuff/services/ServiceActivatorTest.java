@@ -1,8 +1,5 @@
 package org.araqnid.stuff.services;
 
-import java.lang.reflect.Field;
-
-import org.araqnid.stuff.services.ServiceActivator;
 import org.araqnid.stuff.services.Activator.ActivationListener;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -27,7 +24,6 @@ import static com.google.common.util.concurrent.Service.State.TERMINATED;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
-import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -51,17 +47,17 @@ public class ServiceActivatorTest {
 		}
 
 		public void finishStarting() {
-			assertEquals(state(), State.STARTING);
+			assertThat(this, isInState(STARTING));
 			notifyStarted();
 		}
 
 		public void finishStopping() {
-			assertEquals(state(), State.STOPPING);
+			assertThat(this, isInState(STOPPING));
 			notifyStopped();
 		}
 
 		public void failStarting(Throwable t) {
-			assertEquals(state(), State.STARTING);
+			assertThat(this, isInState(STARTING));
 			notifyFailed(t);
 		}
 	}
@@ -382,20 +378,10 @@ public class ServiceActivatorTest {
 		return new TypeSafeDiagnosingMatcher<ServiceActivator<?>>() {
 			@Override
 			protected boolean matchesSafely(ServiceActivator<?> item, Description mismatchDescription) {
-				Service service;
-				try {
-					Field field = ServiceActivator.class.getDeclaredField("service");
-					field.setAccessible(true);
-					service = (Service) field.get(item);
-				} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
-					throw new RuntimeException("Unable to get 'service' field from " + item);
-				}
-				if (!serviceMatcher.matches(service)) {
-					mismatchDescription.appendText("service field ");
-					serviceMatcher.describeMismatch(service, mismatchDescription);
-					return false;
-				}
-				return true;
+				Service service = item.getActiveService().orNull();
+				mismatchDescription.appendText("service field ");
+				serviceMatcher.describeMismatch(service, mismatchDescription);
+				return serviceMatcher.matches(service);
 			}
 
 			@Override
