@@ -113,3 +113,76 @@ eclipse {
         plusConfigurations += configurations.browserTestCompile;
     }
 }
+
+task proguard(type: proguard.gradle.ProGuardTask) {
+    dependsOn 'jar'
+    injars file('build/libs/stuff-0.0.0.jar')
+    injars configurations.runtime.filter { it.toString().contains("guava-18") }
+    injars configurations.runtime.filter { !(it.toString().contains("guava-18") || it.toString().contains("org.jboss.spec.javax.annotation")) }
+    outjars file('build/libs/stuff_out.jar')
+    libraryjars "${System.getProperty('java.home')}/lib/rt.jar"
+    libraryjars "${System.getProperty('java.home')}/lib/jce.jar"
+    dontoptimize
+    dontobfuscate
+    allowaccessmodification
+    dontwarn 'org.jboss.resteasy.**'
+    dontwarn 'javax.xml.**'
+    dontwarn 'org.w3c.dom.**'
+    dontwarn 'org.joda.time.**'
+    dontwarn 'org.xml.sax.**'
+    dontwarn 'org.jboss.logging.**'
+    dontwarn 'org.hibernate.**'
+    dontwarn 'org.jboss.jandex.**'
+    dontwarn 'org.eclipse.jetty.**'
+    dontwarn 'org.eclipse.jdt.**'
+    dontwarn 'org.dom4j.**'
+    dontwarn 'org.apache.taglibs.**'
+    dontwarn 'org.apache.jasper.**'
+    dontwarn 'javassist.**'
+    dontwarn 'ch.qos.logback.**'
+    dontwarn 'org.apache.commons.logging.**'
+    dontwarn 'net.sf.cglib.**'
+    dontwarn 'com.sun.xml.internal.**'
+    dontwarn 'com.sun.istack.**'
+    dontwarn 'javax.transaction.*'
+    dontwarn 'com.google.inject.internal.**'
+    dontwarn 'javax.sql.*'
+    dontnote 'javax.activation.**'
+    dontnote 'org.w3c.dom.**'
+    dontnote 'org.xml.sax.**'
+    dontnote 'javax.xml.**'
+    dontnote 'javax.transaction.**'
+    dontnote 'javax.annotation.**'
+    dontnote 'com.sun.activation.registries.**'
+    adaptresourcefilecontents '*.xml'
+    //repackageclasses ""
+    printmapping 'proguard.map'
+    keep 'public class org.araqnid.stuff.Main { \
+      public static void main(java.lang.String[]); \
+    }'
+    keep 'class * { \
+        @com.google.inject.Inject *; \
+        @com.google.inject.Provides *; \
+    }'
+    keep 'class com.google.inject.internal.util.** { *; }'
+    keep 'class org.jboss.resteasy.logging.impl.Slf4jLogger { <init>(...); }'
+    keep 'class org.eclipse.jetty.apache.jsp.JuliLog {  <init>(...); }'
+    keep 'class org.hibernate.internal.CoreMessageLogger_$logger { <init>(...); }'
+    keep 'class org.hibernate.annotations.common.util.impl.Log_$logger { <init>(...); }'
+    keep 'class org.apache.tomcat.util.descriptor.tld.TldRuleSet$* { *; }'
+    keep 'class org.apache.tomcat.util.descriptor.tld.* { public void set*(...); }'
+    keep 'public class org.jboss.resteasy.plugins.providers.* { public void <init>(...); }'
+    keepclassmembers 'enum * { \
+        public static **[] values(); \
+        public static ** valueOf(java.lang.String); \
+    }'
+}
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'net.sf.proguard:proguard-gradle:5.2'
+    }
+}
