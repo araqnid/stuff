@@ -1,6 +1,7 @@
 package org.araqnid.stuff.services;
 
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
@@ -42,7 +43,11 @@ public abstract class ProviderService<T> extends AbstractIdleService implements 
 			if (method.getName().equals("hashCode") && method.getParameterTypes().length == 0) return getHashCode();
 			if (method.getName().equals("equals") && method.getParameterTypes().length == 1) return isEqual(args[0]);
 			if (!activeService.isPresent()) throw new NotAvailableException();
-			return method.invoke(activeService.get(), args);
+			try {
+				return method.invoke(activeService.get(), args);
+			} catch (InvocationTargetException e) {
+				throw e.getCause();
+			}
 		}
 
 		private String toString(Optional<T> activeService) {
