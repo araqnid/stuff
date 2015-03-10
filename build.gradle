@@ -1,6 +1,7 @@
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'application'
+apply plugin: 'gradle-one-jar'
 
 mainClassName = 'org.araqnid.stuff.Main'
 sourceCompatibility = 1.8
@@ -178,11 +179,19 @@ task proguard(type: proguard.gradle.ProGuardTask) {
     }'
 }
 
+task oneJar(type: OneJar) {
+    mainClass = mainClassName
+    manifest {
+        attributes 'One-Jar-URL-Factory': 'com.simontuffs.onejar.JarClassLoader$OneJarURLFactory'
+    }
+}
+
 buildscript {
     repositories {
         mavenCentral()
     }
     dependencies {
         classpath 'net.sf.proguard:proguard-gradle:5.2'
+        classpath 'com.github.rholder:gradle-one-jar:1.0.4'
     }
 }
