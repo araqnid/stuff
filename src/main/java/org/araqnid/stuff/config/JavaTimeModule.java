@@ -29,22 +29,32 @@ import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
 public class JavaTimeModule extends SimpleModule {
 	private static final long serialVersionUID = 2014082501L;
 
+	private static final DateTimeFormatter INSTANT_FORMATTER = new DateTimeFormatterBuilder().parseCaseInsensitive()
+			.append(DateTimeFormatter.ISO_LOCAL_DATE).appendLiteral('T').appendValue(HOUR_OF_DAY, 2).appendLiteral(':')
+			.appendValue(MINUTE_OF_HOUR, 2).appendLiteral(':').appendValue(SECOND_OF_MINUTE, 2)
+			.appendFraction(NANO_OF_SECOND, 3, 9, true).appendLiteral('Z').toFormatter(Locale.UK)
+			.withZone(ZoneOffset.UTC);
+
+	private static final DateTimeFormatter LOCAL_DATE_TIME_FORMATTER = new DateTimeFormatterBuilder()
+			.parseCaseInsensitive().append(DateTimeFormatter.ISO_LOCAL_DATE).appendLiteral('T')
+			.appendValue(HOUR_OF_DAY, 2).appendLiteral(':').appendValue(MINUTE_OF_HOUR, 2).appendLiteral(':')
+			.appendValue(SECOND_OF_MINUTE, 2).appendFraction(NANO_OF_SECOND, 3, 9, true).toFormatter(Locale.UK);
+
+	private static final DateTimeFormatter LOCAL_TIME_FORMATTER = new DateTimeFormatterBuilder().parseCaseInsensitive()
+			.appendValue(HOUR_OF_DAY, 2).appendLiteral(':').appendValue(MINUTE_OF_HOUR, 2).appendLiteral(':')
+			.appendValue(SECOND_OF_MINUTE, 2).appendFraction(NANO_OF_SECOND, 3, 9, true).toFormatter(Locale.UK);
+
 	public JavaTimeModule() {
 		addSerializer(Instant.class, new InstantSerializer());
-		addSerializer(LocalDateTime.class, ToStringSerializer.instance);
+		addSerializer(LocalDateTime.class, new LocalDateTimeSerializer());
 		addSerializer(LocalDate.class, ToStringSerializer.instance);
-		addSerializer(LocalTime.class, ToStringSerializer.instance);
+		addSerializer(LocalTime.class, new LocalTimeSerializer());
 
 		addDeserializer(Instant.class, new InstantDeserializer());
 	}
 
 	static class InstantSerializer extends StdScalarSerializer<Instant> {
 		private static final long serialVersionUID = 2014082501L;
-		private final DateTimeFormatter formatter = new DateTimeFormatterBuilder().parseCaseInsensitive()
-				.append(DateTimeFormatter.ISO_LOCAL_DATE).appendLiteral('T').appendValue(HOUR_OF_DAY, 2)
-				.appendLiteral(':').appendValue(MINUTE_OF_HOUR, 2).optionalStart().appendLiteral(':')
-				.appendValue(SECOND_OF_MINUTE, 2).optionalStart().appendFraction(NANO_OF_SECOND, 3, 9, true)
-				.appendLiteral('Z').toFormatter(Locale.UK).withZone(ZoneOffset.UTC);
 
 		protected InstantSerializer() {
 			super(Instant.class);
@@ -53,7 +63,35 @@ public class JavaTimeModule extends SimpleModule {
 		@Override
 		public void serialize(Instant value, JsonGenerator jgen, SerializerProvider provider) throws IOException,
 				JsonGenerationException {
-			jgen.writeString(formatter.format(value));
+			jgen.writeString(INSTANT_FORMATTER.format(value));
+		}
+	}
+
+	static class LocalDateTimeSerializer extends StdScalarSerializer<LocalDateTime> {
+		private static final long serialVersionUID = 2015031001L;
+
+		protected LocalDateTimeSerializer() {
+			super(LocalDateTime.class);
+		}
+
+		@Override
+		public void serialize(LocalDateTime value, JsonGenerator jgen, SerializerProvider provider) throws IOException,
+				JsonGenerationException {
+			jgen.writeString(LOCAL_DATE_TIME_FORMATTER.format(value));
+		}
+	}
+
+	static class LocalTimeSerializer extends StdScalarSerializer<LocalTime> {
+		private static final long serialVersionUID = 2015031001L;
+
+		protected LocalTimeSerializer() {
+			super(LocalTime.class);
+		}
+
+		@Override
+		public void serialize(LocalTime value, JsonGenerator jgen, SerializerProvider provider) throws IOException,
+				JsonGenerationException {
+			jgen.writeString(LOCAL_TIME_FORMATTER.format(value));
 		}
 	}
 
