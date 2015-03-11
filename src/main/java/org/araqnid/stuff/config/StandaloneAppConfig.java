@@ -170,7 +170,7 @@ public class StandaloneAppConfig extends AbstractModule {
 
 			@Provides
 			public Map<String, TaglibXml> embeddedTaglibs() {
-				String uri = "http://github.com/araqnid/stuff/embedded";
+				String uri = "file://localhost/araqnid/stuff/embedded";
 				TaglibXml taglibXml = new TaglibXml();
 				taglibXml.setTlibVersion("1.0");
 				taglibXml.setJspVersion("1.2");
