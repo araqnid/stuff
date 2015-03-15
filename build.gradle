@@ -84,14 +84,28 @@ dependencies {
     compile 'org.apache.httpcomponents:httpclient:4.4'
 }
 
-task runtimeDeps(dependsOn: 'processResources') << {
-    def sha1 = java.security.MessageDigest.getInstance("SHA-1");
-    def metainf = new File("$buildDir/resources/main/META-INF");
-    metainf.mkdirs()
-    def depsFile = new File(metainf, project.name + ".deps.txt");
-    depsFile.text = ''
-    configurations.runtime.resolvedConfiguration.resolvedArtifacts.each { artifact ->
-        depsFile.text += sha1.digest(artifact.file.bytes).collect {String.format "%02x", it}.join() + ' ' + artifact.moduleVersion.id + ' ' + artifact.type + '\n'
+task runtimeDeps(dependsOn: 'processResources') {
+    def sha1 = java.security.MessageDigest.getInstance("SHA-1")
+    def metainf = new File("$buildDir/resources/main/META-INF")
+    def depsFile = new File(metainf, project.name + ".deps.txt")
+
+    outputs.file depsFile
+    outputs.upToDateWhen {
+        if (!depsFile.exists()) return false
+        def currentContent = depsFile.text
+        def newArtifacts = 0
+        configurations.runtime.resolvedConfiguration.resolvedArtifacts.each { artifact ->
+            if (currentContent.indexOf(' ' + artifact.moduleVersion.id + ' ' + artifact.type + '\n') < 0) newArtifacts++
+        }
+        return newArtifacts == 0
+    }
+
+    doLast {
+        metainf.mkdirs()
+        depsFile.text = ''
+        configurations.runtime.resolvedConfiguration.resolvedArtifacts.each { artifact ->
+            depsFile.text += sha1.digest(artifact.file.bytes).collect {String.format "%02x", it}.join() + ' ' + artifact.moduleVersion.id + ' ' + artifact.type + '\n'
+        }
     }
 }
 
