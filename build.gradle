@@ -7,6 +7,13 @@ mainClassName = 'org.araqnid.stuff.Main'
 sourceCompatibility = 1.8
 version = '0.0.' + (System.getenv("BUILD_NUMBER") ?: System.getenv("TRAVIS_BUILD_NUMBER") ?: "0")
 
+ext {
+  jettyVersion = '9.2.10.v20150310'
+  jacksonVersion = '2.5.1'
+  resteasyVersion = '3.0.10.Final'
+  hibernateVersion = '4.3.8.Final'
+}
+
 jar {
     manifest {
         attributes 'Implementation-Title': project.description ?: project.name,
@@ -38,11 +45,6 @@ repositories {
 }
 
 dependencies {
-    def jettyVersion = '9.2.9.v20150224'
-    def jacksonVersion = '2.5.1'
-    def resteasyVersion = '3.0.10.Final'
-    def hibernateVersion = '4.3.8.Final'
-
     compile 'com.google.guava:guava:18.0'
     compile 'com.google.inject:guice:3.0'
     compile 'com.google.inject.extensions:guice-servlet:3.0'
