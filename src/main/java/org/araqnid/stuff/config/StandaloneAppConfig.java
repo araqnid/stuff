@@ -33,7 +33,7 @@ import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.util.resource.Resource;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
-import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
+import org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
@@ -196,7 +196,7 @@ public class StandaloneAppConfig extends AbstractModule {
 			@Override
 			protected void configure() {
 				install(new ResteasyServletModule());
-				expose(HttpServletDispatcher.class);
+				expose(HttpServlet30Dispatcher.class);
 			}
 
 			@Provides

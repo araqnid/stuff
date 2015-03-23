@@ -62,6 +62,7 @@ dependencies {
     compile 'org.jboss.resteasy:resteasy-jaxrs:' + resteasyVersion
     compile 'org.jboss.resteasy:resteasy-guice:' + resteasyVersion
     compile 'org.jboss.resteasy:resteasy-jackson2-provider:' + resteasyVersion
+    compile 'org.jboss.resteasy:async-http-servlet-3.0:' + resteasyVersion
     compile 'com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:' + jacksonVersion
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-joda:' + jacksonVersion
     compile 'com.fasterxml.jackson.module:jackson-module-guice:' + jacksonVersion

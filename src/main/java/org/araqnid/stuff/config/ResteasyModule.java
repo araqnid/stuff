@@ -7,7 +7,7 @@ import org.araqnid.stuff.HelloResource;
 import org.araqnid.stuff.InfoResources;
 import org.araqnid.stuff.MerlotResources;
 import org.jboss.resteasy.core.Dispatcher;
-import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
+import org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher;
 import org.jboss.resteasy.spi.Registry;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 
@@ -26,7 +26,7 @@ public final class ResteasyModule extends AbstractModule {
 	}
 
 	@Provides
-	public Dispatcher dispatcher(HttpServletDispatcher servlet) {
+	public Dispatcher dispatcher(HttpServlet30Dispatcher servlet) {
 		return servlet.getDispatcher();
 	}
 
