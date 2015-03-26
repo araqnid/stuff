@@ -35,12 +35,14 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.Serializers;
 import com.fasterxml.jackson.databind.ser.std.StdScalarSerializer;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.fasterxml.jackson.module.guice.ObjectMapperModule;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.AbstractModule;
@@ -228,6 +230,12 @@ public class JacksonThings {
 				equalTo(mapper.readValue("{\"score\":3.14}", JsonNode.class)));
 	}
 
+	@Test
+	public void tree_node_objects_can_be_used_for_equality_checks() throws Exception {
+		assertThat(mapper.readValue("{\"a\":1,\"b\":2}", JsonNode.class),
+				equalTo(mapper.readValue("{ \"b\" : 2, \"a\": 1 }", JsonNode.class)));
+	}
+
 	@SuppressWarnings("serial")
 	@Test
 	public void converting_data_object_to_tree_node_uses_serializers() throws Exception {
@@ -246,6 +254,27 @@ public class JacksonThings {
 		assertThat(mapper.writeValueAsBytes(new Data(3.14)), equalTo("\"foo\"".getBytes(StandardCharsets.UTF_8)));
 		assertThat(mapper.convertValue(new Data(3.14), JsonNode.class),
 				equalTo(mapper.readValue("\"foo\"", JsonNode.class)));
+	}
+
+	@Test
+	public void immutable_sets_can_be_read() throws Exception {
+		mapper.registerModule(new GuavaModule());
+		assertThat(mapper.readValue("[1, 2, 3]", ImmutableSet.class), equalTo(ImmutableSet.of(1, 2, 3)));
+	}
+
+	@Test
+	public void object_reader_can_be_built_specifying_parameterised_type() throws Exception {
+		mapper.registerModule(new GuavaModule());
+		JavaType typeToken = mapper.getTypeFactory().constructParametrizedType(ImmutableSet.class, ImmutableSet.class,
+				Long.class);
+		assertThat(mapper.reader(typeToken).readValue("[1, 2, 3]"), equalTo(ImmutableSet.of(1L, 2L, 3L)));
+	}
+
+	@Test
+	public void multimaps_are_objects_with_array_valued_properties() throws Exception {
+		mapper.registerModule(new GuavaModule());
+		assertThat(mapper.convertValue(ImmutableMultimap.of("a", 1, "a", 2, "b", 3), JsonNode.class),
+				equalTo(mapper.readValue("{\"a\":[1,2],\"b\":[3]}", JsonNode.class)));
 	}
 
 	public static class Data {
