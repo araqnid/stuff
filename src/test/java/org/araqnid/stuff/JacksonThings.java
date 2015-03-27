@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.joda.time.DateTime;
 import org.joda.time.Instant;
+import org.json.JSONObject;
 import org.junit.Test;
 
 import com.fasterxml.jackson.annotation.JacksonInject;
@@ -37,6 +38,7 @@ import com.fasterxml.jackson.databind.ser.Serializers;
 import com.fasterxml.jackson.databind.ser.std.StdScalarSerializer;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
+import com.fasterxml.jackson.datatype.jsonorg.JsonOrgModule;
 import com.fasterxml.jackson.module.guice.ObjectMapperModule;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Throwables;
@@ -226,14 +228,13 @@ public class JacksonThings {
 
 	@Test
 	public void data_object_can_be_converted_to_tree_node() throws Exception {
-		assertThat(mapper.convertValue(new Data(3.14), JsonNode.class),
-				equalTo(mapper.readValue("{\"score\":3.14}", JsonNode.class)));
+		assertThat(mapper.valueToTree(new Data(3.14)), equalTo(mapper.readTree("{\"score\":3.14}")));
+		assertThat(mapper.convertValue(new Data(3.14), JsonNode.class), equalTo(mapper.readTree("{\"score\":3.14}")));
 	}
 
 	@Test
 	public void tree_node_objects_can_be_used_for_equality_checks() throws Exception {
-		assertThat(mapper.readValue("{\"a\":1,\"b\":2}", JsonNode.class),
-				equalTo(mapper.readValue("{ \"b\" : 2, \"a\": 1 }", JsonNode.class)));
+		assertThat(mapper.readTree("{\"a\":1,\"b\":2}"), equalTo(mapper.readTree("{ \"b\" : 2, \"a\": 1 }")));
 	}
 
 	@SuppressWarnings("serial")
@@ -252,8 +253,7 @@ public class JacksonThings {
 		});
 		assertThat(mapper.writeValueAsString(new Data(3.14)), equalTo("\"foo\""));
 		assertThat(mapper.writeValueAsBytes(new Data(3.14)), equalTo("\"foo\"".getBytes(StandardCharsets.UTF_8)));
-		assertThat(mapper.convertValue(new Data(3.14), JsonNode.class),
-				equalTo(mapper.readValue("\"foo\"", JsonNode.class)));
+		assertThat(mapper.valueToTree(new Data(3.14)), equalTo(mapper.readTree("\"foo\"")));
 	}
 
 	@Test
@@ -273,8 +273,14 @@ public class JacksonThings {
 	@Test
 	public void multimaps_are_objects_with_array_valued_properties() throws Exception {
 		mapper.registerModule(new GuavaModule());
-		assertThat(mapper.convertValue(ImmutableMultimap.of("a", 1, "a", 2, "b", 3), JsonNode.class),
-				equalTo(mapper.readValue("{\"a\":[1,2],\"b\":[3]}", JsonNode.class)));
+		assertThat(mapper.valueToTree(ImmutableMultimap.of("a", 1, "a", 2, "b", 3)),
+				equalTo(mapper.readTree("{\"a\":[1,2],\"b\":[3]}")));
+	}
+
+	@Test
+	public void cross_library_with_json_org() throws Exception {
+		mapper.registerModule(new JsonOrgModule());
+		assertThat(mapper.valueToTree(new JSONObject().put("a", 1)), equalTo(mapper.readTree("{\"a\":1}")));
 	}
 
 	public static class Data {
