@@ -38,6 +38,8 @@ configurations {
     integrationTestRuntime.extendsFrom testRuntime
     browserTestCompile.extendsFrom testCompile
     browserTestRuntime.extendsFrom testRuntime
+
+    compile.exclude group: 'org.apache.geronimo.bundles', module: 'json'
 }
 
 repositories {
@@ -69,9 +71,7 @@ dependencies {
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-guava:' + jacksonVersion
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk7:' + jacksonVersion
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:' + jacksonVersion
-    compile ('com.fasterxml.jackson.datatype:jackson-datatype-json-org:' + jacksonVersion) {
-        exclude module: 'json'
-    }
+    compile 'com.fasterxml.jackson.datatype:jackson-datatype-json-org:' + jacksonVersion
     compile 'org.json:json:20141113'
     compile 'com.lexicalscope.eventcast:eventcast:1.0.2'
     compile 'joda-time:joda-time:2.7'
