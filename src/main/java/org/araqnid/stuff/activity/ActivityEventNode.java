@@ -1,6 +1,7 @@
 package org.araqnid.stuff.activity;
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import com.google.common.base.Stopwatch;
 
@@ -41,6 +42,7 @@ public class ActivityEventNode {
 
 		@Override
 		public ActivityEventNode next() {
+			if (cursor == null) throw new NoSuchElementException();
 			ActivityEventNode next = cursor;
 			cursor = cursor.parent;
 			return next;
