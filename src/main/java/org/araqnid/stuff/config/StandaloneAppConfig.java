@@ -31,6 +31,7 @@ import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.util.resource.FileResource;
 import org.eclipse.jetty.util.resource.Resource;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
 import org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher;
@@ -164,8 +165,15 @@ public class StandaloneAppConfig extends AbstractModule {
 			@Provides
 			@Named("webapp-root")
 			public Resource webappRoot() throws IOException {
-				ClassLoader classLoader = getClass().getClassLoader();
-				return new EmbeddedResource(classLoader, "web", ClassPath.from(classLoader));
+				if (getClass().getResource("/stuff/web/index.html") != null) {
+					ClassLoader classLoader = getClass().getClassLoader();
+					return new EmbeddedResource(classLoader, "stuff/web", ClassPath.from(classLoader));
+				}
+				else {
+					File documentRoot = new File("web");
+					System.out.println("document root = " + documentRoot);
+					return new FileResource(documentRoot.toURI());
+				}
 			}
 
 			@Provides

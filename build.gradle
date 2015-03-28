@@ -21,6 +21,9 @@ jar {
                    'X-Service-Class': mainClassName
         if (version) attributes 'Implementation-Version': version
     }
+    into('stuff/web') {
+        from('web')
+    }
 }
 
 sourceSets {
@@ -146,6 +149,14 @@ buildscript {
 }
 
 run {
+    environment("PGUSER", "steve")
+    environment("PGPASSWORD", "xyzzy")
+}
+
+task runFromJar(type: JavaExec, dependsOn: 'jar') {
+    classpath configurations.runtime
+    classpath tasks.jar.archivePath
+    main mainClassName
     environment("PGUSER", "steve")
     environment("PGPASSWORD", "xyzzy")
 }
