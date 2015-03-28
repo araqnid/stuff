@@ -3,6 +3,7 @@ package org.araqnid.stuff;
 import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentJsonNode;
 import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
@@ -12,6 +13,7 @@ import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -27,11 +29,13 @@ import org.json.JSONObject;
 import org.junit.Test;
 
 import com.fasterxml.jackson.annotation.JacksonInject;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonGenerator.Feature;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.JavaType;
@@ -285,6 +289,32 @@ public class JacksonThings {
 		assertThat(mapper.valueToTree(new JSONObject().put("a", 1)), equivalentJsonNode("{\"a\":1}"));
 	}
 
+	@Test
+	public void immutable_object_can_be_read_using_constructor_with_annotated_property_names() throws Exception {
+		mapper.enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES);
+		mapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
+		ValueClassWithAnnotatedCreatorConstructor value = mapper.readValue(
+				"{name:'the name',description:'the description',price:42.24}",
+				ValueClassWithAnnotatedCreatorConstructor.class);
+		assertThat(value.name, equalTo("the name"));
+		assertThat(value.description, equalTo("the description"));
+		assertThat(value.price, closeTo(new BigDecimal(42.24), new BigDecimal(0.0001)));
+		assertThat(mapper.writeValueAsString(value), equivalentTo("{name:'the name',description:'the description',price:42.24}"));
+	}
+
+	@Test
+	public void immutable_object_can_be_read_using_delegate_creator() throws Exception {
+		mapper.enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES);
+		mapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
+		ValueClassWithDelegateCreatorConstructor value = mapper.readValue(
+				"{name:'the name',description:'the description',price:42.24}",
+				ValueClassWithDelegateCreatorConstructor.class);
+		assertThat(value.name, equalTo("the name"));
+		assertThat(value.description, equalTo("the description"));
+		assertThat(value.price, closeTo(new BigDecimal(42.24), new BigDecimal(0.0001)));
+		assertThat(mapper.writeValueAsString(value), equivalentTo("{name:'the name',description:'the description',price:42.24}"));
+	}
+
 	public static class Data {
 		@JsonProperty("score")
 		public final double quux;
@@ -384,6 +414,78 @@ public class JacksonThings {
 		@Override
 		public String toString() {
 			return MoreObjects.toStringHelper(this).add("value", value).add("extra", extra).toString();
+		}
+	}
+
+	public static class ValueClassWithAnnotatedCreatorConstructor {
+		public final String name;
+		public final String description;
+		public final BigDecimal price;
+
+		@JsonCreator
+		public ValueClassWithAnnotatedCreatorConstructor(@JsonProperty("name") String name,
+				@JsonProperty("description") String description,
+				@JsonProperty("price") BigDecimal price) {
+			this.name = name;
+			this.description = description;
+			this.price = price;
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(name, description, price);
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			return obj instanceof ValueClassWithAnnotatedCreatorConstructor
+					&& Objects.equals(name, ((ValueClassWithAnnotatedCreatorConstructor) obj).name)
+			&& Objects.equals(description, ((ValueClassWithAnnotatedCreatorConstructor) obj).description)
+			&& Objects.equals(price, ((ValueClassWithAnnotatedCreatorConstructor) obj).price);
+		}
+
+		@Override
+		public String toString() {
+			return MoreObjects.toStringHelper(this).add("name", name).add("description", description)
+					.add("price", price).toString();
+		}
+	}
+
+	public static class ValueClassWithDelegateCreatorConstructor {
+		public final String name;
+		public final String description;
+		public final BigDecimal price;
+
+		@JsonCreator
+		public ValueClassWithDelegateCreatorConstructor(Template template) {
+			this.name = template.name;
+			this.description = template.description;
+			this.price = template.price;
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(name, description, price);
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			return obj instanceof ValueClassWithDelegateCreatorConstructor
+					&& Objects.equals(name, ((ValueClassWithDelegateCreatorConstructor) obj).name)
+			&& Objects.equals(description, ((ValueClassWithDelegateCreatorConstructor) obj).description)
+			&& Objects.equals(price, ((ValueClassWithDelegateCreatorConstructor) obj).price);
+		}
+
+		@Override
+		public String toString() {
+			return MoreObjects.toStringHelper(this).add("name", name).add("description", description)
+					.add("price", price).toString();
+		}
+
+		public static class Template {
+			public String name;
+			public String description;
+			public BigDecimal price;
 		}
 	}
 }
