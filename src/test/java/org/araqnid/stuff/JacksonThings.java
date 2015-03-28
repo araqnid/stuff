@@ -1,5 +1,15 @@
 package org.araqnid.stuff;
 
+import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentJsonNode;
+import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
@@ -51,14 +61,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.sameInstance;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-
 public class JacksonThings {
 	private final ObjectMapper mapper = new ObjectMapper();
 
@@ -86,7 +88,7 @@ public class JacksonThings {
 		mapper.registerModule(new JodaModule());
 		mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 		assertThat(mapper.writeValueAsString(DateTime.parse("2015-03-17T00:04:01Z")),
-				equalTo("\"2015-03-17T00:04:01.000Z\""));
+				equivalentTo("\"2015-03-17T00:04:01.000Z\""));
 	}
 
 	@Test
@@ -94,7 +96,7 @@ public class JacksonThings {
 		mapper.registerModule(new JodaModule());
 		mapper.disable(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS);
 		assertThat(mapper.writeValueAsString(Instant.parse("2015-03-17T00:04:01Z")),
-				equalTo("\"2015-03-17T00:04:01.000Z\""));
+				equivalentTo("\"2015-03-17T00:04:01.000Z\""));
 	}
 
 	@Test
@@ -128,8 +130,8 @@ public class JacksonThings {
 			x.execute(() -> {
 				try {
 					for (int j = 0; j < 200; j++) {
-						assertThat(dataWriter.writeValueAsString(new Data(3.14)), equalTo("{\"score\":3.14}"));
-						assertThat(dataWriter.writeValueAsString(new Data(2.18)), equalTo("{\"score\":2.18}"));
+						assertThat(dataWriter.writeValueAsString(new Data(3.14)), equivalentTo("{\"score\":3.14}"));
+						assertThat(dataWriter.writeValueAsString(new Data(2.18)), equivalentTo("{\"score\":2.18}"));
 					}
 				} catch (IOException e) {
 					throw Throwables.propagate(e);
@@ -141,34 +143,34 @@ public class JacksonThings {
 
 	@Test
 	public void nan_written_as_a_string() throws Exception {
-		assertThat(mapper.writeValueAsString(Double.NaN), equalTo("\"NaN\""));
-		assertThat(mapper.writeValueAsString(Float.NaN), equalTo("\"NaN\""));
+		assertThat(mapper.writeValueAsString(Double.NaN), equivalentTo("\"NaN\""));
+		assertThat(mapper.writeValueAsString(Float.NaN), equivalentTo("\"NaN\""));
 	}
 
 	@Test
 	public void infinity_written_as_a_string() throws Exception {
-		assertThat(mapper.writeValueAsString(Double.POSITIVE_INFINITY), equalTo("\"Infinity\""));
-		assertThat(mapper.writeValueAsString(Double.NEGATIVE_INFINITY), equalTo("\"-Infinity\""));
-		assertThat(mapper.writeValueAsString(Float.POSITIVE_INFINITY), equalTo("\"Infinity\""));
-		assertThat(mapper.writeValueAsString(Float.NEGATIVE_INFINITY), equalTo("\"-Infinity\""));
+		assertThat(mapper.writeValueAsString(Double.POSITIVE_INFINITY), equivalentTo("\"Infinity\""));
+		assertThat(mapper.writeValueAsString(Double.NEGATIVE_INFINITY), equivalentTo("\"-Infinity\""));
+		assertThat(mapper.writeValueAsString(Float.POSITIVE_INFINITY), equivalentTo("\"Infinity\""));
+		assertThat(mapper.writeValueAsString(Float.NEGATIVE_INFINITY), equivalentTo("\"-Infinity\""));
 	}
 
 	@Test
 	public void maps_are_json_objects() throws Exception {
-		assertThat(mapper.writeValueAsString(ImmutableMap.<String, Object> of("a", 1)), equalTo("{\"a\":1}"));
+		assertThat(mapper.writeValueAsString(ImmutableMap.<String, Object> of("a", 1)), equivalentTo("{\"a\":1}"));
 		assertThat(mapper.readValue("{\"a\":1}", Map.class), equalTo(ImmutableMap.<String, Object> of("a", 1)));
 	}
 
 	@Test
 	public void lists_are_json_arrays() throws Exception {
-		assertThat(mapper.writeValueAsString(ImmutableList.of(1, 2)), equalTo("[1,2]"));
+		assertThat(mapper.writeValueAsString(ImmutableList.of(1, 2)), equivalentTo("[1,2]"));
 		assertThat(mapper.readValue("[1,2]", List.class), equalTo(ImmutableList.of(1, 2)));
 		assertThat(mapper.readValue("[1,2]", List.class), not(equalTo(mapper.readValue("[2,1]", List.class))));
 	}
 
 	@Test
 	public void sets_are_json_arrays() throws Exception {
-		assertThat(mapper.writeValueAsString(ImmutableSet.of(1, 2)), equalTo("[1,2]"));
+		assertThat(mapper.writeValueAsString(ImmutableSet.of(1, 2)), equivalentTo("[1,2]"));
 		assertThat(mapper.readValue("[1,2]", Set.class), equalTo(ImmutableSet.of(1, 2)));
 		assertThat(mapper.readValue("[1,2]", Set.class), equalTo(mapper.readValue("[2,1]", Set.class)));
 	}
@@ -274,13 +276,13 @@ public class JacksonThings {
 	public void multimaps_are_objects_with_array_valued_properties() throws Exception {
 		mapper.registerModule(new GuavaModule());
 		assertThat(mapper.valueToTree(ImmutableMultimap.of("a", 1, "a", 2, "b", 3)),
-				equalTo(mapper.readTree("{\"a\":[1,2],\"b\":[3]}")));
+				equivalentJsonNode("{\"a\":[1,2],\"b\":[3]}"));
 	}
 
 	@Test
 	public void cross_library_with_json_org() throws Exception {
 		mapper.registerModule(new JsonOrgModule());
-		assertThat(mapper.valueToTree(new JSONObject().put("a", 1)), equalTo(mapper.readTree("{\"a\":1}")));
+		assertThat(mapper.valueToTree(new JSONObject().put("a", 1)), equivalentJsonNode("{\"a\":1}"));
 	}
 
 	public static class Data {
