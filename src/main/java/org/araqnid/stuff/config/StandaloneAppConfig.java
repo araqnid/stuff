@@ -170,9 +170,7 @@ public class StandaloneAppConfig extends AbstractModule {
 					return new EmbeddedResource(classLoader, "stuff/web", ClassPath.from(classLoader));
 				}
 				else {
-					File documentRoot = new File("web");
-					System.out.println("document root = " + documentRoot);
-					return new FileResource(documentRoot.toURI());
+					return new FileResource(new File("web").toURI());
 				}
 			}
 
