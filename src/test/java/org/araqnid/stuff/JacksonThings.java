@@ -315,6 +315,21 @@ public class JacksonThings {
 		assertThat(mapper.writeValueAsString(value), equivalentTo("{name:'the name',description:'the description',price:42.24}"));
 	}
 
+	@Test
+	public void numbers_can_be_serialized_as_strings() throws Exception {
+		mapper.enable(JsonGenerator.Feature.WRITE_NUMBERS_AS_STRINGS);
+		assertThat(mapper.writeValueAsString(ImmutableMap.<String, Number> builder()
+				.put("int", 1)
+				.put("short", (short) 2)
+				.put("long", 3l)
+				.put("double", 4.12)
+				.put("float", 5.5f)
+				.put("bigdecimal", new BigDecimal(6.78))
+				.build()),
+				equivalentTo("{ int: '1', short: '2', long: '3', double: '4.12', float: '5.5', bigdecimal: '"
+						+ new BigDecimal(6.78) + "' }"));
+	}
+
 	public static class Data {
 		@JsonProperty("score")
 		public final double quux;
