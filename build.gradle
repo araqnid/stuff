@@ -5,20 +5,22 @@ apply plugin: 'gradle-one-jar'
 
 mainClassName = 'org.araqnid.stuff.Main'
 sourceCompatibility = 1.8
-version = '0.0.' + (System.getenv("BUILD_NUMBER") ?: System.getenv("TRAVIS_BUILD_NUMBER") ?: "0")
 
 ext {
   jettyVersion = '9.2.10.v20150310'
   jacksonVersion = '2.5.1'
   resteasyVersion = '3.0.11.Final'
   hibernateVersion = '4.3.8.Final'
+  buildNumber = System.getenv("BUILD_NUMBER") ?: System.getenv("TRAVIS_BUILD_NUMBER")
 }
+
+if (ext.buildNumber) version = '0.0.' + ext.buildNumber
 
 jar {
     manifest {
         attributes 'Implementation-Title': project.description ?: project.name,
-                   'Implementation-Version': version,
                    'X-Service-Class': mainClassName
+        if (version) attributes 'Implementation-Version': version
     }
 }
 
