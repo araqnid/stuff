@@ -1,5 +1,6 @@
 package org.araqnid.stuff;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -15,12 +16,14 @@ import com.google.inject.Inject;
 @Path("hello/{name}")
 public class HelloResource {
 	private final GreetingRepository greetings;
+	private final HttpServletRequest request;
 	@PathParam("name")
 	private String name;
 
 	@Inject
-	public HelloResource(GreetingRepository greetings) {
+	public HelloResource(GreetingRepository greetings, HttpServletRequest request) {
 		this.greetings = greetings;
+		this.request = request;
 	}
 
 	@GET
@@ -29,7 +32,7 @@ public class HelloResource {
 		return Optional.fromNullable(greetings.find(name)).or(new Supplier<String>() {
 			@Override
 			public String get() {
-				return "Hello " + name;
+				return "Hello " + name + ", your session is " + request.getSession().getId();
 			}
 		});
 	}

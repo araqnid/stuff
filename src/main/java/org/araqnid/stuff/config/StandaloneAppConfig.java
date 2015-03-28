@@ -27,7 +27,12 @@ import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.SessionIdManager;
+import org.eclipse.jetty.server.SessionManager;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
+import org.eclipse.jetty.server.session.HashSessionIdManager;
+import org.eclipse.jetty.server.session.HashSessionManager;
+import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
@@ -126,6 +131,7 @@ public class StandaloneAppConfig extends AbstractModule {
 			install(new VanillaContextModule());
 			install(new ResteasyContextModule());
 			requestStaticInjection(UUIDPropertyEditor.class);
+			bind(SessionIdManager.class).to(HashSessionIdManager.class);
 		}
 
 		public static final class VanillaContextModule extends PrivateModule {
@@ -202,6 +208,7 @@ public class StandaloneAppConfig extends AbstractModule {
 			@Override
 			protected void configure() {
 				install(new ResteasyServletModule());
+				bind(SessionManager.class).to(HashSessionManager.class);
 				expose(HttpServlet30Dispatcher.class);
 			}
 
@@ -209,9 +216,11 @@ public class StandaloneAppConfig extends AbstractModule {
 			@Named("resteasy")
 			@Exposed
 			public Handler resteasyContext(GuiceFilter guiceFilter,
-					GuiceResteasyBootstrapServletContextListener listener) {
+					GuiceResteasyBootstrapServletContextListener listener,
+					SessionManager sessionManager) {
 				ServletContextHandler context = new ServletContextHandler();
 				context.setContextPath("/_api");
+				context.setSessionHandler(new SessionHandler(sessionManager));
 				context.addFilter(new FilterHolder(guiceFilter), "/*", EnumSet.of(DispatcherType.REQUEST));
 				context.addServlet(DefaultServlet.class, "/");
 				context.addEventListener(listener);
@@ -228,11 +237,12 @@ public class StandaloneAppConfig extends AbstractModule {
 
 		@Provides
 		@Singleton
-		public Server server(Handler handler) {
+		public Server server(Handler handler, SessionIdManager sessionIdManager) {
 			Server server = new Server();
 			ServerConnector connector = new ServerConnector(server);
 			connector.setPort(port);
 			server.setConnectors(new Connector[] { connector });
+			server.setSessionIdManager(sessionIdManager);
 			server.setHandler(handler);
 			return server;
 		}
