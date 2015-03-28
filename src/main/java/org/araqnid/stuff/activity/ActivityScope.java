@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -40,7 +39,8 @@ public final class ActivityScope implements Scope {
 			bindScope(scopeAnnotation, scope);
 			bind(ActivityScopeControl.class).toProvider(new ProviderWithDependencies<ActivityScopeControl>() {
 				private final Provider<ActivityEventSink> sinkProvider = binder().getProvider(eventSink);
-				private final Set<Dependency<?>> dependencies = ImmutableSet.<Dependency<?>> of(Dependency.get(eventSink));
+				private final Set<Dependency<?>> dependencies = ImmutableSet.<Dependency<?>> of(Dependency
+						.get(eventSink));
 
 				@Override
 				public Set<Dependency<?>> getDependencies() {
@@ -88,8 +88,8 @@ public final class ActivityScope implements Scope {
 		}
 
 		private void beginRequestWithRuid(String ruid, AppRequestType type, String description) {
-			if (contexts.get() != null) throw new IllegalStateException(
-					"Activity context already attached to this thread");
+			if (contexts.get() != null)
+				throw new IllegalStateException("Activity context already attached to this thread");
 			RequestActivity requestActivity = new RequestActivity(ruid, activityEventSink);
 			Context context = new Context(requestActivity);
 			requestActivity.beginRequest(type, description);
@@ -115,7 +115,7 @@ public final class ActivityScope implements Scope {
 		return threadContext;
 	}
 
-	private final class Context {
+	private static final class Context {
 		private final Key<RequestActivity> activityKey = Key.get(RequestActivity.class);
 		private final Map<Key<?>, Object> contents;
 
