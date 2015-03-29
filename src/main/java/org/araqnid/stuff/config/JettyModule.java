@@ -72,7 +72,6 @@ public final class JettyModule extends AbstractModule {
 		install(new ServletDispatchModule());
 		bind(InstanceManager.class).to(InjectedInstanceManager.class);
 		bind(HttpServlet30Dispatcher.class).in(Singleton.class);
-		bind(JspServlet.class).in(Singleton.class);
 	}
 
 	@Provides
