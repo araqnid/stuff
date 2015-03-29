@@ -2,10 +2,10 @@ package org.araqnid.stuff.messages;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,7 +67,7 @@ public class DispatchingMessageHandler implements MessageHandler {
 		for (Method method : methods) {
 			Class<?>[] parameterTypes = method.getParameterTypes();
 			if (method.getName().equals("handleEvent") && parameterTypes.length == 3 && parameterTypes[0] == UUID.class
-					&& parameterTypes[1] == DateTime.class && parameterTypes[2] != Object.class) {
+					&& parameterTypes[1] == Instant.class && parameterTypes[2] != Object.class) {
 				@SuppressWarnings("unchecked")
 				Class<T> eventDataType = (Class<T>) parameterTypes[2];
 				return new EventHandlerRef<T>(eventDataType, handler);
@@ -90,11 +90,11 @@ public class DispatchingMessageHandler implements MessageHandler {
 	public static class Event {
 		public UUID id;
 		public String type;
-		public DateTime timestamp;
+		public Instant timestamp;
 		public JsonNode data;
 	}
 
 	public interface EventHandler<T> {
-		void handleEvent(UUID id, DateTime timestamp, T data);
+		void handleEvent(UUID id, Instant timestamp, T data);
 	}
 }

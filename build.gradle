@@ -70,7 +70,6 @@ dependencies {
     compile 'org.jboss.resteasy:resteasy-jackson2-provider:' + resteasyVersion
     compile 'org.jboss.resteasy:async-http-servlet-3.0:' + resteasyVersion
     compile 'com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:' + jacksonVersion
-    compile 'com.fasterxml.jackson.datatype:jackson-datatype-joda:' + jacksonVersion
     compile 'com.fasterxml.jackson.module:jackson-module-guice:' + jacksonVersion
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-guava:' + jacksonVersion
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk7:' + jacksonVersion
@@ -78,7 +77,6 @@ dependencies {
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-json-org:' + jacksonVersion
     compile 'org.json:json:20141113'
     compile 'com.lexicalscope.eventcast:eventcast:1.0.2'
-    compile 'joda-time:joda-time:2.7'
     compile 'org.postgresql:postgresql:9.3-1102-jdbc41'
     compile 'org.slf4j:jcl-over-slf4j:1.7.10'
     runtime 'ch.qos.logback:logback-classic:1.1.2'

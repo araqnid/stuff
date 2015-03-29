@@ -1,16 +1,5 @@
 package org.araqnid.stuff;
 
-import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentJsonNode;
-import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentTo;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.closeTo;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.sameInstance;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigDecimal;
@@ -23,8 +12,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.joda.time.DateTime;
-import org.joda.time.Instant;
 import org.json.JSONObject;
 import org.junit.Test;
 
@@ -45,13 +32,11 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationConfig;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.Serializers;
 import com.fasterxml.jackson.databind.ser.std.StdScalarSerializer;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.fasterxml.jackson.datatype.jsonorg.JsonOrgModule;
 import com.fasterxml.jackson.module.guice.ObjectMapperModule;
 import com.google.common.base.MoreObjects;
@@ -64,6 +49,17 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+
+import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentJsonNode;
+import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.closeTo;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 public class JacksonThings {
 	private final ObjectMapper mapper = new ObjectMapper();
@@ -85,29 +81,6 @@ public class JacksonThings {
 	@Test(expected = JsonMappingException.class)
 	public void writer_accepts_specific_type_only() throws Exception {
 		mapper.writerFor(Data.class).writeValueAsString("foo");
-	}
-
-	@Test
-	public void writer_writes_datetime_nicely() throws Exception {
-		mapper.registerModule(new JodaModule());
-		mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-		assertThat(mapper.writeValueAsString(DateTime.parse("2015-03-17T00:04:01Z")),
-				equivalentTo("\"2015-03-17T00:04:01.000Z\""));
-	}
-
-	@Test
-	public void writer_writes_instant_nicely() throws Exception {
-		mapper.registerModule(new JodaModule());
-		mapper.disable(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS);
-		assertThat(mapper.writeValueAsString(Instant.parse("2015-03-17T00:04:01Z")),
-				equivalentTo("\"2015-03-17T00:04:01.000Z\""));
-	}
-
-	@Test
-	public void reader_reads_datetime_nicely_even_when_not_configured_to_write_them() throws Exception {
-		mapper.registerModule(new JodaModule());
-		assertThat(mapper.readValue("\"2015-03-17T00:04:01.000Z\"", DateTime.class),
-				equalTo(DateTime.parse("2015-03-17T00:04:01Z")));
 	}
 
 	@Test
@@ -299,7 +272,8 @@ public class JacksonThings {
 		assertThat(value.name, equalTo("the name"));
 		assertThat(value.description, equalTo("the description"));
 		assertThat(value.price, closeTo(new BigDecimal(42.24), new BigDecimal(0.0001)));
-		assertThat(mapper.writeValueAsString(value), equivalentTo("{name:'the name',description:'the description',price:42.24}"));
+		assertThat(mapper.writeValueAsString(value),
+				equivalentTo("{name:'the name',description:'the description',price:42.24}"));
 	}
 
 	@Test
@@ -312,20 +286,17 @@ public class JacksonThings {
 		assertThat(value.name, equalTo("the name"));
 		assertThat(value.description, equalTo("the description"));
 		assertThat(value.price, closeTo(new BigDecimal(42.24), new BigDecimal(0.0001)));
-		assertThat(mapper.writeValueAsString(value), equivalentTo("{name:'the name',description:'the description',price:42.24}"));
+		assertThat(mapper.writeValueAsString(value),
+				equivalentTo("{name:'the name',description:'the description',price:42.24}"));
 	}
 
 	@Test
 	public void numbers_can_be_serialized_as_strings() throws Exception {
 		mapper.enable(JsonGenerator.Feature.WRITE_NUMBERS_AS_STRINGS);
-		assertThat(mapper.writeValueAsString(ImmutableMap.<String, Number> builder()
-				.put("int", 1)
-				.put("short", (short) 2)
-				.put("long", 3l)
-				.put("double", 4.12)
-				.put("float", 5.5f)
-				.put("bigdecimal", new BigDecimal(6.78))
-				.build()),
+		assertThat(
+				mapper.writeValueAsString(ImmutableMap.<String, Number> builder().put("int", 1).put("short", (short) 2)
+						.put("long", 3l).put("double", 4.12).put("float", 5.5f).put("bigdecimal", new BigDecimal(6.78))
+						.build()),
 				equivalentTo("{ int: '1', short: '2', long: '3', double: '4.12', float: '5.5', bigdecimal: '"
 						+ new BigDecimal(6.78) + "' }"));
 	}
@@ -455,8 +426,8 @@ public class JacksonThings {
 		public boolean equals(Object obj) {
 			return obj instanceof ValueClassWithAnnotatedCreatorConstructor
 					&& Objects.equals(name, ((ValueClassWithAnnotatedCreatorConstructor) obj).name)
-			&& Objects.equals(description, ((ValueClassWithAnnotatedCreatorConstructor) obj).description)
-			&& Objects.equals(price, ((ValueClassWithAnnotatedCreatorConstructor) obj).price);
+					&& Objects.equals(description, ((ValueClassWithAnnotatedCreatorConstructor) obj).description)
+					&& Objects.equals(price, ((ValueClassWithAnnotatedCreatorConstructor) obj).price);
 		}
 
 		@Override
@@ -487,8 +458,8 @@ public class JacksonThings {
 		public boolean equals(Object obj) {
 			return obj instanceof ValueClassWithDelegateCreatorConstructor
 					&& Objects.equals(name, ((ValueClassWithDelegateCreatorConstructor) obj).name)
-			&& Objects.equals(description, ((ValueClassWithDelegateCreatorConstructor) obj).description)
-			&& Objects.equals(price, ((ValueClassWithDelegateCreatorConstructor) obj).price);
+					&& Objects.equals(description, ((ValueClassWithDelegateCreatorConstructor) obj).description)
+					&& Objects.equals(price, ((ValueClassWithDelegateCreatorConstructor) obj).price);
 		}
 
 		@Override

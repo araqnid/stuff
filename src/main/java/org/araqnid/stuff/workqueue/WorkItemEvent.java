@@ -1,13 +1,13 @@
 package org.araqnid.stuff.workqueue;
 
+import java.time.Instant;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
-
-import org.joda.time.DateTime;
 
 @Entity
 @Table(schema = "work")
@@ -22,7 +22,7 @@ public class WorkItemEvent {
 	@Column(nullable = false)
 	private String context;
 	@Column(nullable = false)
-	private DateTime created;
+	private Instant created;
 
 	public Integer getId() {
 		return id;
@@ -56,11 +56,11 @@ public class WorkItemEvent {
 		this.context = context;
 	}
 
-	public DateTime getCreated() {
+	public Instant getCreated() {
 		return created;
 	}
 
-	public void setCreated(DateTime created) {
+	public void setCreated(Instant created) {
 		this.created = created;
 	}
 

@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.introspect.AnnotationIntrospectorPair;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk7.Jdk7Module;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.fasterxml.jackson.module.guice.GuiceAnnotationIntrospector;
 import com.fasterxml.jackson.module.guice.GuiceInjectableValues;
 import com.google.inject.Exposed;
@@ -24,7 +23,6 @@ public class JacksonModule extends PrivateModule {
 	protected void configure() {
 		Multibinder<com.fasterxml.jackson.databind.Module> jacksonModules = Multibinder.newSetBinder(binder(),
 				com.fasterxml.jackson.databind.Module.class);
-		jacksonModules.addBinding().to(JodaModule.class);
 		jacksonModules.addBinding().to(GuavaModule.class);
 		jacksonModules.addBinding().to(NamingJacksonModule.class);
 		jacksonModules.addBinding().to(Jdk7Module.class);

@@ -61,43 +61,6 @@ public class JsonMarshallingTest extends IntegrationTest {
 	}
 
 	@Test
-	public void joda_datetime_is_marshalled_as_a_nice_string() throws Exception {
-		try (CloseableHttpResponse response = doGet("/_api/test/joda/datetime")) {
-			assertThat(
-					response,
-					is(both(ok())
-							.and(responseWithJsonContent(jsonString(like("\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(\\.\\d\\d\\d)?Z"))))));
-		}
-	}
-
-	@Test
-	public void joda_localdate_is_marshalled_as_a_nice_string() throws Exception {
-		try (CloseableHttpResponse response = doGet("/_api/test/joda/localdate")) {
-			assertThat(response,
-					is(both(ok()).and(responseWithJsonContent(jsonString(like("\\d\\d\\d\\d-\\d\\d-\\d\\d"))))));
-		}
-	}
-
-	@Test
-	public void joda_localtime_is_marshalled_as_a_nice_string() throws Exception {
-		try (CloseableHttpResponse response = doGet("/_api/test/joda/localtime")) {
-			assertThat(
-					response,
-					is(both(ok()).and(responseWithJsonContent(jsonString(like("\\d\\d:\\d\\d:\\d\\d(\\.\\d\\d\\d)?"))))));
-		}
-	}
-
-	@Test
-	public void joda_localdatetime_is_marshalled_as_a_nice_string() throws Exception {
-		try (CloseableHttpResponse response = doGet("/_api/test/joda/localdatetime")) {
-			assertThat(
-					response,
-					is(both(ok())
-							.and(responseWithJsonContent(jsonString(like("\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(\\.\\d\\d\\d)?"))))));
-		}
-	}
-
-	@Test
 	public void jdk_instant_is_marshalled_as_a_nice_string() throws Exception {
 		assertThat(
 				doGet("/_api/test/jdk/instant"),
@@ -205,30 +168,6 @@ public class JsonMarshallingTest extends IntegrationTest {
 	@Path("_api/test")
 	@Produces("application/json")
 	public static class TestResource {
-		@GET
-		@Path("joda/datetime")
-		public org.joda.time.DateTime dateTime() {
-			return new org.joda.time.DateTime();
-		}
-
-		@GET
-		@Path("joda/localdate")
-		public org.joda.time.LocalDate localDate() {
-			return new org.joda.time.LocalDate();
-		}
-
-		@GET
-		@Path("joda/localtime")
-		public org.joda.time.LocalTime localTime() {
-			return new org.joda.time.LocalTime();
-		}
-
-		@GET
-		@Path("joda/localdatetime")
-		public org.joda.time.LocalDateTime localDateTime() {
-			return new org.joda.time.LocalDateTime();
-		}
-
 		@GET
 		@Path("jdk/instant")
 		public java.time.Instant jdkInstant() {
