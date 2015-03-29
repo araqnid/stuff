@@ -180,6 +180,17 @@ public final class HttpClientMatchers {
 		});
 	}
 
+	@Factory
+	public static Matcher<HttpResponse> responseWithHtmlContent(final Matcher<String> contentMatcher) {
+		return responseWithContent(new HttpContentMatcher<String>(equalTo("text/html"), contentMatcher) {
+			@Override
+			protected String doParse(HttpEntity item) throws IOException {
+				byte[] bytes = ByteStreams.toByteArray(item.getContent());
+				return new String(bytes, StandardCharsets.UTF_8);
+			}
+		});
+	}
+
 	public static Matcher<HttpResponse> responseWithTextContent(final Matcher<String> contentMatcher) {
 		return responseWithContent(new HttpContentMatcher<String>(equalTo("text/plain"), contentMatcher) {
 			@Override
