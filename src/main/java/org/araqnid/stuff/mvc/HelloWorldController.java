@@ -10,9 +10,12 @@ import com.google.inject.Inject;
 
 @Path("mvc/helloworld")
 public class HelloWorldController {
+	private final String serverIdentity;
+
 	@Inject
-	@ServerIdentity
-	private String serverIdentity;
+	public HelloWorldController(@ServerIdentity String serverIdentity) {
+		this.serverIdentity = serverIdentity;
+	}
 
 	@GET
 	@Produces("text/html")
