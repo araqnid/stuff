@@ -36,10 +36,12 @@ import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.resource.FileResource;
 import org.eclipse.jetty.util.resource.Resource;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
 import org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher;
+import org.springframework.web.servlet.DispatcherServlet;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
@@ -160,6 +162,9 @@ public class StandaloneAppConfig extends AbstractModule {
 				context.addFilter(new FilterHolder(guiceFilter), "/*", EnumSet.of(DispatcherType.REQUEST));
 				context.addServlet(DefaultServlet.class, "/");
 				context.addServlet(JspServlet.class, "*.jsp");
+				ServletHolder mvcServlet = new ServletHolder("mvc", DispatcherServlet.class);
+				mvcServlet.setInitOrder(1);
+				context.addServlet(mvcServlet, "/mvc/*");
 				context.setBaseResource(baseResource);
 				context.setClassLoader(jspClassLoader);
 				context.setAttribute("javax.servlet.context.tempdir", jspTempDir);
