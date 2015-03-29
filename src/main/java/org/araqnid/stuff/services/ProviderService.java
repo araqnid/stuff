@@ -5,9 +5,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
+import javax.inject.Provider;
+
 import com.google.common.base.Optional;
 import com.google.common.util.concurrent.AbstractIdleService;
-import com.google.inject.Provider;
 
 public abstract class ProviderService<T> extends AbstractIdleService implements Provider<T> {
 	private final Class<T> clazz;

@@ -1,12 +1,11 @@
 package org.araqnid.stuff.mvc;
 
+import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
 import org.araqnid.stuff.config.ServerIdentity;
-
-import com.google.inject.Inject;
 
 @Path("mvc/helloworld")
 public class HelloWorldController {

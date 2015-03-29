@@ -1,5 +1,7 @@
 package org.araqnid.stuff.workqueue;
 
+import static org.araqnid.stuff.activity.AppRequestType.Initialisation;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -17,6 +19,8 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.sql.DataSource;
 
 import org.araqnid.stuff.AppVersion;
@@ -42,10 +46,6 @@ import com.google.common.collect.Maps;
 import com.google.common.io.ByteSource;
 import com.google.common.io.Resources;
 import com.google.common.util.concurrent.AbstractIdleService;
-import com.google.inject.Inject;
-import com.google.inject.Provider;
-
-import static org.araqnid.stuff.activity.AppRequestType.Initialisation;
 
 public class SqlWorkQueue implements WorkQueue {
 	private static final Logger LOG = LoggerFactory.getLogger(SqlWorkQueue.class);

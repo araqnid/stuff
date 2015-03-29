@@ -1,9 +1,9 @@
 package org.araqnid.stuff.activity;
 
-import org.slf4j.MDC;
+import javax.inject.Inject;
+import javax.inject.Named;
 
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
+import org.slf4j.MDC;
 
 public class MDCPopulatingEventSink implements ActivityEventSink {
 	private final ActivityEventSink underlying;

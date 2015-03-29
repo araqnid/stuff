@@ -2,6 +2,8 @@ package org.araqnid.stuff.config;
 
 import java.util.Map;
 
+import javax.inject.Named;
+
 import org.araqnid.stuff.AppStartupBanner;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -9,7 +11,6 @@ import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.google.inject.name.Named;
 
 public class StandaloneAppConfig extends AbstractModule {
 	private Map<String, String> environment;

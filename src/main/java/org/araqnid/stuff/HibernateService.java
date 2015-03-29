@@ -1,5 +1,6 @@
 package org.araqnid.stuff;
 
+import javax.inject.Inject;
 import javax.sql.DataSource;
 
 import org.araqnid.stuff.services.ProviderService;
@@ -15,7 +16,6 @@ import org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProvid
 import org.hibernate.engine.jdbc.connections.spi.ConnectionProvider;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
 
 public class HibernateService extends ProviderService<SessionFactory> {
 	private final DataSource dataSource;

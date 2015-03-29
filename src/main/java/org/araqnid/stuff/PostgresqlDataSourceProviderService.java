@@ -1,14 +1,14 @@
 package org.araqnid.stuff;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
 import javax.sql.DataSource;
 
 import org.araqnid.stuff.services.ProviderService;
 import org.postgresql.ds.PGPoolingDataSource;
 
 import com.google.common.base.Optional;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 
 @Singleton
 public class PostgresqlDataSourceProviderService extends ProviderService<DataSource> {

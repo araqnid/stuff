@@ -1,5 +1,7 @@
 package org.araqnid.stuff.messages;
 
+import javax.inject.Provider;
+
 import org.araqnid.stuff.activity.ActivityScopeControl;
 import org.araqnid.stuff.activity.AppRequestType;
 import org.slf4j.Logger;
@@ -8,7 +10,6 @@ import org.slf4j.MDC;
 
 import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
-import com.google.inject.Provider;
 import com.surftools.BeanstalkClient.BeanstalkException;
 import com.surftools.BeanstalkClient.Client;
 import com.surftools.BeanstalkClient.Job;

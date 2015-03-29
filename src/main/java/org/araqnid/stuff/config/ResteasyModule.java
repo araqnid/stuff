@@ -1,5 +1,6 @@
 package org.araqnid.stuff.config;
 
+import javax.inject.Inject;
 import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.Provider;
 
@@ -15,7 +16,6 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
 import com.google.inject.Provides;
 
 public final class ResteasyModule extends AbstractModule {

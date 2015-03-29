@@ -4,8 +4,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.inject.Singleton;
+
 import com.google.common.base.Optional;
-import com.google.inject.Singleton;
 
 @Singleton
 public class MerlotRepository {

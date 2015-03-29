@@ -3,6 +3,8 @@ package org.araqnid.stuff;
 import java.io.IOException;
 import java.util.UUID;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -15,8 +17,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.araqnid.stuff.config.ServerIdentity;
 
 import com.google.common.base.Joiner;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 
 @Singleton
 public class ServerIdentityFilter implements Filter {

@@ -2,11 +2,11 @@ package org.araqnid.stuff.jsp;
 
 import java.lang.reflect.InvocationTargetException;
 
+import javax.inject.Inject;
 import javax.naming.NamingException;
 
 import org.apache.tomcat.InstanceManager;
 
-import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.matcher.Matcher;
 import com.google.inject.matcher.Matchers;

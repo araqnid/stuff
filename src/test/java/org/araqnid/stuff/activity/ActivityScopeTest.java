@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import javax.inject.Provider;
+
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
@@ -17,7 +19,7 @@ import org.mockito.Mockito;
 
 import com.google.inject.Key;
 import com.google.inject.OutOfScopeException;
-import com.google.inject.Provider;
+import com.google.inject.util.Providers;
 
 public class ActivityScopeTest {
 	private ActivityEventSink mockSink = Mockito.mock(ActivityEventSink.class);
@@ -175,16 +177,18 @@ public class ActivityScopeTest {
 		scopeControl.finishRequest(AppRequestType.ScheduledJob);
 	}
 
-	private static <T> Provider<T> invalid_provider(Class<T> clazz) {
-		return new Provider<T>() {
+	@SuppressWarnings("restriction")
+	private static <T> com.google.inject.Provider<T> invalid_provider(Class<T> clazz) {
+		return Providers.guicify(new Provider<T>() {
 			@Override
 			public T get() {
 				throw new AssertionError("unscoped provider was called");
 			}
-		};
+		});
 	}
 
-	public static class StringGeneratingProvider implements Provider<String> {
+	@SuppressWarnings("restriction")
+	public static class StringGeneratingProvider implements com.google.inject.Provider<String> {
 		public final List<String> generated = new ArrayList<>();
 
 		@Override

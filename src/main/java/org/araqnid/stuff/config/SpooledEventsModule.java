@@ -3,6 +3,10 @@ package org.araqnid.stuff.config;
 import java.lang.annotation.Annotation;
 import java.util.Set;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import org.araqnid.stuff.ActivateOnStartup;
 import org.araqnid.stuff.RedisEventLoader;
 import org.araqnid.stuff.activity.ActivityScopeControl;
@@ -25,11 +29,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Service;
 import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
 import com.google.inject.Key;
-import com.google.inject.Provider;
 import com.google.inject.Provides;
-import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
 import com.google.inject.spi.Dependency;

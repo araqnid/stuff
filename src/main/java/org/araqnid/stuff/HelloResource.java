@@ -1,5 +1,6 @@
 package org.araqnid.stuff;
 
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -11,7 +12,6 @@ import javax.ws.rs.Produces;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Supplier;
-import com.google.inject.Inject;
 
 @Path("hello/{name}")
 public class HelloResource {

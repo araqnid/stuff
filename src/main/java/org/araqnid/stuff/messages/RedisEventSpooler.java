@@ -1,8 +1,8 @@
 package org.araqnid.stuff.messages;
 
-import redis.clients.jedis.Jedis;
+import javax.inject.Provider;
 
-import com.google.inject.Provider;
+import redis.clients.jedis.Jedis;
 
 public class RedisEventSpooler {
 	private final Provider<Jedis> redisProvider;

@@ -1,9 +1,10 @@
 package org.araqnid.stuff;
 
+import javax.inject.Inject;
+
 import org.eclipse.jetty.server.Server;
 
 import com.google.common.util.concurrent.AbstractIdleService;
-import com.google.inject.Inject;
 
 public class JettyAppService extends AbstractIdleService {
 	private final Server jetty;

@@ -1,15 +1,16 @@
 package org.araqnid.stuff.services;
 
+import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
+
 import java.util.List;
 import java.util.concurrent.Executor;
+
+import javax.inject.Provider;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.Service;
-import com.google.inject.Provider;
-
-import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 
 public class ServiceActivator<T extends Service> extends AbstractService implements Activator {
 	private final Provider<T> provider;

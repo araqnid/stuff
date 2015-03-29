@@ -2,6 +2,8 @@ package org.araqnid.stuff.config;
 
 import java.util.Set;
 
+import javax.inject.Singleton;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.introspect.AnnotationIntrospectorPair;
@@ -15,7 +17,6 @@ import com.google.inject.Exposed;
 import com.google.inject.Injector;
 import com.google.inject.PrivateModule;
 import com.google.inject.Provides;
-import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 
 public class JacksonModule extends PrivateModule {

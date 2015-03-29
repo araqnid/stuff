@@ -2,8 +2,7 @@ package org.araqnid.stuff.activity;
 
 import java.util.concurrent.BlockingQueue;
 
-
-import com.google.inject.Inject;
+import javax.inject.Inject;
 
 public class AsyncActivityEventSink implements ActivityEventSink {
 	private final BlockingQueue<Event> queue;

@@ -2,13 +2,13 @@ package org.araqnid.stuff;
 
 import java.util.UUID;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
+
 import org.araqnid.stuff.config.ServerIdentity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 
 @Singleton
 public class EmbeddedAppStartupBanner implements AppLifecycleEvent {

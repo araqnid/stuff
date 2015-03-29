@@ -4,7 +4,7 @@ import java.beans.PropertyEditorManager;
 import java.beans.PropertyEditorSupport;
 import java.util.UUID;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 
 public class UUIDPropertyEditor extends PropertyEditorSupport {
 	@Inject

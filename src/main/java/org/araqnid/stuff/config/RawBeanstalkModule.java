@@ -1,5 +1,8 @@
 package org.araqnid.stuff.config;
 
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import org.araqnid.stuff.ActivateOnStartup;
 import org.araqnid.stuff.SometubeHandler;
 import org.araqnid.stuff.activity.ActivityScopeControl;
@@ -9,9 +12,7 @@ import org.araqnid.stuff.services.ServiceActivator;
 
 import com.google.common.util.concurrent.Service;
 import com.google.inject.AbstractModule;
-import com.google.inject.Provider;
 import com.google.inject.Provides;
-import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
 import com.surftools.BeanstalkClient.Client;

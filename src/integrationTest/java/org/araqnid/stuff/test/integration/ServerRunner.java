@@ -5,6 +5,8 @@ import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.inject.Singleton;
+
 import org.araqnid.stuff.activity.ActivityEventSink;
 import org.araqnid.stuff.config.StandaloneAppConfig;
 import org.araqnid.stuff.test.integration.CollectActivityEvents.ActivityEventRecord;
@@ -22,7 +24,6 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Provides;
-import com.google.inject.Singleton;
 import com.google.inject.util.Modules;
 
 public class ServerRunner {

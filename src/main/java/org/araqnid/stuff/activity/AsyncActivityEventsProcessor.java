@@ -2,10 +2,11 @@ package org.araqnid.stuff.activity;
 
 import java.util.concurrent.BlockingQueue;
 
+import javax.inject.Inject;
+
 import org.araqnid.stuff.activity.AsyncActivityEventSink.Event;
 
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
-import com.google.inject.Inject;
 
 public class AsyncActivityEventsProcessor extends AbstractExecutionThreadService {
 	private static final Event STOP = new Event() {

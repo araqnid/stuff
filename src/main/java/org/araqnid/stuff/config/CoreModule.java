@@ -5,6 +5,8 @@ import java.net.UnknownHostException;
 import java.util.Set;
 import java.util.UUID;
 
+import javax.inject.Singleton;
+
 import org.araqnid.stuff.ActivateOnStartup;
 import org.araqnid.stuff.AppLifecycleEvent;
 import org.araqnid.stuff.AppStateMonitor;
@@ -20,7 +22,6 @@ import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.google.inject.Singleton;
 import com.lexicalscope.eventcast.EventCast;
 
 public final class CoreModule extends AbstractModule {

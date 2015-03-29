@@ -3,7 +3,7 @@ package org.araqnid.stuff.activity;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 
 @ActivityScoped
 public class RequestActivity {

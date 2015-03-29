@@ -1,16 +1,16 @@
 package org.araqnid.stuff;
 
 import java.util.UUID;
+import java.util.function.Supplier;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import org.araqnid.stuff.config.ServerIdentity;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Supplier;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 
 @Singleton
 public class AppStartupBanner implements AppLifecycleEvent {
@@ -21,12 +21,7 @@ public class AppStartupBanner implements AppLifecycleEvent {
 
 	@Inject
 	public AppStartupBanner(final Server server, AppVersion appVersion, @ServerIdentity UUID instanceId) {
-		this.httpPort = new Supplier<Integer>() {
-			@Override
-			public Integer get() {
-				return httpPort(server);
-			}
-		};
+		this.httpPort = () -> httpPort(server);
 		this.appVersion = appVersion;
 		this.instanceId = instanceId;
 	}

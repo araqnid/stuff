@@ -9,6 +9,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.Map;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
@@ -16,15 +20,12 @@ import com.google.common.collect.Maps;
 import com.google.inject.AbstractModule;
 import com.google.inject.CreationException;
 import com.google.inject.Guice;
-import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
-import com.google.inject.Provider;
 import com.google.inject.Scope;
-import com.google.inject.ScopeAnnotation;
-import com.google.inject.Singleton;
 import com.google.inject.Stage;
+import com.google.inject.util.Providers;
 
 public class CrossScopeTest {
 	private Map<Key<?>, Object> scopedThings;
@@ -32,9 +33,10 @@ public class CrossScopeTest {
 		@Override
 		protected void configure() {
 			bindScope(TestScope.class, new Scope() {
+				@SuppressWarnings("restriction")
 				@Override
-				public <T> Provider<T> scope(final Key<T> key, final Provider<T> unscoped) {
-					return new Provider<T>() {
+				public <T> com.google.inject.Provider<T> scope(final Key<T> key, final com.google.inject.Provider<T> unscoped) {
+					return Providers.guicify(new Provider<T>() {
 						@Override
 						public T get() {
 							if (scopedThings == null) throw new IllegalStateException("Scope not entered yet");
@@ -45,7 +47,7 @@ public class CrossScopeTest {
 							T thing = (T) scopedThings.get(key);
 							return thing;
 						}
-					};
+					});
 				}
 			});
 			bind(SomeScopedThing.class);
@@ -135,7 +137,7 @@ public class CrossScopeTest {
 		});
 	}
 
-	@ScopeAnnotation
+	@javax.inject.Scope
 	@Target({ ElementType.TYPE, ElementType.METHOD })
 	@Retention(RetentionPolicy.RUNTIME)
 	public @interface TestScope {

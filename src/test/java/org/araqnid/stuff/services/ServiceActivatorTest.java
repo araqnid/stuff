@@ -1,20 +1,5 @@
 package org.araqnid.stuff.services;
 
-import org.araqnid.stuff.services.Activator.ActivationListener;
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
-import org.hamcrest.TypeSafeDiagnosingMatcher;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-
-import com.google.common.base.Optional;
-import com.google.common.util.concurrent.AbstractService;
-import com.google.common.util.concurrent.Service;
-import com.google.common.util.concurrent.Service.State;
-import com.google.inject.Provider;
-import com.google.inject.util.Providers;
-
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static com.google.common.util.concurrent.Service.State.FAILED;
 import static com.google.common.util.concurrent.Service.State.RUNNING;
@@ -30,6 +15,22 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
+
+import javax.inject.Provider;
+
+import org.araqnid.stuff.services.Activator.ActivationListener;
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.hamcrest.TypeSafeDiagnosingMatcher;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import com.google.common.base.Optional;
+import com.google.common.util.concurrent.AbstractService;
+import com.google.common.util.concurrent.Service;
+import com.google.common.util.concurrent.Service.State;
+import com.google.inject.util.Providers;
 
 public class ServiceActivatorTest {
 	private final Service mockService = mock(Service.class);

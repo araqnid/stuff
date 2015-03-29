@@ -1,21 +1,20 @@
 package org.araqnid.stuff.services;
 
-import org.araqnid.stuff.services.ActiveServiceProxy;
-import org.araqnid.stuff.services.ServiceActivator;
-import org.hamcrest.Matchers;
-import org.junit.Test;
-
-import com.google.common.util.concurrent.AbstractService;
-import com.google.common.util.concurrent.Service;
-import com.google.inject.Provider;
-import com.google.inject.util.Providers;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+
+import javax.inject.Provider;
+
+import org.hamcrest.Matchers;
+import org.junit.Test;
+
+import com.google.common.util.concurrent.AbstractService;
+import com.google.common.util.concurrent.Service;
+import com.google.inject.util.Providers;
 
 public class ActiveServiceProxyTest {
 	@SuppressWarnings("unchecked")

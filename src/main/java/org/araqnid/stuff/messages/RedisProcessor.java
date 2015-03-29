@@ -1,6 +1,10 @@
 package org.araqnid.stuff.messages;
 
+import static org.araqnid.stuff.activity.AppRequestType.RedisMessage;
+
 import java.net.SocketException;
+
+import javax.inject.Provider;
 
 import org.araqnid.stuff.activity.ActivityScopeControl;
 import org.slf4j.Logger;
@@ -13,9 +17,6 @@ import redis.clients.jedis.exceptions.JedisConnectionException;
 import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.google.common.util.concurrent.Monitor;
-import com.google.inject.Provider;
-
-import static org.araqnid.stuff.activity.AppRequestType.RedisMessage;
 
 public class RedisProcessor<T extends RedisProcessor.DeliveryTarget> extends AbstractExecutionThreadService {
 	private final Provider<Jedis> connectionProvider;

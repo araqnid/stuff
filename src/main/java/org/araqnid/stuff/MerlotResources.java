@@ -4,6 +4,7 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.CookieParam;
 import javax.ws.rs.FormParam;
@@ -18,7 +19,6 @@ import javax.ws.rs.core.Response;
 import org.araqnid.stuff.MerlotRepository.User;
 
 import com.google.common.base.Optional;
-import com.google.inject.Inject;
 
 @Path("_api/merlot")
 public class MerlotResources {

@@ -2,6 +2,8 @@ package org.araqnid.stuff;
 
 import java.io.IOException;
 
+import javax.inject.Inject;
+
 import org.araqnid.stuff.messages.BeanstalkProcessor.DeliveryTarget;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.inject.Inject;
 
 public class SometubeHandler implements DeliveryTarget {
 	private static final Logger LOG = LoggerFactory.getLogger(SometubeHandler.class);

@@ -4,18 +4,18 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Set;
 
-import org.araqnid.stuff.services.Activator;
+import javax.inject.Inject;
+import javax.inject.Qualifier;
+import javax.inject.Singleton;
 
-import com.google.inject.BindingAnnotation;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import org.araqnid.stuff.services.Activator;
 
 @Singleton
 public class ActivateOnStartup implements AppLifecycleEvent {
 	private final Set<Activator> activators;
 
 	@Retention(RetentionPolicy.RUNTIME)
-	@BindingAnnotation
+	@Qualifier
 	public @interface OnStartup {
 	}
 

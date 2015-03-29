@@ -1,6 +1,6 @@
 package org.araqnid.stuff;
 
-import com.google.inject.Singleton;
+import javax.inject.Singleton;
 
 @Singleton
 public class AppStateMonitor implements AppLifecycleEvent {

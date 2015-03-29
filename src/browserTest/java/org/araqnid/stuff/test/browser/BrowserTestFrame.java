@@ -6,6 +6,9 @@ import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import org.araqnid.stuff.config.StandaloneAppConfig;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
@@ -22,9 +25,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
-import com.google.inject.Provider;
 import com.google.inject.Provides;
-import com.google.inject.Singleton;
 import com.google.inject.util.Modules;
 
 public class BrowserTestFrame {

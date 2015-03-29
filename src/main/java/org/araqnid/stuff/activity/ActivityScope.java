@@ -6,12 +6,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
+
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.OutOfScopeException;
-import com.google.inject.Provider;
 import com.google.inject.Scope;
 import com.google.inject.spi.Dependency;
 import com.google.inject.spi.ProviderWithDependencies;
@@ -55,9 +56,10 @@ public final class ActivityScope implements Scope {
 		}
 	}
 
+	@SuppressWarnings("restriction")
 	@Override
-	public <T> Provider<T> scope(final Key<T> key, final Provider<T> unscoped) {
-		return new Provider<T>() {
+	public <T> com.google.inject.Provider<T> scope(final Key<T> key, final com.google.inject.Provider<T> unscoped) {
+		return new com.google.inject.Provider<T>() {
 			@Override
 			public T get() {
 				return acquireContext().scope(key, unscoped);
