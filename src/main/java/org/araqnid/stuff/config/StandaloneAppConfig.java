@@ -53,6 +53,7 @@ import com.google.common.reflect.ClassPath;
 import com.google.common.util.concurrent.Service;
 import com.google.inject.AbstractModule;
 import com.google.inject.Exposed;
+import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.PrivateModule;
 import com.google.inject.Provides;
@@ -149,7 +150,8 @@ public class StandaloneAppConfig extends AbstractModule {
 			public Handler vanillaContext(GuiceFilter guiceFilter,
 					@Named("webapp-root") Resource baseResource,
 					InstanceManager instanceManager,
-					Map<String, TaglibXml> embeddedTaglibs) {
+					Map<String, TaglibXml> embeddedTaglibs,
+					Injector injector) {
 				// Set Classloader of Context to be sane (needed for JSTL)
 				// JSP requires a non-System classloader, this simply wraps the
 				// embedded System classloader in a way that makes it suitable
@@ -169,6 +171,7 @@ public class StandaloneAppConfig extends AbstractModule {
 				context.setClassLoader(jspClassLoader);
 				context.setAttribute("javax.servlet.context.tempdir", jspTempDir);
 				context.setAttribute(InstanceManager.class.getName(), instanceManager);
+				context.setAttribute(Injector.class.getName(), injector);
 				context.addEventListener(new JettyJspServletContextListener(jspTempDir, embeddedTaglibs));
 				return context;
 			}

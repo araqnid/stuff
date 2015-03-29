@@ -8,5 +8,6 @@
 <h1>MVC hello world</h1>
 <p>forwarded onto here by controller</p>
 <p><c:out value="${message}" /></p>
+<p>server identity: <c:out value="${server}" /></p>
 </body>
 </html>
