@@ -17,17 +17,19 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyWriter;
 
 import org.apache.jasper.Constants;
+import org.araqnid.stuff.config.MvcPathPattern;
 
 @javax.ws.rs.ext.Provider
 public class JspViewRenderer implements MessageBodyWriter<View> {
 	private final Provider<HttpServletRequest> requestProvider;
 	private final Provider<HttpServletResponse> responseProvider;
-	private final String pathPattern = "/WEB-INF/mvc/%s.jsp";
+	private final String pathPattern;
 
 	@Inject
-	public JspViewRenderer(Provider<HttpServletRequest> requestProvider, Provider<HttpServletResponse> responseProvider) {
+	public JspViewRenderer(Provider<HttpServletRequest> requestProvider, Provider<HttpServletResponse> responseProvider, @MvcPathPattern String pathPattern) {
 		this.requestProvider = requestProvider;
 		this.responseProvider = responseProvider;
+		this.pathPattern = pathPattern;
 	}
 
 	@Override

@@ -27,6 +27,7 @@ public final class ResteasyModule extends AbstractModule {
 		bind(HelloWorldController.class);
 		bind(JacksonContextResolver.class);
 		bind(JspViewRenderer.class);
+		bindConstant().annotatedWith(MvcPathPattern.class).to("/WEB-INF/mvc/%s.jsp");
 	}
 
 	@Provides
