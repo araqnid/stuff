@@ -63,7 +63,7 @@ public class RequestActivityFilter implements Filter {
 			response.setHeader("X-RUID", requestActivity.getRuid());
 			try {
 				chain.doFilter(request, response);
-				response.flushBuffer();
+				if (!request.isAsyncStarted()) response.flushBuffer();
 			} finally {
 				requestLogger.logRequest(request, response, eventPath, rootEvent);
 			}
