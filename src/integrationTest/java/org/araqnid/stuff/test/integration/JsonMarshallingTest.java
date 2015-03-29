@@ -202,7 +202,7 @@ public class JsonMarshallingTest extends IntegrationTest {
 		};
 	}
 
-	@Path("test")
+	@Path("_api/test")
 	@Produces("application/json")
 	public static class TestResource {
 		@GET

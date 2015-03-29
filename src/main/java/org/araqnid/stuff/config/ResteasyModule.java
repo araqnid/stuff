@@ -60,16 +60,6 @@ public final class ResteasyModule extends AbstractModule {
 		return ResteasyProviderFactory.getContextData(javax.ws.rs.core.SecurityContext.class);
 	}
 
-	@Provides
-	public javax.servlet.http.HttpServletRequest servletRequest() {
-		return ResteasyProviderFactory.getContextData(javax.servlet.http.HttpServletRequest.class);
-	}
-
-	@Provides
-	public javax.servlet.http.HttpServletResponse servletResponse() {
-		return ResteasyProviderFactory.getContextData(javax.servlet.http.HttpServletResponse.class);
-	}
-
 	@Provider
 	public static class JacksonContextResolver implements ContextResolver<ObjectMapper> {
 		private final ObjectMapper objectMapper;

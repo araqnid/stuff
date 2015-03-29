@@ -30,7 +30,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
 import com.google.inject.Inject;
 
-@Path("info")
+@Path("_api/info")
 public class InfoResources {
 	private final AppVersion appVersion;
 	private final AppStateMonitor appStateMonitor;

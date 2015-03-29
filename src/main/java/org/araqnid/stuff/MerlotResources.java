@@ -20,7 +20,7 @@ import org.araqnid.stuff.MerlotRepository.User;
 import com.google.common.base.Optional;
 import com.google.inject.Inject;
 
-@Path("merlot")
+@Path("_api/merlot")
 public class MerlotResources {
 	private final AppVersion appVersion;
 	private final MerlotRepository repository;

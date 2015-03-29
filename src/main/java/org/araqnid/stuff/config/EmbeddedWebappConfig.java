@@ -35,7 +35,7 @@ public class EmbeddedWebappConfig extends AbstractModule {
 			}
 		});
 		install(new CoreModule());
-		install(new ResteasyServletModule());
+		install(new ServletDispatchModule());
 		if (servletApiSupportsRequestGetStatus()) {
 			bind(RequestActivityFilter.RequestLogger.class).to(RequestActivityFilter.BasicRequestLogger.class);
 		}
