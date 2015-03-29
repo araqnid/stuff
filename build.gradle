@@ -80,7 +80,6 @@ dependencies {
     compile 'com.lexicalscope.eventcast:eventcast:1.0.2'
     compile 'joda-time:joda-time:2.7'
     compile 'org.postgresql:postgresql:9.3-1102-jdbc41'
-    compile 'org.springframework:spring-webmvc:4.1.6.RELEASE'
     compile 'org.slf4j:jcl-over-slf4j:1.7.10'
     runtime 'ch.qos.logback:logback-classic:1.1.2'
     testCompile 'junit:junit:4.12'

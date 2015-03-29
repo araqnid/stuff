@@ -6,6 +6,8 @@ import javax.ws.rs.ext.Provider;
 import org.araqnid.stuff.HelloResource;
 import org.araqnid.stuff.InfoResources;
 import org.araqnid.stuff.MerlotResources;
+import org.araqnid.stuff.mvc.HelloWorldController;
+import org.araqnid.stuff.mvc.JspViewRenderer;
 import org.jboss.resteasy.core.Dispatcher;
 import org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher;
 import org.jboss.resteasy.spi.Registry;
@@ -22,7 +24,9 @@ public final class ResteasyModule extends AbstractModule {
 		bind(HelloResource.class);
 		bind(InfoResources.class);
 		bind(MerlotResources.class);
+		bind(HelloWorldController.class);
 		bind(JacksonContextResolver.class);
+		bind(JspViewRenderer.class);
 	}
 
 	@Provides

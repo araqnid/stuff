@@ -1,22 +1,25 @@
 package org.araqnid.stuff.mvc;
 
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+
 import org.araqnid.stuff.config.ServerIdentity;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.google.inject.Inject;
 
-@Controller
+@Path("mvc/helloworld")
 public class HelloWorldController {
 	@Inject
 	@ServerIdentity
 	private String serverIdentity;
 
-	@RequestMapping("/helloworld")
-	public String helloWorld(Model model) {
-		model.addAttribute("message", "Hello World!");
-		model.addAttribute("server", serverIdentity);
-		return "helloWorld";
+	@GET
+	@Produces("text/html")
+	public View helloWorld() {
+		return View.of("helloWorld")
+				.put("message", "Hello World!")
+				.put("server", serverIdentity)
+				.build();
 	}
 }

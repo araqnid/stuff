@@ -31,12 +31,10 @@ import org.eclipse.jetty.server.session.HashSessionIdManager;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.resource.FileResource;
 import org.eclipse.jetty.util.resource.Resource;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
 import org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher;
-import org.springframework.web.servlet.DispatcherServlet;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -44,7 +42,6 @@ import com.google.common.io.Files;
 import com.google.common.reflect.ClassPath;
 import com.google.common.util.concurrent.Service;
 import com.google.inject.AbstractModule;
-import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
@@ -75,6 +72,7 @@ public final class JettyModule extends AbstractModule {
 		install(new ServletDispatchModule());
 		bind(InstanceManager.class).to(InjectedInstanceManager.class);
 		bind(HttpServlet30Dispatcher.class).in(Singleton.class);
+		bind(JspServlet.class).in(Singleton.class);
 	}
 
 	@Provides
@@ -82,8 +80,7 @@ public final class JettyModule extends AbstractModule {
 			Resource baseResource,
 			InstanceManager instanceManager,
 			Map<String, TaglibXml> embeddedTaglibs,
-			GuiceResteasyBootstrapServletContextListener resteasyListener,
-			Injector injector) {
+			GuiceResteasyBootstrapServletContextListener resteasyListener) {
 		// Set Classloader of Context to be sane (needed for JSTL)
 		// JSP requires a non-System classloader, this simply wraps the
 		// embedded System classloader in a way that makes it suitable
@@ -96,14 +93,10 @@ public final class JettyModule extends AbstractModule {
 		context.addFilter(new FilterHolder(guiceFilter), "/*", EnumSet.of(DispatcherType.REQUEST));
 		context.addServlet(DefaultServlet.class, "/");
 		context.addServlet(JspServlet.class, "*.jsp");
-		ServletHolder mvcServlet = new ServletHolder("mvc", DispatcherServlet.class);
-		mvcServlet.setInitOrder(1);
-		context.addServlet(mvcServlet, "/mvc/*");
 		context.setBaseResource(baseResource);
 		context.setClassLoader(jspClassLoader);
 		context.setAttribute("javax.servlet.context.tempdir", jspTempDir);
 		context.setAttribute(InstanceManager.class.getName(), instanceManager);
-		context.setAttribute(Injector.class.getName(), injector);
 		context.addEventListener(new JettyJspServletContextListener(jspTempDir, embeddedTaglibs));
 		context.addEventListener(resteasyListener);
 		return context;
