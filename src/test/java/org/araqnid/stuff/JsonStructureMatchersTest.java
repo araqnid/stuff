@@ -130,7 +130,7 @@ public class JsonStructureMatchersTest {
 
 	@Test
 	public void allows_unexpected_property_if_requested() {
-		assertThat("{ \"a\": 1 }", is(json(jsonObject().withAnyFields())));
+		assertThat("{ \"a\": 1 }", is(json(jsonObject().withAnyOtherProperties())));
 	}
 
 	@Test

@@ -187,7 +187,7 @@ public final class JsonStructureMatchers {
 			return this;
 		}
 
-		public ObjectNodeMatcher withAnyFields() {
+		public ObjectNodeMatcher withAnyOtherProperties() {
 			failOnUnexpectedProperties = false;
 			return this;
 		}
