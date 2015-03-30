@@ -33,15 +33,15 @@ import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
 
 public final class JsonStructureMatchers {
+	private static final ObjectMapper MAPPER = new ObjectMapper();
+
 	public static Matcher<String> json(Matcher<? extends TreeNode> matcher) {
 		return new TypeSafeDiagnosingMatcher<String>() {
-			private final ObjectMapper objectMapper = new ObjectMapper();
-
 			@Override
 			protected boolean matchesSafely(String item, Description mismatchDescription) {
 				JsonNode treeNode;
 				try {
-					treeNode = objectMapper.readTree(item);
+					treeNode = MAPPER.readTree(item);
 				} catch (IOException e) {
 					mismatchDescription.appendText("Invalid JSON: ").appendValue(e);
 					return false;
