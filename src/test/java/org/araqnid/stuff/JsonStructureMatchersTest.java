@@ -10,6 +10,7 @@ import org.junit.Test;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentJsonNode;
 import static org.araqnid.stuff.JsonStructureMatchers.jacksonTree;
 import static org.araqnid.stuff.JsonStructureMatchers.json;
 import static org.araqnid.stuff.JsonStructureMatchers.jsonArray;
@@ -188,6 +189,12 @@ public class JsonStructureMatchersTest {
 	@Test
 	public void matches_array_of_integers() {
 		assertThat("[1,2,3]", is(json(jsonArray().of(jsonInt(1), jsonInt(2), jsonInt(3)))));
+	}
+
+	@Test
+	public void matches_array_of_json_representations() {
+		assertThat("[{\"a\":1}, {\"b\":2}]",
+				is(json(jsonArray().of(equivalentJsonNode("{a:1}"), equivalentJsonNode("{b:2}")))));
 	}
 
 	@Test
