@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.NumericNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 
 import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentJsonNode;
@@ -153,36 +154,43 @@ public final class JsonStructureMatchers {
 		}
 
 		public ObjectNodeMatcher withProperty(String key, Matcher<? extends JsonNode> value) {
+			Preconditions.checkNotNull(key, "property key must not be null");
 			propertyMatchers.put(key, value);
 			return this;
 		}
 
 		public ObjectNodeMatcher withProperty(String key, int value) {
+			Preconditions.checkNotNull(key, "property key must not be null");
 			propertyMatchers.put(key, jsonInt(value));
 			return this;
 		}
 
 		public ObjectNodeMatcher withProperty(String key, double value) {
+			Preconditions.checkNotNull(key, "property key must not be null");
 			propertyMatchers.put(key, jsonDouble(value));
 			return this;
 		}
 
 		public ObjectNodeMatcher withProperty(String key, boolean value) {
+			Preconditions.checkNotNull(key, "property key must not be null");
 			propertyMatchers.put(key, jsonBoolean(value));
 			return this;
 		}
 
 		public ObjectNodeMatcher withProperty(String key, String value) {
+			Preconditions.checkNotNull(key, "property key must not be null");
 			propertyMatchers.put(key, jsonString(value));
 			return this;
 		}
 
 		public ObjectNodeMatcher withPropertyLike(String key, String apparentValue) {
+			Preconditions.checkNotNull(key, "property key must not be null");
 			propertyMatchers.put(key, jsonNodeStringifyingAs(apparentValue));
 			return this;
 		}
 
 		public ObjectNodeMatcher withPropertyJSON(String key, String json) {
+			Preconditions.checkNotNull(key, "property key must not be null");
 			propertyMatchers.put(key, equivalentJsonNode(json));
 			return this;
 		}
