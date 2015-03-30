@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.collect.Sets;
 
 import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentJsonNode;
+import static org.hamcrest.Matchers.any;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -168,17 +169,7 @@ public final class JsonStructureMatchers {
 	}
 
 	public static Matcher<JsonNode> jsonAny() {
-		return new TypeSafeDiagnosingMatcher<JsonNode>() {
-			@Override
-			protected boolean matchesSafely(JsonNode item, Description mismatchDescription) {
-				return true;
-			}
-
-			@Override
-			public void describeTo(Description description) {
-				description.appendText("any");
-			}
-		};
+		return any(JsonNode.class);
 	}
 
 	public static Matcher<NullNode> jsonNull() {
