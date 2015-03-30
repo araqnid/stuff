@@ -35,6 +35,14 @@ public class TimeThings {
 	}
 
 	@Test
+	public void offset_date_time_can_be_made_from_local_date_time_and_offset() throws Exception {
+		LocalDateTime nowDateTime = LocalDateTime.parse("2015-03-30T00:12:37");
+		ZoneOffset nowOffset = ZoneOffset.of("+01:00");
+		assertThat(OffsetDateTime.of(nowDateTime, nowOffset),
+				equalTo(OffsetDateTime.parse("2015-03-30T00:12:37+01:00")));
+	}
+
+	@Test
 	public void zoned_date_time_can_be_made_from_local_date_time_and_time_zone() throws Exception {
 		LocalDateTime nowDateTime = LocalDateTime.parse("2015-03-30T00:12:37");
 		ZoneId nowTimeZone = ZoneId.of("Europe/London");
@@ -46,14 +54,6 @@ public class TimeThings {
 	public void zoned_date_time_can_be_made_from_component_parts() throws Exception {
 		ZonedDateTime now = ZonedDateTime.of(2015, 3, 30, 0, 12, 37, 0, ZoneId.of("Europe/London"));
 		assertThat(now, equalTo(ZonedDateTime.parse("2015-03-30T00:12:37+01:00[Europe/London]")));
-	}
-
-	@Test
-	public void offset_date_time_can_be_made_from_local_date_time_and_offset() throws Exception {
-		LocalDateTime nowDateTime = LocalDateTime.parse("2015-03-30T00:12:37");
-		ZoneOffset nowOffset = ZoneOffset.of("+01:00");
-		assertThat(OffsetDateTime.of(nowDateTime, nowOffset),
-				equalTo(OffsetDateTime.parse("2015-03-30T00:12:37+01:00")));
 	}
 
 	@Test
