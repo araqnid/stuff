@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.collect.Sets;
 
+import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentJsonNode;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -131,6 +132,11 @@ public final class JsonStructureMatchers {
 
 		public ObjectNodeMatcher withPropertyLike(String key, String apparentValue) {
 			propertyMatchers.put(key, jsonNodeStringifyingAs(apparentValue));
+			return this;
+		}
+
+		public ObjectNodeMatcher withPropertyJSON(String key, String json) {
+			propertyMatchers.put(key, equivalentJsonNode(json));
 			return this;
 		}
 

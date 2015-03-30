@@ -152,6 +152,11 @@ public class JsonStructureMatchersTest {
 	}
 
 	@Test
+	public void matches_property_using_json_equivalence() {
+		assertThat("{ \"a\": { \"aa\" : 1 } }", is(json(jsonObject().withPropertyJSON("a", "{'aa':1}"))));
+	}
+
+	@Test
 	public void matches_properties_in_any_order() {
 		assertThat(
 				"{ \"a\": 1, \"b\": 2 }",
