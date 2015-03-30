@@ -6,6 +6,7 @@ import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.Test;
 
 import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import static org.araqnid.stuff.JsonStructureMatchers.json;
 import static org.araqnid.stuff.JsonStructureMatchers.jsonArray;
@@ -104,6 +105,11 @@ public class JsonStructureMatchersTest {
 	@Test
 	public void rejects_empty_string() {
 		assertThat("", is(not(json(anySubclassOf(TreeNode.class)))));
+	}
+
+	@Test
+	public void rejects_laxly_formatted_input() {
+		assertThat("{ foo: 1 }", is(not(json(anySubclassOf(JsonNode.class)))));
 	}
 
 	@Test
