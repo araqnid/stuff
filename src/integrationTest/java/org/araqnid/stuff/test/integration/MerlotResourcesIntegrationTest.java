@@ -6,10 +6,6 @@ import static org.araqnid.stuff.test.integration.HttpClientMatchers.ok;
 import static org.araqnid.stuff.test.integration.HttpClientMatchers.removeCookie;
 import static org.araqnid.stuff.test.integration.HttpClientMatchers.responseWithCookies;
 import static org.araqnid.stuff.test.integration.HttpClientMatchers.responseWithJsonContent;
-import static org.araqnid.stuff.test.integration.JsonMatchers.jsonAny;
-import static org.araqnid.stuff.test.integration.JsonMatchers.jsonNull;
-import static org.araqnid.stuff.test.integration.JsonMatchers.jsonObject;
-import static org.araqnid.stuff.test.integration.JsonMatchers.jsonString;
 import static org.araqnid.stuff.testutil.RandomData.randomEmailAddress;
 import static org.araqnid.stuff.testutil.RandomData.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -24,6 +20,11 @@ import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
+
+import static org.araqnid.stuff.JsonStructureMatchers.jsonAny;
+import static org.araqnid.stuff.JsonStructureMatchers.jsonNull;
+import static org.araqnid.stuff.JsonStructureMatchers.jsonObject;
+import static org.araqnid.stuff.JsonStructureMatchers.jsonString;
 
 public class MerlotResourcesIntegrationTest extends IntegrationTest {
 	@Test

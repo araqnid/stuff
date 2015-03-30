@@ -3,9 +3,6 @@ package org.araqnid.stuff.test.integration;
 import static org.araqnid.stuff.test.integration.HttpClientMatchers.ok;
 import static org.araqnid.stuff.test.integration.HttpClientMatchers.responseWithContent;
 import static org.araqnid.stuff.test.integration.HttpClientMatchers.responseWithJsonContent;
-import static org.araqnid.stuff.test.integration.JsonMatchers.jsonAny;
-import static org.araqnid.stuff.test.integration.JsonMatchers.jsonObject;
-import static org.araqnid.stuff.test.integration.JsonMatchers.jsonString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.any;
@@ -32,6 +29,10 @@ import org.junit.Test;
 import com.fasterxml.jackson.core.TreeNode;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.io.CharSource;
+
+import static org.araqnid.stuff.JsonStructureMatchers.jsonAny;
+import static org.araqnid.stuff.JsonStructureMatchers.jsonObject;
+import static org.araqnid.stuff.JsonStructureMatchers.jsonString;
 
 public class InfoResourcesIntegrationTest extends IntegrationTest {
 	@Test

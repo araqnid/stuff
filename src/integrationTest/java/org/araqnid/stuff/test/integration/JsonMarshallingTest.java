@@ -26,12 +26,13 @@ import com.google.common.collect.Multimap;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 
+import static org.araqnid.stuff.JsonStructureMatchers.jsonArray;
+import static org.araqnid.stuff.JsonStructureMatchers.jsonNull;
+import static org.araqnid.stuff.JsonStructureMatchers.jsonObject;
+import static org.araqnid.stuff.JsonStructureMatchers.jsonString;
+
 import static org.araqnid.stuff.test.integration.HttpClientMatchers.ok;
 import static org.araqnid.stuff.test.integration.HttpClientMatchers.responseWithJsonContent;
-import static org.araqnid.stuff.test.integration.JsonMatchers.jsonArray;
-import static org.araqnid.stuff.test.integration.JsonMatchers.jsonNull;
-import static org.araqnid.stuff.test.integration.JsonMatchers.jsonObject;
-import static org.araqnid.stuff.test.integration.JsonMatchers.jsonString;
 import static org.araqnid.stuff.testutil.RandomData.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.both;
