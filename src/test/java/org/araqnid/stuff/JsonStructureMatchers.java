@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.collect.Sets;
 
+import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
 
 public final class JsonStructureMatchers {
@@ -190,22 +191,22 @@ public final class JsonStructureMatchers {
 	}
 
 	public static Matcher<NumericNode> jsonNumber(long n) {
+		return jsonNumberLong(equalTo(n));
+	}
+
+	public static Matcher<NumericNode> jsonNumberLong(Matcher<Long> matcher) {
 		return new TypeSafeDiagnosingMatcher<NumericNode>() {
 			@Override
 			protected boolean matchesSafely(NumericNode item, Description mismatchDescription) {
-				if (!item.canConvertToLong()) {
-					mismatchDescription.appendText("not an integer value ").appendValue(item);
-				}
-				if (item.asLong() != n) {
-					mismatchDescription.appendText("long value was ").appendValue(item.asInt());
-					return false;
-				}
-				return true;
+				long value = item.asLong();
+				mismatchDescription.appendText("long value ");
+				matcher.describeMismatch(value, mismatchDescription);
+				return matcher.matches(value);
 			}
 
 			@Override
 			public void describeTo(Description description) {
-				description.appendText("JSON number(long) ").appendValue(n);
+				description.appendText("JSON number ").appendDescriptionOf(matcher);
 			}
 		};
 	}
@@ -227,74 +228,90 @@ public final class JsonStructureMatchers {
 		};
 	}
 
-	public static Matcher<IntNode> jsonInt(final int n) {
+	public static Matcher<IntNode> jsonInt(int n) {
+		return jsonInt(equalTo(n));
+	}
+
+	public static Matcher<IntNode> jsonInt(Matcher<Integer> matcher) {
 		return new TypeSafeDiagnosingMatcher<IntNode>() {
 			@Override
 			protected boolean matchesSafely(IntNode item, Description mismatchDescription) {
-				if (item.asInt() != n) {
-					mismatchDescription.appendText("integer value was ").appendValue(item.asInt());
-					return false;
-				}
-				return true;
+				int value = item.asInt();
+				mismatchDescription.appendText("integer value ");
+				matcher.describeMismatch(value, mismatchDescription);
+				return matcher.matches(value);
 			}
 
 			@Override
 			public void describeTo(Description description) {
-				description.appendText("JSON int ").appendValue(n);
+				description.appendText("JSON int ").appendDescriptionOf(matcher);
 			}
 		};
 	}
 
-	public static Matcher<LongNode> jsonLong(final long n) {
+	public static Matcher<LongNode> jsonLong(long n) {
+		return jsonLong(equalTo(n));
+	}
+
+	public static Matcher<LongNode> jsonLong(Matcher<Long> matcher) {
 		return new TypeSafeDiagnosingMatcher<LongNode>() {
 			@Override
 			protected boolean matchesSafely(LongNode item, Description mismatchDescription) {
-				if (item.asLong() != n) {
-					mismatchDescription.appendText("long value was ").appendValue(item.asLong());
-					return false;
-				}
-				return true;
+				long value = item.asLong();
+				mismatchDescription.appendText("long value ");
+				matcher.describeMismatch(value, mismatchDescription);
+				return matcher.matches(value);
 			}
 
 			@Override
 			public void describeTo(Description description) {
-				description.appendText("JSON long ").appendValue(n);
+				description.appendText("JSON long ").appendDescriptionOf(matcher);
 			}
 		};
 	}
 
-	public static Matcher<DoubleNode> jsonDouble(final double n) {
+	public static Matcher<DoubleNode> jsonDouble(double n) {
+		return jsonDouble(equalTo(n));
+	}
+
+	public static Matcher<DoubleNode> jsonDouble(double n, double tolerance) {
+		return jsonDouble(closeTo(n, tolerance));
+	}
+
+	public static Matcher<DoubleNode> jsonDouble(Matcher<Double> matcher) {
 		return new TypeSafeDiagnosingMatcher<DoubleNode>() {
 			@Override
 			protected boolean matchesSafely(DoubleNode item, Description mismatchDescription) {
-				if (item.asDouble() != n) {
-					mismatchDescription.appendText("double value was ").appendValue(item.asDouble());
-					return false;
-				}
-				return true;
+				double value = item.asDouble();
+				mismatchDescription.appendText("double value ");
+				matcher.describeMismatch(value, mismatchDescription);
+				return matcher.matches(value);
 			}
 
 			@Override
 			public void describeTo(Description description) {
-				description.appendText("JSON double ").appendValue(n);
+				description.appendText("JSON double ").appendDescriptionOf(matcher);
 			}
 		};
 	}
 
-	public static Matcher<BooleanNode> jsonBoolean(final boolean b) {
+	public static Matcher<BooleanNode> jsonBoolean(boolean n) {
+		return jsonBoolean(equalTo(n));
+	}
+
+	public static Matcher<BooleanNode> jsonBoolean(Matcher<Boolean> matcher) {
 		return new TypeSafeDiagnosingMatcher<BooleanNode>() {
 			@Override
 			protected boolean matchesSafely(BooleanNode item, Description mismatchDescription) {
-				if (item.asBoolean() != b) {
-					mismatchDescription.appendText("boolean value was ").appendValue(item.asBoolean());
-					return false;
-				}
-				return true;
+				boolean value = item.asBoolean();
+				mismatchDescription.appendText("boolean value ");
+				matcher.describeMismatch(value, mismatchDescription);
+				return matcher.matches(value);
 			}
 
 			@Override
 			public void describeTo(Description description) {
-				description.appendText("JSON boolean ").appendValue(b);
+				description.appendText("JSON boolean ").appendDescriptionOf(matcher);
 			}
 		};
 	}
