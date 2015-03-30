@@ -90,7 +90,7 @@ public final class JsonStructureMatchers {
 
 		@Override
 		public void describeTo(Description description) {
-			description.appendText("JSON object { ");
+			description.appendText("{ ");
 			boolean first = true;
 			for (Map.Entry<String, Matcher<? extends TreeNode>> e : propertyMatchers.entrySet()) {
 				if (first) {
@@ -157,7 +157,7 @@ public final class JsonStructureMatchers {
 
 			@Override
 			public void describeTo(Description description) {
-				description.appendText("JSON text ").appendDescriptionOf(valueMatcher);
+				description.appendText("text ").appendDescriptionOf(valueMatcher);
 			}
 		};
 	}
@@ -171,7 +171,7 @@ public final class JsonStructureMatchers {
 
 			@Override
 			public void describeTo(Description description) {
-				description.appendText("JSON");
+				description.appendText("any");
 			}
 		};
 	}
@@ -185,7 +185,7 @@ public final class JsonStructureMatchers {
 
 			@Override
 			public void describeTo(Description description) {
-				description.appendText("JSON null");
+				description.appendText("null");
 			}
 		};
 	}
@@ -206,7 +206,7 @@ public final class JsonStructureMatchers {
 
 			@Override
 			public void describeTo(Description description) {
-				description.appendText("JSON number ").appendDescriptionOf(matcher);
+				description.appendText("number ").appendDescriptionOf(matcher);
 			}
 		};
 	}
@@ -244,7 +244,7 @@ public final class JsonStructureMatchers {
 
 			@Override
 			public void describeTo(Description description) {
-				description.appendText("JSON int ").appendDescriptionOf(matcher);
+				description.appendText("int ").appendDescriptionOf(matcher);
 			}
 		};
 	}
@@ -265,7 +265,7 @@ public final class JsonStructureMatchers {
 
 			@Override
 			public void describeTo(Description description) {
-				description.appendText("JSON long ").appendDescriptionOf(matcher);
+				description.appendText("long ").appendDescriptionOf(matcher);
 			}
 		};
 	}
@@ -290,7 +290,7 @@ public final class JsonStructureMatchers {
 
 			@Override
 			public void describeTo(Description description) {
-				description.appendText("JSON double ").appendDescriptionOf(matcher);
+				description.appendText("double ").appendDescriptionOf(matcher);
 			}
 		};
 	}
@@ -311,7 +311,7 @@ public final class JsonStructureMatchers {
 
 			@Override
 			public void describeTo(Description description) {
-				description.appendText("JSON boolean ").appendDescriptionOf(matcher);
+				description.appendText("boolean ").appendDescriptionOf(matcher);
 			}
 		};
 	}
@@ -355,7 +355,7 @@ public final class JsonStructureMatchers {
 
 		@Override
 		public void describeTo(Description description) {
-			description.appendText("JSON array");
+			description.appendText("array");
 			if (contentsMatcher != null) {
 				description.appendText(" containing ").appendDescriptionOf(contentsMatcher);
 			}
