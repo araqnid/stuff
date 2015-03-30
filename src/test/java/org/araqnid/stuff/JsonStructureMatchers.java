@@ -15,7 +15,6 @@ import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.hamcrest.collection.IsIterableContainingInAnyOrder;
 import org.hamcrest.collection.IsIterableContainingInOrder;
 
-import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -36,19 +35,19 @@ import static org.hamcrest.Matchers.equalTo;
 public final class JsonStructureMatchers {
 	private static final ObjectMapper MAPPER = new ObjectMapper();
 
-	public static Matcher<String> json(Matcher<? extends TreeNode> matcher) {
+	public static Matcher<String> json(Matcher<? extends JsonNode> matcher) {
 		return new TypeSafeDiagnosingMatcher<String>() {
 			@Override
 			protected boolean matchesSafely(String item, Description mismatchDescription) {
-				JsonNode treeNode;
+				JsonNode node;
 				try {
-					treeNode = MAPPER.readTree(item);
+					node = MAPPER.readTree(item);
 				} catch (IOException e) {
 					mismatchDescription.appendText("Invalid JSON: ").appendValue(e);
 					return false;
 				}
-				matcher.describeMismatch(treeNode, mismatchDescription);
-				return matcher.matches(treeNode);
+				matcher.describeMismatch(node, mismatchDescription);
+				return matcher.matches(node);
 			}
 
 			@Override
@@ -63,18 +62,18 @@ public final class JsonStructureMatchers {
 	}
 
 	public static class ObjectNodeMatcher extends TypeSafeDiagnosingMatcher<ObjectNode> {
-		private final Map<String, Matcher<? extends TreeNode>> propertyMatchers = new LinkedHashMap<>();
+		private final Map<String, Matcher<? extends JsonNode>> propertyMatchers = new LinkedHashMap<>();
 		private boolean failOnUnexpectedProperties = true;
 
 		@Override
 		protected boolean matchesSafely(ObjectNode item, Description mismatchDescription) {
 			Set<String> remainingFieldNames = Sets.newHashSet(item.fieldNames());
-			for (Map.Entry<String, Matcher<? extends TreeNode>> e : propertyMatchers.entrySet()) {
+			for (Map.Entry<String, Matcher<? extends JsonNode>> e : propertyMatchers.entrySet()) {
 				if (!item.has(e.getKey())) {
 					mismatchDescription.appendText(e.getKey()).appendText(" was not present");
 					return false;
 				}
-				TreeNode value = item.get(e.getKey());
+				JsonNode value = item.get(e.getKey());
 				if (!e.getValue().matches(value)) {
 					mismatchDescription.appendText(e.getKey()).appendText(": ");
 					e.getValue().describeMismatch(value, mismatchDescription);
@@ -93,7 +92,7 @@ public final class JsonStructureMatchers {
 		public void describeTo(Description description) {
 			description.appendText("{ ");
 			boolean first = true;
-			for (Map.Entry<String, Matcher<? extends TreeNode>> e : propertyMatchers.entrySet()) {
+			for (Map.Entry<String, Matcher<? extends JsonNode>> e : propertyMatchers.entrySet()) {
 				if (first) {
 					first = false;
 				}
@@ -105,7 +104,7 @@ public final class JsonStructureMatchers {
 			description.appendText(" }");
 		}
 
-		public ObjectNodeMatcher withProperty(String key, Matcher<? extends TreeNode> value) {
+		public ObjectNodeMatcher withProperty(String key, Matcher<? extends JsonNode> value) {
 			propertyMatchers.put(key, value);
 			return this;
 		}
@@ -168,10 +167,10 @@ public final class JsonStructureMatchers {
 		};
 	}
 
-	public static Matcher<TreeNode> jsonAny() {
-		return new TypeSafeDiagnosingMatcher<TreeNode>() {
+	public static Matcher<JsonNode> jsonAny() {
+		return new TypeSafeDiagnosingMatcher<JsonNode>() {
 			@Override
-			protected boolean matchesSafely(TreeNode item, Description mismatchDescription) {
+			protected boolean matchesSafely(JsonNode item, Description mismatchDescription) {
 				return true;
 			}
 
@@ -342,7 +341,7 @@ public final class JsonStructureMatchers {
 	}
 
 	public static class ArrayNodeMatcher extends TypeSafeDiagnosingMatcher<ArrayNode> {
-		private Matcher<Iterable<? extends TreeNode>> contentsMatcher = Matchers.emptyIterable();
+		private Matcher<Iterable<? extends JsonNode>> contentsMatcher = Matchers.emptyIterable();
 
 		@Override
 		protected boolean matchesSafely(final ArrayNode item, Description mismatchDescription) {
@@ -368,40 +367,40 @@ public final class JsonStructureMatchers {
 		}
 
 		@SafeVarargs
-		public final ArrayNodeMatcher of(Matcher<? extends TreeNode>... nodeMatchers) {
+		public final ArrayNodeMatcher of(Matcher<? extends JsonNode>... nodeMatchers) {
 			if (nodeMatchers.length == 0) {
 				contentsMatcher = Matchers.emptyIterable();
 				return this;
 			}
 			@SuppressWarnings({ "unchecked", "rawtypes" })
-			List<Matcher<? super TreeNode>> matcherList = (List) Arrays.asList(nodeMatchers);
+			List<Matcher<? super JsonNode>> matcherList = (List) Arrays.asList(nodeMatchers);
 			contentsMatcher = IsIterableContainingInOrder.contains(matcherList);
 			return this;
 		}
 
 		@SafeVarargs
-		public final ArrayNodeMatcher inAnyOrder(Matcher<? extends TreeNode>... nodeMatchers) {
+		public final ArrayNodeMatcher inAnyOrder(Matcher<? extends JsonNode>... nodeMatchers) {
 			if (nodeMatchers.length == 0) {
 				contentsMatcher = Matchers.emptyIterable();
 				return this;
 			}
 			@SuppressWarnings({ "unchecked", "rawtypes" })
-			List<Matcher<? super TreeNode>> matcherList = (List) Arrays.asList(nodeMatchers);
+			List<Matcher<? super JsonNode>> matcherList = (List) Arrays.asList(nodeMatchers);
 			contentsMatcher = IsIterableContainingInAnyOrder.containsInAnyOrder(matcherList);
 			return this;
 		}
 
-		public ArrayNodeMatcher including(final Matcher<? extends TreeNode> nodeMatcher) {
-			contentsMatcher = new TypeSafeDiagnosingMatcher<Iterable<? extends TreeNode>>() {
+		public ArrayNodeMatcher including(final Matcher<? extends JsonNode> nodeMatcher) {
+			contentsMatcher = new TypeSafeDiagnosingMatcher<Iterable<? extends JsonNode>>() {
 				@Override
-				protected boolean matchesSafely(Iterable<? extends TreeNode> item, Description mismatchDescription) {
-					Iterator<? extends TreeNode> iterator = item.iterator();
+				protected boolean matchesSafely(Iterable<? extends JsonNode> item, Description mismatchDescription) {
+					Iterator<? extends JsonNode> iterator = item.iterator();
 					if (!iterator.hasNext()) {
 						mismatchDescription.appendText("array was empty");
 						return false;
 					}
 					while (iterator.hasNext()) {
-						TreeNode node = iterator.next();
+						JsonNode node = iterator.next();
 						if (nodeMatcher.matches(node)) return true;
 					}
 					mismatchDescription.appendText("not matched: ").appendDescriptionOf(nodeMatcher);
