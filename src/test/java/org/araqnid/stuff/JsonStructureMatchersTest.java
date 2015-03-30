@@ -13,11 +13,13 @@ import static org.araqnid.stuff.JsonStructureMatchers.jsonBoolean;
 import static org.araqnid.stuff.JsonStructureMatchers.jsonDouble;
 import static org.araqnid.stuff.JsonStructureMatchers.jsonInt;
 import static org.araqnid.stuff.JsonStructureMatchers.jsonNull;
+import static org.araqnid.stuff.JsonStructureMatchers.jsonNumber;
 import static org.araqnid.stuff.JsonStructureMatchers.jsonObject;
 import static org.araqnid.stuff.JsonStructureMatchers.jsonString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.both;
+import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
@@ -29,7 +31,22 @@ public class JsonStructureMatchersTest {
 
 	@Test
 	public void matches_double() {
-		assertThat("1.0", is(json(jsonDouble(1.0))));
+		assertThat("1.5", is(json(jsonDouble(1.5))));
+	}
+
+	@Test
+	public void rejects_floating_point_when_matching_integer() {
+		assertThat("1.5", is(json(not(jsonInt(1)))));
+	}
+
+	@Test
+	public void matches_double_as_numeric() {
+		assertThat("1.5", is(json(jsonNumber(closeTo(1.5, 0.01)))));
+	}
+
+	@Test
+	public void matches_integer_as_numeric() {
+		assertThat("1", is(json(jsonNumber(closeTo(1.0, 0.01)))));
 	}
 
 	@Test

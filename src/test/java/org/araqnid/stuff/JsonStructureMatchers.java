@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.node.DoubleNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.LongNode;
 import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.NumericNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.collect.Sets;
@@ -142,7 +143,7 @@ public final class JsonStructureMatchers {
 		return jsonString(equalTo(value));
 	}
 
-	public static Matcher<TextNode> jsonString(final Matcher<String> valueMatcher) {
+	public static Matcher<TextNode> jsonString(Matcher<String> valueMatcher) {
 		return new TypeSafeDiagnosingMatcher<TextNode>() {
 			@Override
 			protected boolean matchesSafely(TextNode item, Description mismatchDescription) {
@@ -184,6 +185,44 @@ public final class JsonStructureMatchers {
 			@Override
 			public void describeTo(Description description) {
 				description.appendText("JSON null");
+			}
+		};
+	}
+
+	public static Matcher<NumericNode> jsonNumber(long n) {
+		return new TypeSafeDiagnosingMatcher<NumericNode>() {
+			@Override
+			protected boolean matchesSafely(NumericNode item, Description mismatchDescription) {
+				if (!item.canConvertToLong()) {
+					mismatchDescription.appendText("not an integer value ").appendValue(item);
+				}
+				if (item.asLong() != n) {
+					mismatchDescription.appendText("long value was ").appendValue(item.asInt());
+					return false;
+				}
+				return true;
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendText("JSON number(long) ").appendValue(n);
+			}
+		};
+	}
+
+	public static Matcher<NumericNode> jsonNumber(Matcher<Double> matcher) {
+		return new TypeSafeDiagnosingMatcher<NumericNode>() {
+			@Override
+			protected boolean matchesSafely(NumericNode item, Description mismatchDescription) {
+				double value = item.asDouble();
+				mismatchDescription.appendText("numeric value ");
+				matcher.describeMismatch(value, mismatchDescription);
+				return matcher.matches(value);
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendText("JSON numeric ").appendDescriptionOf(matcher);
 			}
 		};
 	}
