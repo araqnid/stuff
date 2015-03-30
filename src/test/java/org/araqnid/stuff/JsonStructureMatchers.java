@@ -127,6 +127,11 @@ public final class JsonStructureMatchers {
 			return this;
 		}
 
+		public ObjectNodeMatcher withPropertyLike(String key, String apparentValue) {
+			propertyMatchers.put(key, jsonNodeStringifyingAs(apparentValue));
+			return this;
+		}
+
 		public ObjectNodeMatcher withAnyFields() {
 			failOnUnexpectedProperties = false;
 			return this;
@@ -251,6 +256,25 @@ public final class JsonStructureMatchers {
 			@Override
 			public void describeTo(Description description) {
 				description.appendText("JSON boolean ").appendValue(b);
+			}
+		};
+	}
+
+	public static Matcher<JsonNode> jsonNodeStringifyingAs(String str) {
+		return new TypeSafeDiagnosingMatcher<JsonNode>() {
+			@Override
+			protected boolean matchesSafely(JsonNode item, Description mismatchDescription) {
+				String itemString = item.toString();
+				if (!itemString.equals(str)) {
+					mismatchDescription.appendText("node is ").appendValue(itemString);
+					return false;
+				}
+				return true;
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendValue(str);
 			}
 		};
 	}

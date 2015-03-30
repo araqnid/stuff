@@ -88,6 +88,11 @@ public class JsonStructureMatchersTest {
 	}
 
 	@Test
+	public void matches_property_using_stringify() {
+		assertThat("{ \"a\": 1 }", is(json(jsonObject().withPropertyLike("a", "1"))));
+	}
+
+	@Test
 	public void matches_properties_in_any_order() {
 		assertThat(
 				"{ \"a\": 1, \"b\": 2 }",
