@@ -146,6 +146,8 @@ eclipse {
                     entry.accessRules.add(new org.gradle.plugins.ide.eclipse.model.AccessRule('discouraged', 'com/google/inject/Provider'))
                     entry.accessRules.add(new org.gradle.plugins.ide.eclipse.model.AccessRule('discouraged', 'com/google/inject/BindingAnnotation'))
                     entry.accessRules.add(new org.gradle.plugins.ide.eclipse.model.AccessRule('discouraged', 'com/google/inject/ScopeAnnotation'))
+                    entry.accessRules.add(new org.gradle.plugins.ide.eclipse.model.AccessRule('discouraged', 'com/google/inject/Singleton'))
+                    entry.accessRules.add(new org.gradle.plugins.ide.eclipse.model.AccessRule('discouraged', 'com/google/inject/name/Named'))
                 }
             }
         }
