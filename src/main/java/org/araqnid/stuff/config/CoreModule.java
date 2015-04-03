@@ -2,6 +2,7 @@ package org.araqnid.stuff.config;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.time.Clock;
 import java.util.Set;
 import java.util.UUID;
 
@@ -41,6 +42,7 @@ public final class CoreModule extends AbstractModule {
 		install(new JacksonModule());
 		install(new SpooledEventsModule());
 		bind(MerlotRepository.class);
+		bind(Clock.class).toInstance(Clock.systemDefaultZone());
 	}
 
 	@Provides

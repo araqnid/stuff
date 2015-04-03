@@ -2,6 +2,9 @@ package org.araqnid.stuff.test.integration;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -24,11 +27,19 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 
 public class IntegrationTest {
+	private static final Instant DEFAULT_INSTANT = Instant.parse("2012-11-10T09:08:07.006005004Z");
 	protected CloseableHttpClient httpClient;
 	protected ServerRunner server = new ServerRunner();
+	protected ManuallySetClock clock = new ManuallySetClock(DEFAULT_INSTANT, ZoneOffset.UTC);
 
 	@Before
 	public void startServer() throws Exception {
+		server.addConfiguration(new AbstractModule() {
+			@Override
+			protected void configure() {
+				bind(Clock.class).toInstance(clock);
+			}
+		});
 		server.addConfiguration(serverConfiguration());
 		server.start();
 	}
