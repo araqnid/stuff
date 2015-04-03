@@ -1,8 +1,11 @@
 package org.araqnid.stuff.test.integration;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import javax.inject.Inject;
 import javax.servlet.ServletContext;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -16,7 +19,12 @@ import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
@@ -30,7 +38,6 @@ import static org.araqnid.stuff.JsonStructureMatchers.jsonArray;
 import static org.araqnid.stuff.JsonStructureMatchers.jsonNull;
 import static org.araqnid.stuff.JsonStructureMatchers.jsonObject;
 import static org.araqnid.stuff.JsonStructureMatchers.jsonString;
-
 import static org.araqnid.stuff.test.integration.HttpClientMatchers.ok;
 import static org.araqnid.stuff.test.integration.HttpClientMatchers.responseWithJsonContent;
 import static org.araqnid.stuff.testutil.RandomData.randomString;
@@ -38,7 +45,27 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.is;
 
+@RunWith(Parameterized.class)
 public class JsonMarshallingTest extends IntegrationTest {
+	@Parameters(name="@{0}")
+	public static Instant[] parameters() {
+		ImmutableList<Instant> instants = ImmutableList.of(
+				Instant.parse("2015-04-03T13:29:33.123456789Z"),
+				Instant.parse("2015-04-03T13:29:33.123456000Z"),
+				Instant.parse("2015-04-03T13:29:33.123000000Z"),
+				Instant.parse("2015-04-03T13:29:33.000000000Z"),
+				Instant.parse("2015-04-03T13:29:00.000000000Z"),
+				Instant.parse("2015-04-03T13:00:00.000000000Z")
+				);
+		return instants.toArray(new Instant[instants.size()]);
+	}
+
+	@Parameter public Instant instant;
+
+	@Before public void setClock() {
+		clock.setTime(instant);
+	}
+
 	@Override
 	protected Module serverConfiguration() {
 		return new AbstractModule() {
@@ -66,7 +93,7 @@ public class JsonMarshallingTest extends IntegrationTest {
 		assertThat(
 				doGet("/_api/test/jdk/instant"),
 				is(both(ok())
-						.and(responseWithJsonContent(jsonString(like("\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(\\.\\d\\d\\d)?Z"))))));
+						.and(responseWithJsonContent(jsonString(like("2015-04-03T13:\\d\\d:\\d\\d(\\.\\d\\d\\d(\\d\\d\\d(\\d\\d\\d)?)?)?Z"))))));
 	}
 
 	@Test
@@ -78,7 +105,7 @@ public class JsonMarshallingTest extends IntegrationTest {
 	@Test
 	public void jdk_localtime_is_marshalled_as_a_nice_string() throws Exception {
 		assertThat(doGet("/_api/test/jdk/localtime"),
-				is(both(ok()).and(responseWithJsonContent(jsonString(like("\\d\\d:\\d\\d:\\d\\d(\\.\\d\\d\\d)?"))))));
+				is(both(ok()).and(responseWithJsonContent(jsonString(like("\\d\\d:\\d\\d(:\\d\\d(\\.\\d\\d\\d(\\d\\d\\d(\\d\\d\\d)?)?)?)?"))))));
 	}
 
 	@Test
@@ -86,7 +113,7 @@ public class JsonMarshallingTest extends IntegrationTest {
 		assertThat(
 				doGet("/_api/test/jdk/localdatetime"),
 				is(both(ok())
-						.and(responseWithJsonContent(jsonString(like("\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(\\.\\d\\d\\d)?"))))));
+						.and(responseWithJsonContent(jsonString(like("2015-04-03T13:\\d\\d(:\\d\\d(\\.\\d\\d\\d(\\d\\d\\d(\\d\\d\\d(\\d\\d\\d(\\d\\d\\d)?)?)?)?)?)?"))))));
 	}
 
 	@Test
@@ -169,28 +196,35 @@ public class JsonMarshallingTest extends IntegrationTest {
 	@Path("_api/test")
 	@Produces("application/json")
 	public static class TestResource {
+		private final Clock clock;
+
+		@Inject
+		public TestResource(Clock clock) {
+			this.clock = clock;
+		}
+
 		@GET
 		@Path("jdk/instant")
 		public java.time.Instant jdkInstant() {
-			return java.time.Instant.now();
+			return java.time.Instant.now(clock);
 		}
 
 		@GET
 		@Path("jdk/localdate")
 		public java.time.LocalDate jdkLocalDate() {
-			return java.time.LocalDate.now();
+			return java.time.LocalDate.now(clock);
 		}
 
 		@GET
 		@Path("jdk/localtime")
 		public java.time.LocalTime jdkLocalTime() {
-			return java.time.LocalTime.now();
+			return java.time.LocalTime.now(clock);
 		}
 
 		@GET
 		@Path("jdk/localdatetime")
 		public java.time.LocalDateTime jdkLocalDateTime() {
-			return java.time.LocalDateTime.now();
+			return java.time.LocalDateTime.now(clock);
 		}
 
 		@GET
