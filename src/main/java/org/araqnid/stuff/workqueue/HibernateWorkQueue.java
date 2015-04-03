@@ -3,7 +3,9 @@ package org.araqnid.stuff.workqueue;
 import org.hibernate.SessionFactory;
 
 public class HibernateWorkQueue implements WorkQueue {
+	@SuppressWarnings("unused")
 	private final String queueCode;
+	@SuppressWarnings("unused")
 	private final SessionFactory sessionFactory;
 
 	public HibernateWorkQueue(String queueCode, SessionFactory sessionFactory) {
