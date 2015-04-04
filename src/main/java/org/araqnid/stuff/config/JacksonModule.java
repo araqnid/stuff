@@ -11,6 +11,7 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk7.Jdk7Module;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
+import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import com.fasterxml.jackson.module.guice.GuiceAnnotationIntrospector;
 import com.fasterxml.jackson.module.guice.GuiceInjectableValues;
 import com.google.inject.Exposed;
@@ -29,6 +30,7 @@ public class JacksonModule extends PrivateModule {
 		jacksonModules.addBinding().to(Jdk7Module.class);
 		jacksonModules.addBinding().to(Jdk8Module.class);
 		jacksonModules.addBinding().to(JSR310Module.class);
+		jacksonModules.addBinding().to(AfterburnerModule.class);
 	}
 
 	@Provides

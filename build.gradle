@@ -77,6 +77,7 @@ dependencies {
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:' + jacksonVersion
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-joda:' + jacksonVersion
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-json-org:' + jacksonVersion
+    compile 'com.fasterxml.jackson.module:jackson-module-afterburner:' + jacksonVersion
     compile 'org.json:json:20141113'
     compile 'com.lexicalscope.eventcast:eventcast:1.0.2'
     compile 'org.postgresql:postgresql:9.3-1102-jdbc41'
