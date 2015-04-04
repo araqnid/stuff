@@ -30,7 +30,7 @@ ul.consumes, ul.produces {
   padding: 0px;
 }
 
-ul.consumes li:before {
+ul.consumes li:first-child:before {
   content: " < ";
 }
 
