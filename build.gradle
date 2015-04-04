@@ -123,15 +123,19 @@ task runtimeDeps(dependsOn: 'processResources') {
 
 jar.dependsOn(runtimeDeps)
 
-task integrationTest(type: Test, dependsOn: 'test') {
+task integrationTest(type: Test) {
     testClassesDir = sourceSets.integrationTest.output.classesDir
     classpath = sourceSets.integrationTest.runtimeClasspath
+    reports.html.destination = file("$buildDir/reports/integationTests")
 }
+integrationTest.shouldRunAfter(test)
 
 task browserTest(type: Test) {
     testClassesDir = sourceSets.browserTest.output.classesDir
     classpath = sourceSets.browserTest.runtimeClasspath
+    reports.html.destination = file("$buildDir/reports/browserTests")
 }
+browserTest.shouldRunAfter(integrationTest)
 
 build.dependsOn(integrationTestClasses, browserTestClasses)
 check.dependsOn(integrationTest)
