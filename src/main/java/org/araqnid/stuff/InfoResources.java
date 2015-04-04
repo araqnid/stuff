@@ -283,6 +283,24 @@ public class InfoResources {
 					pw.print(invoker.resourceClass);
 					pw.print('.');
 					pw.print(invoker.method);
+					if (!invoker.consumes.isEmpty()) {
+						pw.print("<ul class='consumes'>");
+						for (String mimeType : invoker.consumes) {
+							pw.print("<li>");
+							pw.print(mimeType);
+							pw.print("</li>");
+						}
+						pw.print("</ul>");
+					}
+					if (!invoker.produces.isEmpty()) {
+						pw.print("<ul class='produces'>");
+						for (String mimeType : invoker.produces) {
+							pw.print("<li>");
+							pw.print(mimeType);
+							pw.print("</li>");
+						}
+						pw.print("</ul>");
+					}
 					pw.println("</li>");
 				}
 			}

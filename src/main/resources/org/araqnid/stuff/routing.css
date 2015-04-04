@@ -16,3 +16,32 @@ ul {
 li {
   display: inline;
 }
+
+ul.produces:before {
+  content: "[ ";
+}
+
+ul.consumes:before {
+  content: "[ ";
+}
+
+ul.consumes, ul.produces {
+  display: inline;
+  padding: 0px;
+}
+
+ul.consumes li:before {
+  content: " < ";
+}
+
+ul.produces li:first-child:before {
+  content: " > ";
+}
+
+ul.consumes li:before, ul.produces li:before {
+  content: " | ";
+}
+
+ul.consumes:after, ul.produces:after {
+  content: " ]";
+}
