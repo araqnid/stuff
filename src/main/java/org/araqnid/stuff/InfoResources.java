@@ -117,6 +117,24 @@ public class InfoResources {
 	@Path("routing")
 	@Produces("text/plain")
 	public String dumpRouting() {
+		StringWriter sw = new StringWriter();
+		routingToTree().dump(new PrintWriter(sw));
+		return sw.toString();
+	}
+
+	@GET
+	@Path("routing")
+	@Produces("text/html")
+	public String formatRouting() {
+		StringWriter sw = new StringWriter();
+		PrintWriter pw = new PrintWriter(sw);
+		pw.println("<html><head><title>Routing</title></head><body><pre>");
+		routingToTree().dump(pw);
+		pw.println("</pre></body></html>");
+		return sw.toString();
+	}
+
+	private DumpNode routingToTree() {
 		DumpNode root = new DumpNode();
 		for (Map.Entry<String, List<InvokerDetail>> e : getRouting().entrySet()) {
 			Iterator<String> segmentIter = Splitter.on('/').omitEmptyStrings().split(e.getKey()).iterator();
@@ -130,9 +148,7 @@ public class InfoResources {
 				}
 			}
 		}
-		StringWriter sw = new StringWriter();
-		root.dump(new PrintWriter(sw));
-		return sw.toString();
+		return root;
 	}
 
 	private class DumpNode {
