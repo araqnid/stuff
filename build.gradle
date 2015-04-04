@@ -147,7 +147,7 @@ eclipse {
         file {
             whenMerged { classpath ->
                 def libs = classpath.entries.findAll { it.kind == 'lib' }
-                libs.findAll { it.moduleVersion.group == 'com.google.inject' && it.moduleVersion.name == 'guice' }.collect { entry ->
+                libs.findAll { it.moduleVersion?.group == 'com.google.inject' && it.moduleVersion?.name == 'guice' }.collect { entry ->
                     entry.accessRules.add(new org.gradle.plugins.ide.eclipse.model.AccessRule('discouraged', 'com/google/inject/Inject'))
                     entry.accessRules.add(new org.gradle.plugins.ide.eclipse.model.AccessRule('discouraged', 'com/google/inject/Provider'))
                     entry.accessRules.add(new org.gradle.plugins.ide.eclipse.model.AccessRule('discouraged', 'com/google/inject/BindingAnnotation'))
