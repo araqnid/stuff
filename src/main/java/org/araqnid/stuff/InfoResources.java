@@ -21,10 +21,10 @@ import org.jboss.resteasy.core.ResourceMethodInvoker;
 import org.jboss.resteasy.core.ResourceMethodRegistry;
 import org.jboss.resteasy.spi.Registry;
 
-import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
@@ -73,14 +73,12 @@ public class InfoResources {
 
 		public InvokerDetail(String method, String resourceClass, Set<String> httpMethods, Set<String> consumes,
 				Set<String> produces) {
-			super();
 			this.method = method;
 			this.resourceClass = resourceClass;
 			this.httpMethods = httpMethods;
 			this.consumes = consumes;
 			this.produces = produces;
 		}
-
 	}
 
 	@GET
@@ -118,7 +116,7 @@ public class InfoResources {
 	@Produces("text/plain")
 	public String dumpRouting() {
 		StringWriter sw = new StringWriter();
-		routingToTree().dump(new PrintWriter(sw));
+		routingToTree(new TextDumpNode()).dump(new PrintWriter(sw));
 		return sw.toString();
 	}
 
@@ -128,17 +126,16 @@ public class InfoResources {
 	public String formatRouting() {
 		StringWriter sw = new StringWriter();
 		PrintWriter pw = new PrintWriter(sw);
-		pw.println("<html><head><title>Routing</title></head><body><pre>");
-		routingToTree().dump(pw);
-		pw.println("</pre></body></html>");
+		pw.println("<html><head><title>Routing</title></head><body>");
+		routingToTree(new HtmlDumpNode()).dump(pw);
+		pw.println("</body></html>");
 		return sw.toString();
 	}
 
-	private DumpNode routingToTree() {
-		DumpNode root = new DumpNode();
+	private <T extends RoutingTree<T>> T routingToTree(T root) {
 		for (Map.Entry<String, List<InvokerDetail>> e : getRouting().entrySet()) {
 			Iterator<String> segmentIter = Splitter.on('/').omitEmptyStrings().split(e.getKey()).iterator();
-			DumpNode cursor = root;
+			T cursor = root;
 			while (segmentIter.hasNext()) {
 				cursor = cursor.matchSegment(segmentIter.next());
 			}
@@ -151,23 +148,23 @@ public class InfoResources {
 		return root;
 	}
 
-	private class DumpNode {
-		private final DumpNode parent;
-		private final Map<String, DumpNode> segmentMatches = new TreeMap<>();
-		private final Multimap<String, String> methodHandlers = TreeMultimap.create();
+	private static abstract class RoutingTree<T extends RoutingTree<T>> {
+		protected final T parent;
+		protected final Map<String, T> segmentMatches = new TreeMap<>();
+		protected final Multimap<String, String> methodHandlers = TreeMultimap.create();
 
-		public DumpNode() {
+		public RoutingTree() {
 			this.parent = null;
 		}
 
-		private DumpNode(DumpNode parent) {
+		protected RoutingTree(T parent) {
 			this.parent = parent;
 		}
 
-		public DumpNode matchSegment(String segment) {
-			DumpNode next = segmentMatches.get(segment);
+		public T matchSegment(String segment) {
+			T next = segmentMatches.get(segment);
 			if (next == null) {
-				next = new DumpNode(this);
+				next = createChild();
 				segmentMatches.put(segment, next);
 			}
 			return next;
@@ -175,6 +172,23 @@ public class InfoResources {
 
 		public void addHandler(String httpMethod, String target) {
 			methodHandlers.put(httpMethod, target);
+		}
+
+		protected abstract T createChild();
+	}
+
+	private static class TextDumpNode extends RoutingTree<TextDumpNode> {
+		public TextDumpNode() {
+			super();
+		}
+
+		private TextDumpNode(TextDumpNode parent) {
+			super(parent);
+		}
+
+		@Override
+		protected TextDumpNode createChild() {
+			return new TextDumpNode(this);
 		}
 
 		public void dump(PrintWriter pw) {
@@ -186,7 +200,7 @@ public class InfoResources {
 		}
 
 		private void dumpSegments(PrintWriter pw) {
-			for (Map.Entry<String, DumpNode> e : segmentMatches.entrySet()) {
+			for (Map.Entry<String, TextDumpNode> e : segmentMatches.entrySet()) {
 				indent(pw);
 				pw.append(e.getKey());
 				e.getValue().dumpHandlers(pw);
@@ -199,13 +213,7 @@ public class InfoResources {
 			if (methodHandlers.isEmpty()) return;
 			pw.append(" = ").append(
 					Joiner.on(' ').join(
-							Iterables.transform(methodHandlers.entries(),
-									new Function<Map.Entry<String, String>, String>() {
-										@Override
-										public String apply(Map.Entry<String, String> input) {
-											return input.getKey() + ":" + input.getValue();
-										}
-									})));
+							Collections2.transform(methodHandlers.entries(), e -> e.getKey() + ":" + e.getValue())));
 		}
 
 		private int level() {
@@ -217,6 +225,54 @@ public class InfoResources {
 			for (int i = 0; i < level(); i++) {
 				pw.write('\t');
 			}
+		}
+	}
+
+	private static class HtmlDumpNode extends RoutingTree<HtmlDumpNode> {
+		public HtmlDumpNode() {
+			super();
+		}
+
+		private HtmlDumpNode(HtmlDumpNode parent) {
+			super(parent);
+		}
+
+		@Override
+		protected HtmlDumpNode createChild() {
+			return new HtmlDumpNode(this);
+		}
+
+		public void dump(PrintWriter pw) {
+			if (!methodHandlers.isEmpty()) {
+				dumpHandlers(pw);
+			}
+			dumpSegments(pw);
+		}
+
+		private void dumpSegments(PrintWriter pw) {
+			pw.println("<dl class='segments'>");
+			for (Map.Entry<String, HtmlDumpNode> e : segmentMatches.entrySet()) {
+				pw.print("<dt>");
+				pw.print(e.getKey());
+				pw.print("</dt>");
+				pw.print("<dd>");
+				e.getValue().dumpHandlers(pw);
+				e.getValue().dumpSegments(pw);
+				pw.print("</dd>");
+			}
+			pw.println("</dl>");
+		}
+
+		private void dumpHandlers(PrintWriter pw) {
+			pw.println("<ul class='handlers'>");
+			for (Map.Entry<String, String> e : methodHandlers.entries()) {
+				pw.print("<li>");
+				pw.print(e.getKey());
+				pw.print(":");
+				pw.print(e.getValue());
+				pw.println("</li>");
+			}
+			pw.println("</ul>");
 		}
 	}
 }
