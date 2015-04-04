@@ -10,6 +10,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -31,9 +32,11 @@ import org.jboss.resteasy.spi.Registry;
 import com.google.common.base.Functions;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import com.google.common.io.Resources;
@@ -92,12 +95,10 @@ public class InfoResources {
 	@GET
 	@Path("routing")
 	@Produces("application/json")
-	public Map<String, List<InvokerDetail>> getRouting() {
+	public Multimap<String, InvokerDetail> getRouting() {
 		ResourceMethodRegistry rmr = (ResourceMethodRegistry) registry;
-		Map<String, List<InvokerDetail>> output = new TreeMap<>();
+		Multimap<String, InvokerDetail> output = ArrayListMultimap.create();
 		for (Map.Entry<String, List<ResourceInvoker>> e : rmr.getBounded().entrySet()) {
-			List<InvokerDetail> values = new ArrayList<>();
-			output.put(e.getKey(), values);
 			for (ResourceInvoker invoker : e.getValue()) {
 				Method method = invoker.getMethod();
 				InvokerDetail invokerInfo;
@@ -113,7 +114,7 @@ public class InfoResources {
 					invokerInfo = new InvokerDetail(method.getName(), method.getDeclaringClass().getName(), null, null,
 							null);
 				}
-				values.add(invokerInfo);
+				output.put(e.getKey(), invokerInfo);
 			}
 		}
 		return output;
@@ -141,7 +142,7 @@ public class InfoResources {
 	}
 
 	private <T extends RoutingTree<T>> T routingToTree(T root) {
-		for (Map.Entry<String, List<InvokerDetail>> e : getRouting().entrySet()) {
+		for (Map.Entry<String, Collection<InvokerDetail>> e : getRouting().asMap().entrySet()) {
 			Iterator<String> segmentIter = Splitter.on('/').omitEmptyStrings().split(e.getKey()).iterator();
 			T cursor = root;
 			while (segmentIter.hasNext()) {
