@@ -1,23 +1,5 @@
 package org.araqnid.stuff.test.integration;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.charset.Charset;
-
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.araqnid.stuff.test.integration.HttpClientMatchers.HttpContentMatcher;
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
-import org.hamcrest.TypeSafeDiagnosingMatcher;
-import org.junit.Ignore;
-import org.junit.Test;
-
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.io.CharSource;
-
 import static org.araqnid.stuff.JsonStructureMatchers.jsonAny;
 import static org.araqnid.stuff.JsonStructureMatchers.jsonObject;
 import static org.araqnid.stuff.JsonStructureMatchers.jsonString;
@@ -30,6 +12,21 @@ import static org.hamcrest.Matchers.any;
 import static org.hamcrest.Matchers.either;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+
+import java.io.IOException;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.util.EntityUtils;
+import org.araqnid.stuff.test.integration.HttpClientMatchers.HttpContentMatcher;
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.hamcrest.TypeSafeDiagnosingMatcher;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import com.google.common.collect.ImmutableMultimap;
 
 public class InfoResourcesIntegrationTest extends IntegrationTest {
 	@Test
@@ -118,6 +115,14 @@ public class InfoResourcesIntegrationTest extends IntegrationTest {
 		}
 	}
 
+	@Test
+	public void routing_resource_as_html() throws Exception {
+		try (CloseableHttpResponse response = doGetWithHeaders("/_api/info/routing",
+				ImmutableMultimap.of("Accept", "text/html"))) {
+			assertThat(response, is(allOf(ok(), responseWithHtmlContent(any(String.class)))));
+		}
+	}
+
 	private static Matcher<HttpResponse> responseWithNullEntity() {
 		return new TypeSafeDiagnosingMatcher<HttpResponse>() {
 			@Override
@@ -140,12 +145,16 @@ public class InfoResourcesIntegrationTest extends IntegrationTest {
 		return responseWithContent(new HttpContentMatcher<String>(equalTo("text/plain"), contentMatcher) {
 			@Override
 			protected String doParse(final HttpEntity item) throws IOException {
-				return new CharSource() {
-					@Override
-					public Reader openStream() throws IOException {
-						return new InputStreamReader(item.getContent(), Charset.forName("UTF-8"));
-					}
-				}.read();
+				return EntityUtils.toString(item);
+			}
+		});
+	}
+
+	public static Matcher<HttpResponse> responseWithHtmlContent(final Matcher<String> contentMatcher) {
+		return responseWithContent(new HttpContentMatcher<String>(equalTo("text/html"), contentMatcher) {
+			@Override
+			protected String doParse(final HttpEntity item) throws IOException {
+				return EntityUtils.toString(item);
 			}
 		});
 	}

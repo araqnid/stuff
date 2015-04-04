@@ -1,10 +1,16 @@
 package org.araqnid.stuff;
 
+import static java.util.stream.Collectors.joining;
+
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -16,19 +22,20 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.jboss.resteasy.core.ResourceInvoker;
 import org.jboss.resteasy.core.ResourceMethodInvoker;
 import org.jboss.resteasy.core.ResourceMethodRegistry;
 import org.jboss.resteasy.spi.Registry;
 
 import com.google.common.base.Functions;
-import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
-import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.TreeMultimap;
+import com.google.common.collect.Ordering;
+import com.google.common.collect.Sets;
+import com.google.common.io.Resources;
 
 @Path("_api/info")
 public class InfoResources {
@@ -126,7 +133,7 @@ public class InfoResources {
 	public String formatRouting() {
 		StringWriter sw = new StringWriter();
 		PrintWriter pw = new PrintWriter(sw);
-		pw.println("<html><head><title>Routing</title></head><body>");
+		pw.println("<html><head><title>Routing</title><style type='text/css'>" + stylesheet() + "</style></head><body>");
 		routingToTree(new HtmlDumpNode()).dump(pw);
 		pw.println("</body></html>");
 		return sw.toString();
@@ -140,9 +147,7 @@ public class InfoResources {
 				cursor = cursor.matchSegment(segmentIter.next());
 			}
 			for (InvokerDetail invoker : e.getValue()) {
-				for (String httpMethod : invoker.httpMethods) {
-					cursor.addHandler(httpMethod, invoker.resourceClass + "." + invoker.method);
-				}
+				cursor.addInvoker(invoker);
 			}
 		}
 		return root;
@@ -151,7 +156,7 @@ public class InfoResources {
 	private static abstract class RoutingTree<T extends RoutingTree<T>> {
 		protected final T parent;
 		protected final Map<String, T> segmentMatches = new TreeMap<>();
-		protected final Multimap<String, String> methodHandlers = TreeMultimap.create();
+		protected final Set<InvokerDetail> methodInvokers = Sets.newHashSet();
 
 		public RoutingTree() {
 			this.parent = null;
@@ -170,8 +175,8 @@ public class InfoResources {
 			return next;
 		}
 
-		public void addHandler(String httpMethod, String target) {
-			methodHandlers.put(httpMethod, target);
+		public void addInvoker(InvokerDetail invoker) {
+			methodInvokers.add(invoker);
 		}
 
 		protected abstract T createChild();
@@ -192,7 +197,7 @@ public class InfoResources {
 		}
 
 		public void dump(PrintWriter pw) {
-			if (!methodHandlers.isEmpty()) {
+			if (!methodInvokers.isEmpty()) {
 				dumpHandlers(pw);
 				pw.println("");
 			}
@@ -210,10 +215,14 @@ public class InfoResources {
 		}
 
 		private void dumpHandlers(PrintWriter pw) {
-			if (methodHandlers.isEmpty()) return;
-			pw.append(" = ").append(
-					Joiner.on(' ').join(
-							Collections2.transform(methodHandlers.entries(), e -> e.getKey() + ":" + e.getValue())));
+			if (methodInvokers.isEmpty()) return;
+			String handlers = methodInvokers.stream()
+				.sorted(invokerOrdering)
+				.<Pair<String, InvokerDetail>> flatMap(invoker -> invoker.httpMethods.stream()
+					  				.map(method -> Pair.of(method, invoker)))
+				.map(pair -> pair.getLeft() + ":" + pair.getRight().resourceClass + "." + pair.getRight().method)
+				.collect(joining(" "));
+			pw.append(" = ").append(handlers);
 		}
 
 		private int level() {
@@ -243,9 +252,7 @@ public class InfoResources {
 		}
 
 		public void dump(PrintWriter pw) {
-			if (!methodHandlers.isEmpty()) {
-				dumpHandlers(pw);
-			}
+			dumpHandlers(pw);
 			dumpSegments(pw);
 		}
 
@@ -264,15 +271,36 @@ public class InfoResources {
 		}
 
 		private void dumpHandlers(PrintWriter pw) {
+			if (methodInvokers.isEmpty()) return;
 			pw.println("<ul class='handlers'>");
-			for (Map.Entry<String, String> e : methodHandlers.entries()) {
-				pw.print("<li>");
-				pw.print(e.getKey());
-				pw.print(":");
-				pw.print(e.getValue());
-				pw.println("</li>");
+			List<InvokerDetail> sortedInvokers = new ArrayList<>(methodInvokers);
+			Collections.sort(sortedInvokers, invokerOrdering);
+			for (InvokerDetail invoker : sortedInvokers) {
+				for (String httpMethod : invoker.httpMethods) {
+					pw.print("<li>");
+					pw.print(httpMethod);
+					pw.print(":");
+					pw.print(invoker.resourceClass);
+					pw.print('.');
+					pw.print(invoker.method);
+					pw.println("</li>");
+				}
 			}
 			pw.println("</ul>");
 		}
 	}
+
+	private static String stylesheet() {
+		URL resource = Resources.getResource(InfoResources.class, "routing.css");
+		try {
+			return Resources.asCharSource(resource, StandardCharsets.UTF_8).read();
+		} catch (IOException e) {
+			throw new IllegalStateException("Unable to read stylesheet resource: " + resource, e);
+		}
+	}
+
+	private static final Ordering<InvokerDetail> invokerOrdering = Ordering.compound(ImmutableList.of(
+			(left, right) -> left.resourceClass.compareTo(right.resourceClass),
+			(left, right) -> left.method.compareTo(right.method)
+			));
 }

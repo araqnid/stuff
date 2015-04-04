@@ -1,0 +1,18 @@
+dl {
+  margin: 0px;
+}
+
+dt {
+}
+
+dd {
+}
+
+ul {
+  margin: 0px;
+  list-style-type: none;
+}
+
+li {
+  display: inline;
+}
