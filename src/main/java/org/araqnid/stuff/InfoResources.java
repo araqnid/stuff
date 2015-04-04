@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -22,13 +23,13 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.jboss.resteasy.core.ResourceInvoker;
 import org.jboss.resteasy.core.ResourceMethodInvoker;
 import org.jboss.resteasy.core.ResourceMethodRegistry;
 import org.jboss.resteasy.spi.Registry;
 
 import com.google.common.base.Functions;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -218,9 +219,9 @@ public class InfoResources {
 			if (methodInvokers.isEmpty()) return;
 			String handlers = methodInvokers.stream()
 				.sorted(invokerOrdering)
-				.<Pair<String, InvokerDetail>> flatMap(invoker -> invoker.httpMethods.stream()
-					  				.map(method -> Pair.of(method, invoker)))
-				.map(pair -> pair.getLeft() + ":" + pair.getRight().resourceClass + "." + pair.getRight().method)
+				.<MethodInvokerPair> flatMap(invoker -> invoker.httpMethods.stream()
+										.map(method -> MethodInvokerPair.of(method, invoker)))
+				.map(pair -> pair.method + ":" + pair.invoker.resourceClass + "." + pair.invoker.method)
 				.collect(joining(" "));
 			pw.append(" = ").append(handlers);
 		}
@@ -321,4 +322,35 @@ public class InfoResources {
 			(left, right) -> left.resourceClass.compareTo(right.resourceClass),
 			(left, right) -> left.method.compareTo(right.method)
 			));
+
+	private static class MethodInvokerPair {
+		public final String method;
+		public final InvokerDetail invoker;
+
+		private MethodInvokerPair(String method, InvokerDetail invoker) {
+			this.method = method;
+			this.invoker = invoker;
+		}
+
+		public static MethodInvokerPair of(String method, InvokerDetail invoker) {
+			return new MethodInvokerPair(method, invoker);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(method, invoker);
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			return obj instanceof MethodInvokerPair
+					&& Objects.equals(method, ((MethodInvokerPair) obj).method)
+					&& Objects.equals(invoker, ((MethodInvokerPair) obj).invoker);
+		}
+
+		@Override
+		public String toString() {
+			return MoreObjects.toStringHelper(this).addValue(method).addValue(invoker).toString();
+		}
+	}
 }
