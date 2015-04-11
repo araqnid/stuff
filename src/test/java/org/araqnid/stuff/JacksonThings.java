@@ -24,6 +24,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonGenerator.Feature;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -244,8 +245,8 @@ public class JacksonThings {
 	@Test
 	public void object_reader_can_be_built_specifying_parameterised_type() throws Exception {
 		mapper.registerModule(new GuavaModule());
-		JavaType typeToken = mapper.getTypeFactory().constructParametrizedType(ImmutableSet.class, ImmutableSet.class,
-				Long.class);
+		TypeReference<ImmutableSet<Long>> typeToken = new TypeReference<ImmutableSet<Long>>() {
+		};
 		assertThat(mapper.reader(typeToken).readValue("[1, 2, 3]"), equalTo(ImmutableSet.of(1L, 2L, 3L)));
 	}
 
