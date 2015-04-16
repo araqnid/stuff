@@ -4,16 +4,19 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
+import org.hamcrest.Matchers;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.hamcrest.core.StringContains;
@@ -50,7 +53,9 @@ import com.fasterxml.jackson.databind.ser.Serializers;
 import com.fasterxml.jackson.databind.ser.std.StdScalarSerializer;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jsonorg.JsonOrgModule;
+import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
 import com.fasterxml.jackson.module.guice.ObjectMapperModule;
+import com.fasterxml.jackson.module.mrbean.MrBeanModule;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -67,6 +72,7 @@ import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.fail;
@@ -389,6 +395,20 @@ public class JacksonThings {
 		assertThat(mapper.writeValueAsString(new EarthCoords(49.9, -0.01)), equivalentTo("{ lat: 49.9, long: -0.01 }"));
 		assertThat(mapper.readValue("{ lat: 49.9, long: -0.01 }", EarthCoords.class), equalTo(new EarthCoords(49.9,
 				-0.01)));
+	}
+
+	@Test
+	public void bean_implementation_can_be_materialised_automagically() throws Exception {
+		mapper.registerModule(new MrBeanModule());
+		mapper.registerModule(new JSR310Module());
+		mapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
+		mapper.enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES);
+		assertThat(mapper.readValue(
+				"{ id: '82eee21e-4754-461c-a1b5-59fb883f4ea3', timestamp: '2015-04-17T00:45:00Z', name: 'Test' }",
+				SimpleEventInterface.class), Matchers.allOf(
+				hasProperty("id", equalTo(UUID.fromString("82eee21e-4754-461c-a1b5-59fb883f4ea3"))),
+				hasProperty("timestamp", equalTo(Instant.parse("2015-04-17T00:45:00Z"))),
+				hasProperty("name", equalTo("Test"))));
 	}
 
 	public static class Data {
@@ -723,5 +743,13 @@ public class JacksonThings {
 
 		EarthCoordsMixin(@JsonProperty("lat") double latitude, @JsonProperty("long") double longitude) {
 		}
+	}
+
+	public interface SimpleEventInterface {
+		UUID getId();
+
+		Instant getTimestamp();
+
+		String getName();
 	}
 }
