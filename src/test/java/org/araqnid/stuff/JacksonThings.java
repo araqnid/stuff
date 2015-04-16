@@ -1,17 +1,5 @@
 package org.araqnid.stuff;
 
-import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentJsonNode;
-import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentTo;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.closeTo;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.sameInstance;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigDecimal;
@@ -73,6 +61,18 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+
+import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentJsonNode;
+import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.closeTo;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 public class JacksonThings {
 	private final ObjectMapper mapper = new ObjectMapper();
@@ -322,30 +322,31 @@ public class JacksonThings {
 			public void setupModule(SetupContext context) {
 				context.addDeserializers(new Deserializers.Base() {
 					@Override
-					public JsonDeserializer<?> findBeanDeserializer(JavaType type, DeserializationConfig config,
+					public JsonDeserializer<?> findBeanDeserializer(JavaType type,
+							DeserializationConfig config,
 							BeanDescription beanDesc) throws JsonMappingException {
 						if (type.getRawClass() == Either.class) {
 							JavaType[] types = config.getTypeFactory().findTypeParameters(type, Either.class);
-							if (types[0].getRawClass() == Data.class && types[1].getRawClass() == SimpleData.class) {
-								return new StdNodeBasedDeserializer<Either<Data, SimpleData>>(type) {
-									@Override
-									public Either<Data, SimpleData> convert(JsonNode root, DeserializationContext ctxt)
-											throws IOException {
-										JsonNode typeNode = root.get("type");
-										if (typeNode == null) throw JsonMappingException.from(ctxt.getParser(), "No type field");
-										String type = typeNode.asText();
-										if (type.equals("data")) {
-											return Either.left(new Data(root.get("value").asDouble()));
-										}
-										else if (type.equals("simpledata")) {
-											return Either.right(new SimpleData(root.get("value").asDouble()));
-										}
-										else {
-											throw JsonMappingException.from(ctxt.getParser(), "Unhandled type: " + type);
-										}
+							if (types[0].getRawClass() == Data.class && types[1].getRawClass() == SimpleData.class) { return new StdNodeBasedDeserializer<Either<Data, SimpleData>>(
+									type) {
+								@Override
+								public Either<Data, SimpleData> convert(JsonNode root, DeserializationContext ctxt)
+										throws IOException {
+									JsonNode typeNode = root.get("type");
+									if (typeNode == null)
+										throw JsonMappingException.from(ctxt.getParser(), "No type field");
+									String type = typeNode.asText();
+									if (type.equals("data")) {
+										return Either.left(new Data(root.get("value").asDouble()));
 									}
-								};
-							}
+									else if (type.equals("simpledata")) {
+										return Either.right(new SimpleData(root.get("value").asDouble()));
+									}
+									else {
+										throw JsonMappingException.from(ctxt.getParser(), "Unhandled type: " + type);
+									}
+								}
+							}; }
 						}
 						return super.findBeanDeserializer(type, config, beanDesc);
 					}
@@ -354,7 +355,8 @@ public class JacksonThings {
 		});
 		mapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
 		mapper.enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES);
-		ObjectReader reader = mapper.reader(new TypeReference<Either<Data, SimpleData>>(){});
+		ObjectReader reader = mapper.reader(new TypeReference<Either<Data, SimpleData>>() {
+		});
 		assertThat(reader.readValue("{ type: 'data', value: 3.14 }"), isLeft(equalTo(new Data(3.14))));
 		assertThat(reader.readValue("{ type: 'simpledata', value: 3.14 }"), isRight(equalTo(new SimpleData(3.14))));
 		try {
@@ -369,19 +371,24 @@ public class JacksonThings {
 		} catch (JsonMappingException e) {
 			assertThat(e.getMessage(), StringContains.containsString("No type field"));
 		}
-		assertThat(mapper.readValue("[ { type: 'data', value: 3.14 }, { type: 'simpledata', value: 3.14 } ]", new TypeReference<List<Either<Data,SimpleData>>>(){}),
-				IsIterableContainingInOrder.<Either<Data,SimpleData>> contains(isLeft(equalTo(new Data(3.14))), isRight(equalTo(new SimpleData(3.14)))));
+		assertThat(mapper.readValue("[ { type: 'data', value: 3.14 }, { type: 'simpledata', value: 3.14 } ]",
+				new TypeReference<List<Either<Data, SimpleData>>>() {
+				}), IsIterableContainingInOrder.<Either<Data, SimpleData>> contains(isLeft(equalTo(new Data(3.14))),
+				isRight(equalTo(new SimpleData(3.14)))));
 	}
 
 	@SuppressWarnings("serial")
 	@Test
 	public void annotations_can_be_kept_separate_with_mixins() throws Exception {
-		mapper.registerModule(new SimpleModule() {{
-			setMixInAnnotation(EarthCoords.class, EarthCoordsMixin.class);
-		}});
+		mapper.registerModule(new SimpleModule() {
+			{
+				setMixInAnnotation(EarthCoords.class, EarthCoordsMixin.class);
+			}
+		});
 		mapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
 		assertThat(mapper.writeValueAsString(new EarthCoords(49.9, -0.01)), equivalentTo("{ lat: 49.9, long: -0.01 }"));
-		assertThat(mapper.readValue("{ lat: 49.9, long: -0.01 }", EarthCoords.class), equalTo(new EarthCoords(49.9, -0.01)));
+		assertThat(mapper.readValue("{ lat: 49.9, long: -0.01 }", EarthCoords.class), equalTo(new EarthCoords(49.9,
+				-0.01)));
 	}
 
 	public static class Data {
@@ -560,12 +567,17 @@ public class JacksonThings {
 
 	public interface Either<L, R> {
 		L left();
+
 		R right();
+
 		boolean isLeft();
+
 		boolean isRight();
+
 		static <L, R> Either<L, R> left(L value) {
 			return new Left<L, R>(value);
 		}
+
 		static <L, R> Either<L, R> right(R value) {
 			return new Right<L, R>(value);
 		}
@@ -573,21 +585,31 @@ public class JacksonThings {
 
 	public static final class Left<L, R> implements Either<L, R> {
 		private final L value;
+
 		public Left(L value) {
 			this.value = value;
 		}
+
+		@Override
 		public L left() {
 			return value;
 		}
+
+		@Override
 		public boolean isLeft() {
 			return true;
 		}
+
+		@Override
 		public R right() {
 			throw new IllegalStateException("right() called on left value");
 		}
+
+		@Override
 		public boolean isRight() {
 			return false;
 		}
+
 		@Override
 		public String toString() {
 			return "Left:" + value;
@@ -596,21 +618,31 @@ public class JacksonThings {
 
 	public static final class Right<L, R> implements Either<L, R> {
 		private final R value;
+
 		public Right(R value) {
 			this.value = value;
 		}
+
+		@Override
 		public L left() {
 			throw new IllegalStateException("left() called on right value");
 		}
+
+		@Override
 		public boolean isLeft() {
 			return false;
 		}
+
+		@Override
 		public R right() {
 			return value;
 		}
+
+		@Override
 		public boolean isRight() {
 			return true;
 		}
+
 		@Override
 		public String toString() {
 			return "Right:" + value;
@@ -618,7 +650,7 @@ public class JacksonThings {
 	}
 
 	public static <L, R> Matcher<Either<L, R>> isLeft(Matcher<L> valueMatcher) {
-		return new TypeSafeDiagnosingMatcher<JacksonThings.Either<L,R>>() {
+		return new TypeSafeDiagnosingMatcher<JacksonThings.Either<L, R>>() {
 			@Override
 			protected boolean matchesSafely(Either<L, R> item, Description mismatchDescription) {
 				if (item.isRight()) {
@@ -629,6 +661,7 @@ public class JacksonThings {
 				valueMatcher.describeMismatch(item.left(), mismatchDescription);
 				return valueMatcher.matches(item.left());
 			}
+
 			@Override
 			public void describeTo(Description description) {
 				description.appendText("left ").appendDescriptionOf(valueMatcher);
@@ -637,7 +670,7 @@ public class JacksonThings {
 	}
 
 	public static <L, R> Matcher<Either<L, R>> isRight(Matcher<R> valueMatcher) {
-		return new TypeSafeDiagnosingMatcher<JacksonThings.Either<L,R>>() {
+		return new TypeSafeDiagnosingMatcher<JacksonThings.Either<L, R>>() {
 			@Override
 			protected boolean matchesSafely(Either<L, R> item, Description mismatchDescription) {
 				if (item.isLeft()) {
@@ -648,6 +681,7 @@ public class JacksonThings {
 				valueMatcher.describeMismatch(item.right(), mismatchDescription);
 				return valueMatcher.matches(item.right());
 			}
+
 			@Override
 			public void describeTo(Description description) {
 				description.appendText("right ").appendDescriptionOf(valueMatcher);
@@ -671,23 +705,23 @@ public class JacksonThings {
 
 		@Override
 		public boolean equals(Object obj) {
-			return obj instanceof EarthCoords &&
-					(((EarthCoords) obj).latitude) == latitude &&
-					(((EarthCoords) obj).longitude) == longitude;
+			return obj instanceof EarthCoords && (((EarthCoords) obj).latitude) == latitude
+					&& (((EarthCoords) obj).longitude) == longitude;
 		}
 
 		@Override
 		public String toString() {
-			return MoreObjects.toStringHelper(this)
-					.add("lat", latitude)
-					.add("long", longitude)
-					.toString();
+			return MoreObjects.toStringHelper(this).add("lat", latitude).add("long", longitude).toString();
 		}
 	}
 
 	public static abstract class EarthCoordsMixin {
-		@JsonProperty("lat") public double latitude;
-		@JsonProperty("long") public double longitude;
-		EarthCoordsMixin(@JsonProperty("lat") double latitude, @JsonProperty("long") double longitude) { }
+		@JsonProperty("lat")
+		public double latitude;
+		@JsonProperty("long")
+		public double longitude;
+
+		EarthCoordsMixin(@JsonProperty("lat") double latitude, @JsonProperty("long") double longitude) {
+		}
 	}
 }
