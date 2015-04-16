@@ -1,5 +1,17 @@
 package org.araqnid.stuff;
 
+import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentJsonNode;
+import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.closeTo;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigDecimal;
@@ -12,6 +24,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.hamcrest.TypeSafeDiagnosingMatcher;
+import org.hamcrest.collection.IsIterableContainingInOrder;
+import org.hamcrest.core.StringContains;
 import org.json.JSONObject;
 import org.junit.Test;
 
@@ -26,14 +43,20 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.BeanDescription;
+import com.fasterxml.jackson.databind.DeserializationConfig;
+import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationConfig;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.deser.Deserializers;
+import com.fasterxml.jackson.databind.deser.std.StdNodeBasedDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.Serializers;
 import com.fasterxml.jackson.databind.ser.std.StdScalarSerializer;
@@ -50,17 +73,6 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-
-import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentJsonNode;
-import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentTo;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.closeTo;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.sameInstance;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 
 public class JacksonThings {
 	private final ObjectMapper mapper = new ObjectMapper();
@@ -302,6 +314,65 @@ public class JacksonThings {
 						+ new BigDecimal(6.78) + "' }"));
 	}
 
+	@SuppressWarnings({ "serial", "unchecked" })
+	@Test
+	public void register_deserializer_from_tree_model() throws Exception {
+		mapper.registerModule(new SimpleModule() {
+			@Override
+			public void setupModule(SetupContext context) {
+				context.addDeserializers(new Deserializers.Base() {
+					@Override
+					public JsonDeserializer<?> findBeanDeserializer(JavaType type, DeserializationConfig config,
+							BeanDescription beanDesc) throws JsonMappingException {
+						if (type.getRawClass() == Either.class) {
+							JavaType[] types = config.getTypeFactory().findTypeParameters(type, Either.class);
+							if (types[0].getRawClass() == Data.class && types[1].getRawClass() == SimpleData.class) {
+								return new StdNodeBasedDeserializer<Either<Data, SimpleData>>(type) {
+									@Override
+									public Either<Data, SimpleData> convert(JsonNode root, DeserializationContext ctxt)
+											throws IOException {
+										JsonNode typeNode = root.get("type");
+										if (typeNode == null) throw JsonMappingException.from(ctxt.getParser(), "No type field");
+										String type = typeNode.asText();
+										if (type.equals("data")) {
+											return Either.left(new Data(root.get("value").asDouble()));
+										}
+										else if (type.equals("simpledata")) {
+											return Either.right(new SimpleData(root.get("value").asDouble()));
+										}
+										else {
+											throw JsonMappingException.from(ctxt.getParser(), "Unhandled type: " + type);
+										}
+									}
+								};
+							}
+						}
+						return super.findBeanDeserializer(type, config, beanDesc);
+					}
+				});
+			}
+		});
+		mapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
+		mapper.enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES);
+		ObjectReader reader = mapper.reader(new TypeReference<Either<Data, SimpleData>>(){});
+		assertThat(reader.readValue("{ type: 'data', value: 3.14 }"), isLeft(equalTo(new Data(3.14))));
+		assertThat(reader.readValue("{ type: 'simpledata', value: 3.14 }"), isRight(equalTo(new SimpleData(3.14))));
+		try {
+			reader.readValue("{ type: 'otherdata', value: 3.14 }");
+			fail();
+		} catch (JsonMappingException e) {
+			assertThat(e.getMessage(), StringContains.containsString("otherdata"));
+		}
+		try {
+			reader.readValue("{}");
+			fail();
+		} catch (JsonMappingException e) {
+			assertThat(e.getMessage(), StringContains.containsString("No type field"));
+		}
+		assertThat(mapper.readValue("[ { type: 'data', value: 3.14 }, { type: 'simpledata', value: 3.14 } ]", new TypeReference<List<Either<Data,SimpleData>>>(){}),
+				IsIterableContainingInOrder.<Either<Data,SimpleData>> contains(isLeft(equalTo(new Data(3.14))), isRight(equalTo(new SimpleData(3.14)))));
+	}
+
 	public static class Data {
 		@JsonProperty("score")
 		public final double quux;
@@ -345,7 +416,7 @@ public class JacksonThings {
 
 		@Override
 		public boolean equals(Object obj) {
-			return obj instanceof Data && Objects.equals(quux, ((Data) obj).quux);
+			return obj instanceof SimpleData && Objects.equals(quux, ((SimpleData) obj).quux);
 		}
 
 		@Override
@@ -474,5 +545,102 @@ public class JacksonThings {
 			public String description;
 			public BigDecimal price;
 		}
+	}
+
+	public interface Either<L, R> {
+		L left();
+		R right();
+		boolean isLeft();
+		boolean isRight();
+		static <L, R> Either<L, R> left(L value) {
+			return new Left<L, R>(value);
+		}
+		static <L, R> Either<L, R> right(R value) {
+			return new Right<L, R>(value);
+		}
+	}
+
+	public static final class Left<L, R> implements Either<L, R> {
+		private final L value;
+		public Left(L value) {
+			this.value = value;
+		}
+		public L left() {
+			return value;
+		}
+		public boolean isLeft() {
+			return true;
+		}
+		public R right() {
+			throw new IllegalStateException("right() called on left value");
+		}
+		public boolean isRight() {
+			return false;
+		}
+		@Override
+		public String toString() {
+			return "Left:" + value;
+		}
+	}
+
+	public static final class Right<L, R> implements Either<L, R> {
+		private final R value;
+		public Right(R value) {
+			this.value = value;
+		}
+		public L left() {
+			throw new IllegalStateException("left() called on right value");
+		}
+		public boolean isLeft() {
+			return false;
+		}
+		public R right() {
+			return value;
+		}
+		public boolean isRight() {
+			return true;
+		}
+		@Override
+		public String toString() {
+			return "Right:" + value;
+		}
+	}
+
+	public static <L, R> Matcher<Either<L, R>> isLeft(Matcher<L> valueMatcher) {
+		return new TypeSafeDiagnosingMatcher<JacksonThings.Either<L,R>>() {
+			@Override
+			protected boolean matchesSafely(Either<L, R> item, Description mismatchDescription) {
+				if (item.isRight()) {
+					mismatchDescription.appendText("was right: ").appendValue(item.right());
+					return false;
+				}
+				mismatchDescription.appendText("left value ");
+				valueMatcher.describeMismatch(item.left(), mismatchDescription);
+				return valueMatcher.matches(item.left());
+			}
+			@Override
+			public void describeTo(Description description) {
+				description.appendText("left ").appendDescriptionOf(valueMatcher);
+			}
+		};
+	}
+
+	public static <L, R> Matcher<Either<L, R>> isRight(Matcher<R> valueMatcher) {
+		return new TypeSafeDiagnosingMatcher<JacksonThings.Either<L,R>>() {
+			@Override
+			protected boolean matchesSafely(Either<L, R> item, Description mismatchDescription) {
+				if (item.isLeft()) {
+					mismatchDescription.appendText("was left: ").appendValue(item.right());
+					return false;
+				}
+				mismatchDescription.appendText("right value ");
+				valueMatcher.describeMismatch(item.right(), mismatchDescription);
+				return valueMatcher.matches(item.right());
+			}
+			@Override
+			public void describeTo(Description description) {
+				description.appendText("right ").appendDescriptionOf(valueMatcher);
+			}
+		};
 	}
 }
