@@ -19,6 +19,12 @@ import redis.clients.jedis.Jedis;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import com.fasterxml.jackson.datatype.jdk7.Jdk7Module;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
+import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
+import com.fasterxml.jackson.module.guice.ObjectMapperModule;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
 import com.google.inject.AbstractModule;
@@ -39,7 +45,15 @@ public final class CoreModule extends AbstractModule {
 		install(new RawBeanstalkModule());
 		install(new WorkQueueModule());
 		install(new SynchronousActivityEventsModule());
-		install(new JacksonModule());
+		install(new ObjectMapperModule()
+				.registerModule(GuavaModule.class)
+				.registerModule(NamingJacksonModule.class)
+				.registerModule(Jdk7Module.class)
+				.registerModule(Jdk8Module.class)
+				.registerModule(JSR310Module.class)
+				.registerModule(AfterburnerModule.class)
+				.registerModule(TextualTimestampsModule.class)
+				.in(Singleton.class));
 		install(new SpooledEventsModule());
 		bind(MerlotRepository.class);
 		bind(Clock.class).toInstance(Clock.systemDefaultZone());
