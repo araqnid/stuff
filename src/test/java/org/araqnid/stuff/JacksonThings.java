@@ -373,6 +373,17 @@ public class JacksonThings {
 				IsIterableContainingInOrder.<Either<Data,SimpleData>> contains(isLeft(equalTo(new Data(3.14))), isRight(equalTo(new SimpleData(3.14)))));
 	}
 
+	@SuppressWarnings("serial")
+	@Test
+	public void annotations_can_be_kept_separate_with_mixins() throws Exception {
+		mapper.registerModule(new SimpleModule() {{
+			setMixInAnnotation(EarthCoords.class, EarthCoordsMixin.class);
+		}});
+		mapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
+		assertThat(mapper.writeValueAsString(new EarthCoords(49.9, -0.01)), equivalentTo("{ lat: 49.9, long: -0.01 }"));
+		assertThat(mapper.readValue("{ lat: 49.9, long: -0.01 }", EarthCoords.class), equalTo(new EarthCoords(49.9, -0.01)));
+	}
+
 	public static class Data {
 		@JsonProperty("score")
 		public final double quux;
@@ -642,5 +653,41 @@ public class JacksonThings {
 				description.appendText("right ").appendDescriptionOf(valueMatcher);
 			}
 		};
+	}
+
+	public static final class EarthCoords {
+		public final double latitude;
+		public final double longitude;
+
+		public EarthCoords(double latitude, double longitude) {
+			this.latitude = latitude;
+			this.longitude = longitude;
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(latitude, longitude);
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			return obj instanceof EarthCoords &&
+					(((EarthCoords) obj).latitude) == latitude &&
+					(((EarthCoords) obj).longitude) == longitude;
+		}
+
+		@Override
+		public String toString() {
+			return MoreObjects.toStringHelper(this)
+					.add("lat", latitude)
+					.add("long", longitude)
+					.toString();
+		}
+	}
+
+	public static abstract class EarthCoordsMixin {
+		@JsonProperty("lat") public double latitude;
+		@JsonProperty("long") public double longitude;
+		EarthCoordsMixin(@JsonProperty("lat") double latitude, @JsonProperty("long") double longitude) { }
 	}
 }
