@@ -26,6 +26,8 @@ import org.junit.Test;
 import com.fasterxml.jackson.annotation.JacksonInject;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -411,6 +413,23 @@ public class JacksonThings {
 				hasProperty("name", equalTo("Test"))));
 	}
 
+	@Test
+	public void deserializes_polymorphic_event_structure() throws Exception {
+		mapper.registerModule(new JSR310Module());
+		mapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
+		mapper.enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES);
+		ObjectReader reader = mapper.reader(new TypeReference<Event<?>>() {
+		});
+		assertThat(reader.readValue("{ id: '82eee21e-4754-461c-a1b5-59fb883f4ea3', timestamp: '2015-04-17T00:45:00Z',"
+				+ " type: 'this-event', data: { content: 'foo' } }"), Matchers.<Event<?>> allOf(
+				eventId(equalTo(UUID.fromString("82eee21e-4754-461c-a1b5-59fb883f4ea3"))),
+				eventTimestamp(equalTo(Instant.parse("2015-04-17T00:45:00Z"))), event(thisEvent(equalTo("foo")))));
+		assertThat(reader.readValue("{ id: '82eee21e-4754-461c-a1b5-59fb883f4ea3', timestamp: '2015-04-17T00:45:00Z',"
+				+ " type: 'that-event', data: { value: 1234 } }"), Matchers.<Event<?>> allOf(
+				eventId(equalTo(UUID.fromString("82eee21e-4754-461c-a1b5-59fb883f4ea3"))),
+				eventTimestamp(equalTo(Instant.parse("2015-04-17T00:45:00Z"))), event(thatEvent(equalTo(1234L)))));
+	}
+
 	public static class Data {
 		@JsonProperty("score")
 		public final double quux;
@@ -751,5 +770,125 @@ public class JacksonThings {
 		Instant getTimestamp();
 
 		String getName();
+	}
+
+	public static abstract class EventPayload {
+	}
+
+	public static class ThisEvent extends EventPayload {
+		public final String content;
+
+		public ThisEvent(@JsonProperty("content") String content) {
+			this.content = content;
+		}
+
+		@Override
+		public String toString() {
+			return MoreObjects.toStringHelper(this).add("content", content).toString();
+		}
+	}
+
+	public static class ThatEvent extends EventPayload {
+		public final long value;
+
+		public ThatEvent(@JsonProperty("value") long value) {
+			this.value = value;
+		}
+
+		@Override
+		public String toString() {
+			return MoreObjects.toStringHelper(this).add("value", value).toString();
+		}
+	}
+
+	public static class Event<T extends EventPayload> {
+		public UUID id;
+		public Instant timestamp;
+		@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXTERNAL_PROPERTY, property = "type")
+		@JsonProperty("data")
+		@JsonSubTypes({ @JsonSubTypes.Type(name = "this-event", value = ThisEvent.class),
+				@JsonSubTypes.Type(name = "that-event", value = ThatEvent.class) })
+		public T payload;
+
+		@Override
+		public String toString() {
+			return MoreObjects.toStringHelper(this).add("id", id).add("timestamp", timestamp).add("payload", payload)
+					.toString();
+		}
+	}
+
+	public static Matcher<Event<?>> eventId(Matcher<UUID> idMatcher) {
+		return new TypeSafeDiagnosingMatcher<Event<?>>() {
+			@Override
+			protected boolean matchesSafely(Event<?> item, Description mismatchDescription) {
+				idMatcher.describeMismatch(item.id, mismatchDescription);
+				return idMatcher.matches(item.id);
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendText("id ").appendDescriptionOf(idMatcher);
+			}
+		};
+	}
+
+	public static Matcher<Event<?>> eventTimestamp(Matcher<Instant> timestampMatcher) {
+		return new TypeSafeDiagnosingMatcher<Event<?>>() {
+			@Override
+			protected boolean matchesSafely(Event<?> item, Description mismatchDescription) {
+				timestampMatcher.describeMismatch(item.timestamp, mismatchDescription);
+				return timestampMatcher.matches(item.timestamp);
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendText("timestamp ").appendDescriptionOf(timestampMatcher);
+			}
+		};
+	}
+
+	public static Matcher<Event<?>> event(Matcher<? extends EventPayload> payloadMatcher) {
+		return new TypeSafeDiagnosingMatcher<Event<?>>() {
+			@Override
+			protected boolean matchesSafely(Event<?> item, Description mismatchDescription) {
+				payloadMatcher.describeMismatch(item.payload, mismatchDescription);
+				return payloadMatcher.matches(item.payload);
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendText("event with payload ").appendDescriptionOf(payloadMatcher);
+			}
+		};
+	}
+
+	public static Matcher<ThisEvent> thisEvent(Matcher<String> contentMatcher) {
+		return new TypeSafeDiagnosingMatcher<ThisEvent>() {
+			@Override
+			protected boolean matchesSafely(ThisEvent item, Description mismatchDescription) {
+				contentMatcher.describeMismatch(item.content, mismatchDescription);
+				return contentMatcher.matches(item.content);
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendDescriptionOf(contentMatcher);
+			}
+		};
+	}
+
+	public static Matcher<ThatEvent> thatEvent(Matcher<Long> valueMatcher) {
+		return new TypeSafeDiagnosingMatcher<ThatEvent>() {
+			@Override
+			protected boolean matchesSafely(ThatEvent item, Description mismatchDescription) {
+				valueMatcher.describeMismatch(item.value, mismatchDescription);
+				return valueMatcher.matches(item.value);
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendDescriptionOf(valueMatcher);
+			}
+		};
 	}
 }
