@@ -61,7 +61,7 @@ dependencies {
     compile 'org.eclipse.jetty:apache-jsp:' + jettyVersion
     compile 'org.eclipse.jetty:apache-jstl:' + jettyVersion
     compile 'com.surftools:BeanstalkClient:1.4.6'
-    compile 'redis.clients:jedis:2.7.0'
+    compile 'redis.clients:jedis:2.7.2'
     compile 'com.google.code.findbugs:jsr305:3.0.0'
     compile 'org.hibernate:hibernate-core:' + hibernateVersion
     compile 'org.hibernate:hibernate-entitymanager:' + hibernateVersion
