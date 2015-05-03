@@ -343,15 +343,15 @@ public class JacksonThings {
 									JsonNode typeNode = root.get("type");
 									if (typeNode == null)
 										throw JsonMappingException.from(ctxt.getParser(), "No type field");
-									String type = typeNode.asText();
-									if (type.equals("data")) {
+									String typeString = typeNode.asText();
+									if (typeString.equals("data")) {
 										return Either.left(new Data(root.get("value").asDouble()));
 									}
-									else if (type.equals("simpledata")) {
+									else if (typeString.equals("simpledata")) {
 										return Either.right(new SimpleData(root.get("value").asDouble()));
 									}
 									else {
-										throw JsonMappingException.from(ctxt.getParser(), "Unhandled type: " + type);
+										throw JsonMappingException.from(ctxt.getParser(), "Unhandled type: " + typeString);
 									}
 								}
 							}; }
