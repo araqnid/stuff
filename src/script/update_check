@@ -1,0 +1,47 @@
+#!/bin/sh
+
+maven_central_uri="http://repo1.maven.org/maven2"
+#maven_central_uri="http://repo/nexus/content/groups/public"
+#maven_central_uri="http://repo/nexus/content/repositories/central"
+
+latest_version() {
+    perl -le 'sub compare_versions { my @a = decompose(shift); my @b = decompose(shift); my $len = @a > @b ? @a : @b; for my $i (0..$len) { $n = compare_elt($a[$i], $b[$i]); $n != 0 and return $n } return 0 } sub decompose { my $str = shift; chomp $str; return split(/\./, $str) } sub compare_elt { my $a = shift || 0; my $b = shift || 0; $a =~ /\D/ || $b =~ /\D/ ? $a cmp $b : $a <=> $b } print reverse sort { compare_versions($a, $b) } <>' | head -n 1
+}
+
+check_for_updates() {
+    groupId="$1"
+    artifactId="$2"
+    current_version="$3"
+    version_pattern="$4"
+
+    metadata_uri="$maven_central_uri/$(echo $groupId | tr '.' '/')/$artifactId/maven-metadata.xml"
+
+    if [ -n "$version_pattern" ]; then
+	latest_version="$(curl --silent "$metadata_uri" | xmlstarlet sel -t -v /metadata/versioning/versions/version | grep -E "$version_pattern" | latest_version)"
+    else
+	latest_version="$(curl --silent "$metadata_uri" | xmlstarlet sel -t -v /metadata/versioning/latest)"
+    fi
+
+    if [ "$latest_version" != "$current_version" ]; then
+	echo "$groupId > $artifactId"
+	echo "  current: $current_version"
+	echo "  latest:  $latest_version"
+    fi
+}
+
+check_for_updates ch.qos.logback              logback-classic  1.1.3
+check_for_updates com.fasterxml.jackson.core  jackson-core     2.5.3
+check_for_updates com.google.guava            guava            18.0
+check_for_updates com.google.inject           guice            4.0
+check_for_updates joda-time                   joda-time        2.7
+check_for_updates org.eclipse.jetty           jetty-server     9.2.10.v20150310  '^9\.2\.[0-9]+\.[^M]'
+check_for_updates org.jboss.resteasy          resteasy-jaxrs   3.0.11.Final
+check_for_updates org.slf4j                   slf4j-api        1.7.12
+check_for_updates org.postgresql              postgresql       9.4-1201-jdbc41
+check_for_updates redis.clients               jedis            2.7.2
+check_for_updates com.surftools               BeanstalkClient  1.4.6
+
+check_for_updates junit                       junit            4.12
+check_for_updates org.mockito                 mockito-core     1.10.19 '^1\.10'
+check_for_updates org.seleniumhq.selenium     selenium-java    2.45.0
+check_for_updates org.apache.httpcomponents   httpclient       4.4.1
