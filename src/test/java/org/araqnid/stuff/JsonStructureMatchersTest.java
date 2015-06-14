@@ -3,8 +3,6 @@ package org.araqnid.stuff;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -22,8 +20,6 @@ import static org.araqnid.stuff.JsonStructureMatchers.jsonNull;
 import static org.araqnid.stuff.JsonStructureMatchers.jsonNumber;
 import static org.araqnid.stuff.JsonStructureMatchers.jsonObject;
 import static org.araqnid.stuff.JsonStructureMatchers.jsonString;
-import static org.araqnid.stuff.JsonStructureMatchers.jsonlibArray;
-import static org.araqnid.stuff.JsonStructureMatchers.jsonlibObject;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.both;
@@ -213,17 +209,6 @@ public class JsonStructureMatchersTest {
 				"[1,2,3]",
 				is(json(allOf(jsonArray().including(jsonInt(1)), jsonArray().including(jsonInt(2)), jsonArray()
 						.including(jsonInt(3))))));
-	}
-
-	@Test
-	public void matches_jsonlib_object() throws Exception {
-		assertThat(new JSONObject("{ a : 1 }"), is(jsonlibObject(jsonObject().withProperty("a", 1))));
-	}
-
-	@Test
-	public void matches_jsonlib_array() throws Exception {
-		assertThat(new JSONArray("[1, 2, 3]"),
-				is(jsonlibArray(jsonArray().of(jsonNumber(1), jsonNumber(2), jsonNumber(3)))));
 	}
 
 	@Test

@@ -5,8 +5,6 @@ import java.io.IOException;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -21,24 +19,6 @@ public final class JsonEquivalenceMatchers {
 	private static final ObjectMapper LAX_MAPPER = new ObjectMapper().enable(
 			JsonParser.Feature.ALLOW_SINGLE_QUOTES).enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
 
-	public static Matcher<JSONObject> equivalentJSONObject(String expectedJsonSource) {
-		return new JsonRepresentationMatcher<JSONObject>(expectedJsonSource) {
-			@Override
-			protected String jsonToString(JSONObject item) {
-				return item.toString();
-			}
-		};
-	}
-
-	public static Matcher<JSONArray> equivalentJSONArray(String expectedJsonSource) {
-		return new JsonRepresentationMatcher<JSONArray>(expectedJsonSource) {
-			@Override
-			protected String jsonToString(JSONArray item) {
-				return item.toString();
-			}
-		};
-	}
-
 	public static Matcher<JsonNode> equivalentJsonNode(String expectedJsonSource) {
 		return new JsonRepresentationMatcher<JsonNode>(expectedJsonSource) {
 			@Override
@@ -52,7 +32,7 @@ public final class JsonEquivalenceMatchers {
 		};
 	}
 
-	private static abstract class JsonRepresentationMatcher<T> extends TypeSafeDiagnosingMatcher<T> {
+	public static abstract class JsonRepresentationMatcher<T> extends TypeSafeDiagnosingMatcher<T> {
 		private final Matcher<String> jsonMatcher;
 
 		public JsonRepresentationMatcher(String expectedJsonSource) {

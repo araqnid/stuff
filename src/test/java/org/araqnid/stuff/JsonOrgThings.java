@@ -1,6 +1,6 @@
 package org.araqnid.stuff;
 
-import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentJSONObject;
+import static org.araqnid.stuff.JsonOrgMatchers.equivalentJSONObject;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import org.json.JSONArray;

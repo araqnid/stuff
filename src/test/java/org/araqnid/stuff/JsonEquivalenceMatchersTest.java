@@ -1,13 +1,9 @@
 package org.araqnid.stuff;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
-import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentJSONArray;
-import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentJSONObject;
 import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentJsonNode;
 import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentTo;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -63,15 +59,5 @@ public class JsonEquivalenceMatchersTest {
 	public void matches_jackson_treenode() {
 		JsonNodeFactory nodeFactory = JsonNodeFactory.instance;
 		assertThat(nodeFactory.objectNode().set("a", nodeFactory.numberNode(1)), equivalentJsonNode("{ a: 1 }"));
-	}
-
-	@Test
-	public void matches_jsonlib_object() {
-		assertThat(new JSONObject().put("a", 1), equivalentJSONObject("{a : 1 }"));
-	}
-
-	@Test
-	public void matches_jsonlib_array() {
-		assertThat(new JSONArray().put(1), equivalentJSONArray("[1]"));
 	}
 }

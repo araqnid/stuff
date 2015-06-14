@@ -14,8 +14,6 @@ import org.hamcrest.Matchers;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.hamcrest.collection.IsIterableContainingInAnyOrder;
 import org.hamcrest.collection.IsIterableContainingInOrder;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,30 +37,12 @@ import static org.hamcrest.Matchers.equalTo;
 public final class JsonStructureMatchers {
 	private static final ObjectMapper MAPPER = new ObjectMapper();
 
-	public static Matcher<JSONObject> jsonlibObject(Matcher<? extends JsonNode> matcher) {
-		return new JsonRepresentationMatcher<JSONObject>(matcher) {
-			@Override
-			protected String jsonToString(JSONObject item) {
-				return item.toString();
-			}
-		};
-	}
-
-	public static Matcher<JSONArray> jsonlibArray(Matcher<? extends JsonNode> matcher) {
-		return new JsonRepresentationMatcher<JSONArray>(matcher) {
-			@Override
-			protected String jsonToString(JSONArray item) {
-				return item.toString();
-			}
-		};
-	}
-
 	@SuppressWarnings("unchecked")
 	public static Matcher<JsonNode> jacksonTree(Matcher<? extends JsonNode> matcher) {
 		return (Matcher<JsonNode>) matcher;
 	}
 
-	private static abstract class JsonRepresentationMatcher<T> extends TypeSafeDiagnosingMatcher<T> {
+	public static abstract class JsonRepresentationMatcher<T> extends TypeSafeDiagnosingMatcher<T> {
 		private final Matcher<String> jsonMatcher;
 
 		public JsonRepresentationMatcher(Matcher<? extends JsonNode> matcher) {
