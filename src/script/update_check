@@ -35,7 +35,7 @@ check_for_updates com.google.guava            guava            18.0
 check_for_updates com.google.inject           guice            4.0
 check_for_updates joda-time                   joda-time        2.8.2
 check_for_updates org.eclipse.jetty           jetty-server     9.2.11.v20150529  '^9\.2\.[0-9]+\.[^M]'
-check_for_updates org.jboss.resteasy          resteasy-jaxrs   3.0.11.Final
+check_for_updates org.jboss.resteasy          resteasy-jaxrs   3.0.12.Final
 check_for_updates org.slf4j                   slf4j-api        1.7.12
 check_for_updates org.postgresql              postgresql       9.4-1201-jdbc41
 check_for_updates redis.clients               jedis            2.7.3
