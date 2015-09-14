@@ -38,7 +38,7 @@ check_for_updates org.eclipse.jetty           jetty-server     9.2.11.v20150529 
 check_for_updates org.jboss.resteasy          resteasy-jaxrs   3.0.11.Final
 check_for_updates org.slf4j                   slf4j-api        1.7.12
 check_for_updates org.postgresql              postgresql       9.4-1201-jdbc41
-check_for_updates redis.clients               jedis            2.7.2
+check_for_updates redis.clients               jedis            2.7.3
 check_for_updates com.surftools               BeanstalkClient  1.4.6
 
 check_for_updates junit                       junit            4.12
