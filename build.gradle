@@ -93,9 +93,9 @@ dependencies {
     browserTestCompile ('org.seleniumhq.selenium:selenium-java:2.47.1') {
         exclude module: 'httpclient'
     }
-    integrationTestCompile 'org.apache.httpcomponents:httpclient:4.5'
+    integrationTestCompile 'org.apache.httpcomponents:httpclient:4.5.1'
     // marking this as integrationTestCompile causes a conflict for Eclipse which tries to take the transitive 4.2 version via resteasy too
-    compile 'org.apache.httpcomponents:httpclient:4.5'
+    compile 'org.apache.httpcomponents:httpclient:4.5.1'
 }
 
 task runtimeDeps(dependsOn: 'processResources') {
