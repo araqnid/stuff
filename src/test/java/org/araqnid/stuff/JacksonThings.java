@@ -1,5 +1,18 @@
 package org.araqnid.stuff;
 
+import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentJsonNode;
+import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.closeTo;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigDecimal;
@@ -28,6 +41,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -68,19 +82,6 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-
-import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentJsonNode;
-import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentTo;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.closeTo;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasProperty;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.sameInstance;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 
 public class JacksonThings {
 	private final ObjectMapper mapper = new ObjectMapper();
@@ -428,6 +429,57 @@ public class JacksonThings {
 				+ " type: 'that-event', data: { value: 1234 } }"), Matchers.<Event<?>> allOf(
 				eventId(equalTo(UUID.fromString("82eee21e-4754-461c-a1b5-59fb883f4ea3"))),
 				eventTimestamp(equalTo(Instant.parse("2015-04-17T00:45:00Z"))), event(thatEvent(equalTo(1234L)))));
+	}
+
+	@Test
+	public void serializes_embedded_object_unwrapped() throws Exception {
+		UnwrappedUpper unwrapped = new UnwrappedUpper();
+		unwrapped.name = "the name";
+		unwrapped.lower = new UnwrappedLower();
+		unwrapped.lower.value = "the value";
+
+		assertThat(mapper.writeValueAsString(unwrapped), equivalentTo("{ name: 'the name', value: 'the value' }"));
+	}
+
+	@Test
+	public void deserializes_embedded_object_unwrapped() throws Exception {
+		UnwrappedUpper unwrapped = new UnwrappedUpper();
+		unwrapped.name = "the name";
+		unwrapped.lower = new UnwrappedLower();
+		unwrapped.lower.value = "the value";
+
+		mapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
+		mapper.enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES);
+
+		assertThat(mapper.readValue("{ name: 'the name', value: 'the value' }", UnwrappedUpper.class),
+				equalTo(unwrapped));
+	}
+
+	@Test
+	public void serializes_multiple_embedded_objects_unwrapped() throws Exception {
+		UnwrappedHead unwrapped = new UnwrappedHead();
+		unwrapped.name = "the name";
+		unwrapped.left = new UnwrappedLeftLeg();
+		unwrapped.left.value = "the left value";
+		unwrapped.right = new UnwrappedRightLeg();
+		unwrapped.right.value = "the right value";
+
+		assertThat(mapper.writeValueAsString(unwrapped), equivalentTo("{ name: 'the name', leftValue: 'the left value', rightValue: 'the right value' }"));
+	}
+
+	@Test
+	public void deserializes_multiple_embedded_objects_unwrapped() throws Exception {
+		UnwrappedHead unwrapped = new UnwrappedHead();
+		unwrapped.name = "the name";
+		unwrapped.left = new UnwrappedLeftLeg();
+		unwrapped.left.value = "the left value";
+		unwrapped.right = new UnwrappedRightLeg();
+		unwrapped.right.value = "the right value";
+
+		mapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
+		mapper.enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES);
+
+		assertThat(mapper.readValue("{ name: 'the name', leftValue: 'the left value', rightValue: 'the right value' }", UnwrappedHead.class), equalTo(unwrapped));
 	}
 
 	public static class Data {
@@ -890,5 +942,125 @@ public class JacksonThings {
 				description.appendDescriptionOf(valueMatcher);
 			}
 		};
+	}
+
+	public static final class UnwrappedUpper {
+		public String name;
+		@JsonUnwrapped public UnwrappedLower lower;
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(name, lower);
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (!(obj instanceof UnwrappedUpper)) {
+				return false;
+			}
+			UnwrappedUpper other = (UnwrappedUpper) obj;
+			return Objects.equals(name, other.name) && Objects.equals(lower, other.lower);
+		}
+
+		@Override
+		public String toString() {
+			return MoreObjects.toStringHelper(this).add("name", name).add("lower", lower).toString();
+		}
+	}
+
+	public static final class UnwrappedLower {
+		public String value;
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(value);
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (!(obj instanceof UnwrappedLower)) {
+				return false;
+			}
+			UnwrappedLower other = (UnwrappedLower) obj;
+			return Objects.equals(value, other.value);
+		}
+
+		@Override
+		public String toString() {
+			return MoreObjects.toStringHelper(this).add("value", value).toString();
+		}
+	}
+
+	public static final class UnwrappedHead {
+		public String name;
+		@JsonUnwrapped public UnwrappedLeftLeg left;
+		@JsonUnwrapped public UnwrappedRightLeg right;
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(name, left, right);
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (!(obj instanceof UnwrappedHead)) {
+				return false;
+			}
+			UnwrappedHead other = (UnwrappedHead) obj;
+			return Objects.equals(name, other.name) && Objects.equals(left, other.left) && Objects.equals(right, other.right);
+		}
+
+		@Override
+		public String toString() {
+			return MoreObjects.toStringHelper(this).add("name", name).add("left", left).add("right", right).toString();
+		}
+	}
+
+	public static final class UnwrappedLeftLeg {
+		@JsonProperty("leftValue")
+		public String value;
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(value);
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (!(obj instanceof UnwrappedLeftLeg)) {
+				return false;
+			}
+			UnwrappedLeftLeg other = (UnwrappedLeftLeg) obj;
+			return Objects.equals(value, other.value);
+		}
+
+		@Override
+		public String toString() {
+			return MoreObjects.toStringHelper(this).add("value", value).toString();
+		}
+	}
+
+	public static final class UnwrappedRightLeg {
+		@JsonProperty("rightValue")
+		public String value;
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(value);
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (!(obj instanceof UnwrappedRightLeg)) {
+				return false;
+			}
+			UnwrappedRightLeg other = (UnwrappedRightLeg) obj;
+			return Objects.equals(value, other.value);
+		}
+
+		@Override
+		public String toString() {
+			return MoreObjects.toStringHelper(this).add("value", value).toString();
+		}
 	}
 }
