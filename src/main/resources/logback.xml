@@ -1,7 +1,7 @@
 <configuration>
 	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
 		<encoder>
-			<pattern>stuff %-5level %X{ruid} [%t] [%logger{0}] %m%n</pattern>
+			<pattern>stuff %-5level %X{activity} [%t] [%logger{0}] %m%n</pattern>
 		</encoder>
 	</appender>
 
@@ -14,7 +14,7 @@
 	<root level="info">
 		<appender-ref ref="STDOUT" />
 	</root>
-	<logger name="org.araqnid.stuff.activity.LogActivityEvents" additivity="false" level="error">
+	<logger name="org.araqnid.stuff.activity.ActivityFilter" additivity="false" level="info">
 		<appender-ref ref="STDOUT_ACTIVITY" />
 	</logger>
 </configuration>

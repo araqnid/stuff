@@ -13,6 +13,8 @@ import org.araqnid.stuff.AppLifecycleEvent;
 import org.araqnid.stuff.AppStateMonitor;
 import org.araqnid.stuff.AppVersion;
 import org.araqnid.stuff.MerlotRepository;
+import org.araqnid.stuff.activity.ActivityScope;
+import org.araqnid.stuff.activity.ThreadActivity;
 
 import redis.clients.jedis.Jedis;
 
@@ -45,6 +47,7 @@ public final class CoreModule extends AbstractModule {
 		install(new SpooledEventsModule());
 		bind(MerlotRepository.class);
 		bind(Clock.class).toInstance(Clock.systemDefaultZone());
+		bind(ActivityScope.class).toInstance(ThreadActivity::get);
 	}
 
 	@Provides

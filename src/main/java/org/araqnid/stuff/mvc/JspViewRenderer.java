@@ -17,19 +17,28 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyWriter;
 
 import org.apache.jasper.Constants;
+import org.araqnid.stuff.activity.ActivityNode;
+import org.araqnid.stuff.activity.ActivityScope;
 import org.araqnid.stuff.config.MvcPathPattern;
+
+import com.google.common.collect.ImmutableMap;
 
 @javax.ws.rs.ext.Provider
 public class JspViewRenderer implements MessageBodyWriter<View> {
 	private final Provider<HttpServletRequest> requestProvider;
 	private final Provider<HttpServletResponse> responseProvider;
 	private final String pathPattern;
+	private final ActivityScope activityScope;
 
 	@Inject
-	public JspViewRenderer(Provider<HttpServletRequest> requestProvider, Provider<HttpServletResponse> responseProvider, @MvcPathPattern String pathPattern) {
+	public JspViewRenderer(Provider<HttpServletRequest> requestProvider,
+			Provider<HttpServletResponse> responseProvider,
+			@MvcPathPattern String pathPattern,
+			ActivityScope activityScope) {
 		this.requestProvider = requestProvider;
 		this.responseProvider = responseProvider;
 		this.pathPattern = pathPattern;
+		this.activityScope = activityScope;
 	}
 
 	@Override
@@ -43,9 +52,13 @@ public class JspViewRenderer implements MessageBodyWriter<View> {
 	}
 
 	@Override
-	public void writeTo(View view, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType,
-			MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream) throws IOException,
-			WebApplicationException {
+	public void writeTo(View view,
+			Class<?> type,
+			Type genericType,
+			Annotation[] annotations,
+			MediaType mediaType,
+			MultivaluedMap<String, Object> httpHeaders,
+			OutputStream entityStream) throws IOException, WebApplicationException {
 		HttpServletRequest httpServletRequest = requestProvider.get();
 		HttpServletResponse httpServletResponse = responseProvider.get();
 		String targetPath = String.format(pathPattern, view.name);
@@ -55,8 +68,9 @@ public class JspViewRenderer implements MessageBodyWriter<View> {
 			httpServletRequest.setAttribute(e.getKey(), e.getValue());
 		}
 
-		try {
+		try (ActivityNode.Rec r = activityScope.current().recordActivity("Jsp", ImmutableMap.of("file", targetPath))) {
 			httpServletRequest.getRequestDispatcher(targetPath).forward(httpServletRequest, httpServletResponse);
+			r.markSuccess();
 		} catch (ServletException e) {
 			throw new WebApplicationException(e);
 		}

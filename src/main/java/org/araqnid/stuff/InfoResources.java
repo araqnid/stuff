@@ -1,7 +1,5 @@
 package org.araqnid.stuff;
 
-import static java.util.stream.Collectors.joining;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -18,16 +16,28 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 
+import org.araqnid.stuff.activity.ActivityNode;
+import org.araqnid.stuff.activity.ActivityScope;
+import org.araqnid.stuff.activity.ThreadActivity;
 import org.jboss.resteasy.core.ResourceInvoker;
 import org.jboss.resteasy.core.ResourceMethodInvoker;
 import org.jboss.resteasy.core.ResourceMethodRegistry;
 import org.jboss.resteasy.spi.Registry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Functions;
 import com.google.common.base.MoreObjects;
@@ -40,18 +50,51 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import com.google.common.io.Resources;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
+import static java.util.stream.Collectors.joining;
 
 @Path("_api/info")
 public class InfoResources {
+	private static final Logger LOG = LoggerFactory.getLogger(InfoResources.class);
+
+	@Singleton
+	public static final class Scheduler {
+		private final ScheduledExecutorService underlying = Executors.newScheduledThreadPool(1,
+				new ThreadFactoryBuilder().setDaemon(true).build());
+
+		public CompletableFuture<?> schedule(Runnable runnable, long delay, TimeUnit units) {
+			CompletableFuture<?> future = new CompletableFuture<Void>();
+			ActivityNode node = ThreadActivity.get();
+			underlying.schedule(() -> {
+				try (ThreadActivity.Scoper s = ThreadActivity.reattach(node)) {
+					runnable.run();
+					future.complete(null);
+				} catch (Throwable t) {
+					future.completeExceptionally(t);
+				}
+			}, delay, units);
+			return future;
+		}
+	}
+
 	private final AppVersion appVersion;
 	private final AppStateMonitor appStateMonitor;
 	private final Registry registry;
+	private final ActivityScope activityScope;
+	private final Scheduler scheduler;
 
 	@Inject
-	public InfoResources(AppVersion appVersion, AppStateMonitor appStateMonitor, Registry registry) {
+	public InfoResources(AppVersion appVersion,
+			AppStateMonitor appStateMonitor,
+			Registry registry,
+			ActivityScope activityScope,
+			Scheduler scheduler) {
 		this.appVersion = appVersion;
 		this.appStateMonitor = appStateMonitor;
 		this.registry = registry;
+		this.activityScope = activityScope;
+		this.scheduler = scheduler;
 	}
 
 	@GET
@@ -69,6 +112,21 @@ public class InfoResources {
 	}
 
 	@GET
+	@Path("async-support")
+	@Produces("text/plain")
+	public void getAsyncSupport(@Suspended AsyncResponse async) {
+		async.setTimeout(1, TimeUnit.MINUTES);
+		ActivityNode activityNode = activityScope.current().begin("AsyncTest");
+		scheduler.schedule(() -> {
+			LOG.info("mark complete");
+			activityNode.complete(true);
+		}, 500, TimeUnit.MILLISECONDS).thenRun(() -> {
+			LOG.info("resuming request");
+			async.resume("ok");
+		});
+	}
+
+	@GET
 	@Path("state")
 	@Produces({ "application/json", "text/plain" })
 	public AppState getAppState() {
@@ -82,7 +140,10 @@ public class InfoResources {
 		public final Set<String> consumes;
 		public final Set<String> produces;
 
-		public InvokerDetail(String method, String resourceClass, Set<String> httpMethods, Set<String> consumes,
+		public InvokerDetail(String method,
+				String resourceClass,
+				Set<String> httpMethods,
+				Set<String> consumes,
 				Set<String> produces) {
 			this.method = method;
 			this.resourceClass = resourceClass;
@@ -218,12 +279,14 @@ public class InfoResources {
 
 		private void dumpHandlers(PrintWriter pw) {
 			if (methodInvokers.isEmpty()) return;
-			String handlers = methodInvokers.stream()
-				.sorted(invokerOrdering)
-				.<MethodInvokerPair> flatMap(invoker -> invoker.httpMethods.stream()
-										.map(method -> MethodInvokerPair.of(method, invoker)))
-				.map(pair -> pair.method + ":" + pair.invoker.resourceClass + "." + pair.invoker.method)
-				.collect(joining(" "));
+			String handlers = methodInvokers
+					.stream()
+					.sorted(invokerOrdering)
+					.<MethodInvokerPair> flatMap(
+							invoker -> invoker.httpMethods.stream()
+									.map(method -> MethodInvokerPair.of(method, invoker)))
+					.map(pair -> pair.method + ":" + pair.invoker.resourceClass + "." + pair.invoker.method)
+					.collect(joining(" "));
 			pw.append(" = ").append(handlers);
 		}
 
@@ -321,8 +384,7 @@ public class InfoResources {
 
 	private static final Ordering<InvokerDetail> invokerOrdering = Ordering.compound(ImmutableList.of(
 			(left, right) -> left.resourceClass.compareTo(right.resourceClass),
-			(left, right) -> left.method.compareTo(right.method)
-			));
+			(left, right) -> left.method.compareTo(right.method)));
 
 	private static class MethodInvokerPair {
 		public final String method;
@@ -344,8 +406,7 @@ public class InfoResources {
 
 		@Override
 		public boolean equals(Object obj) {
-			return obj instanceof MethodInvokerPair
-					&& Objects.equals(method, ((MethodInvokerPair) obj).method)
+			return obj instanceof MethodInvokerPair && Objects.equals(method, ((MethodInvokerPair) obj).method)
 					&& Objects.equals(invoker, ((MethodInvokerPair) obj).invoker);
 		}
 
