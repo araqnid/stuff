@@ -82,7 +82,14 @@ public class AccessLogFilter implements Filter {
 		Pending(HttpServletRequest request, HttpServletResponse response) {
 			this.method = request.getMethod();
 			this.protocol = request.getProtocol();
-			this.path = request.getServletPath();
+			String path = request.getServletPath();
+			String queryString = request.getQueryString();
+			if (queryString != null) {
+				this.path = path + "?" + queryString;
+			}
+			else {
+				this.path = path;
+			}
 		}
 
 		public void completed(int status) {
