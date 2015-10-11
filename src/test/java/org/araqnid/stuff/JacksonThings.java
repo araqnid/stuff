@@ -1,18 +1,5 @@
 package org.araqnid.stuff;
 
-import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentJsonNode;
-import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentTo;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.closeTo;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasProperty;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.sameInstance;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigDecimal;
@@ -52,6 +39,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.BeanDescription;
+import com.fasterxml.jackson.databind.BeanProperty;
 import com.fasterxml.jackson.databind.DeserializationConfig;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JavaType;
@@ -67,6 +55,8 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.deser.Deserializers;
 import com.fasterxml.jackson.databind.deser.std.StdNodeBasedDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.ser.ContextualSerializer;
+import com.fasterxml.jackson.databind.ser.ResolvableSerializer;
 import com.fasterxml.jackson.databind.ser.Serializers;
 import com.fasterxml.jackson.databind.ser.std.StdScalarSerializer;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
@@ -85,6 +75,19 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+
+import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentJsonNode;
+import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.closeTo;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 public class JacksonThings {
 	private final ObjectMapper mapper = new ObjectMapper();
@@ -355,7 +358,8 @@ public class JacksonThings {
 										return Either.right(new SimpleData(root.get("value").asDouble()));
 									}
 									else {
-										throw JsonMappingException.from(ctxt.getParser(), "Unhandled type: " + typeString);
+										throw JsonMappingException.from(ctxt.getParser(), "Unhandled type: "
+												+ typeString);
 									}
 								}
 							}; }
@@ -467,7 +471,8 @@ public class JacksonThings {
 		unwrapped.right = new UnwrappedRightLeg();
 		unwrapped.right.value = "the right value";
 
-		assertThat(mapper.writeValueAsString(unwrapped), equivalentTo("{ name: 'the name', leftValue: 'the left value', rightValue: 'the right value' }"));
+		assertThat(mapper.writeValueAsString(unwrapped),
+				equivalentTo("{ name: 'the name', leftValue: 'the left value', rightValue: 'the right value' }"));
 	}
 
 	@Test
@@ -482,7 +487,8 @@ public class JacksonThings {
 		mapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
 		mapper.enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES);
 
-		assertThat(mapper.readValue("{ name: 'the name', leftValue: 'the left value', rightValue: 'the right value' }", UnwrappedHead.class), equalTo(unwrapped));
+		assertThat(mapper.readValue("{ name: 'the name', leftValue: 'the left value', rightValue: 'the right value' }",
+				UnwrappedHead.class), equalTo(unwrapped));
 	}
 
 	@Test
@@ -505,20 +511,285 @@ public class JacksonThings {
 										ImmutableMap.of("colour", "blue", "value", 1.2345),
 										ImmutableMap.of("colour", "indigo", "value", 1.2345),
 										ImmutableMap.of("colour", "violet", "value", 1.2345)))),
-				looksLike(
-						":)\n\u0001\u00fa\u0085values\u00f8\u00fa\u0085colour"
+				looksLike(":)\n\u0001\u00fa\u0085values\u00f8\u00fa\u0085colour"
 						+ "Bred\u0084value)\u0000?yp\u00101\u0013:/\r\u00fb\u00faAEorangeB)\u0000?yp\u00101\u0013:/\r\u00fb\u00faADgreen"
 						+ "B)\u0000?yp\u00101\u0013:/\r\u00fb\u00faACblueB)\u0000?yp\u00101\u0013:/\r\u00fb\u00faAEindigo"
 						+ "B)\u0000?yp\u00101\u0013:/\r\u00fb\u00faAEvioletB)\u0000?yp\u00101\u0013:/\r\u00fb\u00f9\u00fb"));
 	}
 
-	@Test @Ignore("doesn't seem to work this way")
+	@Test
+	@Ignore("doesn't seem to work this way")
 	public void string_written_as_smile_configured_in_writer() throws Exception {
 		assertThat(new String(new ObjectMapper().writer().with(new SmileFactory()).writeValueAsBytes("test"),
 				StandardCharsets.ISO_8859_1), equalTo(":)\n\u0001Ctest"));
 	}
 
-	public static class Data {
+	@SuppressWarnings("serial")
+	@Test
+	public void serializer_created_as_soon_as_writer_created() throws Exception {
+		try {
+			new ObjectMapper().registerModule(new SimpleModule() {
+				@Override
+				public void setupModule(SetupContext context) {
+					super.setupModule(context);
+					context.addSerializers(new Serializers.Base() {
+						@Override
+						public JsonSerializer<?> findSerializer(SerializationConfig config,
+								JavaType type,
+								BeanDescription beanDesc) {
+							if (type.getRawClass() == Data.class) throw new RuntimeException("expected failure");
+							return null;
+						}
+					});
+				}
+			}).writerFor(new TypeReference<List<Map<String, Data>>>() {
+			});
+			fail("Expected exception");
+		} catch (RuntimeException e) {
+			assertThat(e.getMessage(), equalTo("expected failure"));
+		}
+	}
+
+	@SuppressWarnings("serial")
+	@Test
+	public void serializer_resolved_as_soon_as_writer_created() throws Exception {
+		class BrokenSerializer extends StdScalarSerializer<Data> implements ResolvableSerializer {
+			public BrokenSerializer() {
+				super(Data.class);
+			}
+
+			@Override
+			public void resolve(SerializerProvider provider) throws JsonMappingException {
+				throw new RuntimeException("expected failure");
+			}
+
+			@Override
+			public void serialize(Data value, JsonGenerator jgen, SerializerProvider provider) throws IOException,
+					JsonGenerationException {
+				throw new UnsupportedOperationException();
+			}
+		}
+		try {
+			new ObjectMapper().registerModule(new SimpleModule() {
+				@Override
+				public void setupModule(SetupContext context) {
+					super.setupModule(context);
+					context.addSerializers(new Serializers.Base() {
+						@Override
+						public JsonSerializer<?> findSerializer(SerializationConfig config,
+								JavaType type,
+								BeanDescription beanDesc) {
+							if (type.getRawClass() == Data.class) return new BrokenSerializer();
+							return null;
+						}
+					});
+				}
+			}).writerFor(new TypeReference<List<Map<String, Data>>>() {
+			});
+			fail("Expected exception");
+		} catch (RuntimeException e) {
+			assertThat(e.getMessage(), equalTo("expected failure"));
+		}
+	}
+
+	@SuppressWarnings("serial")
+	@Test
+	public void serializer_contextualized_as_soon_as_writer_created() throws Exception {
+		class BrokenSerializer extends StdScalarSerializer<Data> implements ContextualSerializer {
+			public BrokenSerializer() {
+				super(Data.class);
+			}
+
+			@Override
+			public JsonSerializer<?> createContextual(SerializerProvider prov, BeanProperty property)
+					throws JsonMappingException {
+				throw new RuntimeException("expected failure");
+			}
+
+			@Override
+			public void serialize(Data value, JsonGenerator jgen, SerializerProvider provider) throws IOException,
+					JsonGenerationException {
+				throw new UnsupportedOperationException();
+			}
+		}
+		try {
+			new ObjectMapper().registerModule(new SimpleModule() {
+				@Override
+				public void setupModule(SetupContext context) {
+					super.setupModule(context);
+					context.addSerializers(new Serializers.Base() {
+						@Override
+						public JsonSerializer<?> findSerializer(SerializationConfig config,
+								JavaType type,
+								BeanDescription beanDesc) {
+							if (type.getRawClass() == Data.class) return new BrokenSerializer();
+							return null;
+						}
+					});
+				}
+			}).writerFor(new TypeReference<List<Map<String, Data>>>() {
+			});
+			fail("Expected exception");
+		} catch (RuntimeException e) {
+			assertThat(e.getMessage(), equalTo("expected failure"));
+		}
+	}
+
+	@SuppressWarnings("serial")
+	@Test
+	public void serializer_for_final_bean_contextualized_as_soon_as_writer_for_final_containing_bean_created()
+			throws Exception {
+		final class InnerData {
+			@SuppressWarnings("unused")
+			public String value;
+		}
+		final class BrokenData {
+			@SuppressWarnings("unused")
+			public InnerData value;
+		}
+		class BrokenSerializer extends StdScalarSerializer<InnerData> implements ContextualSerializer {
+			public BrokenSerializer() {
+				super(InnerData.class);
+			}
+
+			@Override
+			public JsonSerializer<?> createContextual(SerializerProvider prov, BeanProperty property)
+					throws JsonMappingException {
+				throw new RuntimeException("expected failure");
+			}
+
+			@Override
+			public void serialize(InnerData value, JsonGenerator jgen, SerializerProvider provider) throws IOException,
+					JsonGenerationException {
+				throw new UnsupportedOperationException();
+			}
+		}
+		try {
+			new ObjectMapper().registerModule(new SimpleModule() {
+				@Override
+				public void setupModule(SetupContext context) {
+					super.setupModule(context);
+					context.addSerializers(new Serializers.Base() {
+						@Override
+						public JsonSerializer<?> findSerializer(SerializationConfig config,
+								JavaType type,
+								BeanDescription beanDesc) {
+							if (type.getRawClass() == InnerData.class) return new BrokenSerializer();
+							return null;
+						}
+					});
+				}
+			}).writerFor(BrokenData.class);
+			fail("Expected exception");
+		} catch (RuntimeException e) {
+			assertThat(e.getMessage(), equalTo("expected failure"));
+		}
+	}
+
+	@SuppressWarnings("serial")
+	@Test
+	public void serializer_not_immediately_contextualized_if_inner_data_bean_is_not_final() throws Exception {
+		class InnerData {
+			@SuppressWarnings("unused")
+			public String value;
+		}
+		final class BrokenData {
+			public InnerData value;
+		}
+		class BrokenSerializer extends StdScalarSerializer<InnerData> implements ContextualSerializer {
+			public BrokenSerializer() {
+				super(InnerData.class);
+			}
+
+			@Override
+			public JsonSerializer<?> createContextual(SerializerProvider prov, BeanProperty property)
+					throws JsonMappingException {
+				throw new RuntimeException("expected failure");
+			}
+
+			@Override
+			public void serialize(InnerData value, JsonGenerator jgen, SerializerProvider provider) throws IOException,
+					JsonGenerationException {
+				throw new UnsupportedOperationException();
+			}
+		}
+		ObjectWriter writer = new ObjectMapper().registerModule(new SimpleModule() {
+			@Override
+			public void setupModule(SetupContext context) {
+				super.setupModule(context);
+				context.addSerializers(new Serializers.Base() {
+					@Override
+					public JsonSerializer<?> findSerializer(SerializationConfig config,
+							JavaType type,
+							BeanDescription beanDesc) {
+						if (type.getRawClass() == InnerData.class) return new BrokenSerializer();
+						return null;
+					}
+				});
+			}
+		}).writerFor(BrokenData.class);
+		BrokenData broken = new BrokenData();
+		broken.value = new InnerData();
+		broken.value.value = "foo";
+		try {
+			writer.writeValueAsString(broken);
+			fail("Expected exception");
+		} catch (JsonMappingException e) {
+			assertThat(e.getCause().getMessage(), equalTo("expected failure"));
+		}
+	}
+
+	@SuppressWarnings("serial")
+	@Test
+	public void serializer_is_immediately_contextualized_even_if_containing_data_bean_is_not_final() throws Exception {
+		final class InnerData {
+			@SuppressWarnings("unused")
+			public String value;
+		}
+		final class BrokenData {
+			@SuppressWarnings("unused")
+			public InnerData value;
+		}
+		class BrokenSerializer extends StdScalarSerializer<InnerData> implements ContextualSerializer {
+			public BrokenSerializer() {
+				super(InnerData.class);
+			}
+
+			@Override
+			public JsonSerializer<?> createContextual(SerializerProvider prov, BeanProperty property)
+					throws JsonMappingException {
+				throw new RuntimeException("expected failure");
+			}
+
+			@Override
+			public void serialize(InnerData value, JsonGenerator jgen, SerializerProvider provider) throws IOException,
+					JsonGenerationException {
+				throw new UnsupportedOperationException();
+			}
+		}
+		try {
+			new ObjectMapper().registerModule(new SimpleModule() {
+				@Override
+				public void setupModule(SetupContext context) {
+					super.setupModule(context);
+					context.addSerializers(new Serializers.Base() {
+						@Override
+						public JsonSerializer<?> findSerializer(SerializationConfig config,
+								JavaType type,
+								BeanDescription beanDesc) {
+							if (type.getRawClass() == InnerData.class) return new BrokenSerializer();
+							return null;
+						}
+					});
+				}
+			}).writerFor(BrokenData.class);
+			fail("Expected exception");
+		} catch (RuntimeException e) {
+			assertThat(e.getMessage(), equalTo("expected failure"));
+		}
+	}
+
+	public static final class Data {
 		@JsonProperty("score")
 		public final double quux;
 
@@ -542,7 +813,7 @@ public class JacksonThings {
 		}
 	}
 
-	public static class SimpleData {
+	public static final class SimpleData {
 		private final double quux;
 
 		public SimpleData(double quux) {
@@ -570,7 +841,7 @@ public class JacksonThings {
 		}
 	}
 
-	public static class DataWithExtra {
+	public static final class DataWithExtra {
 		private final double value;
 		private final JacksonThings extra;
 
@@ -595,7 +866,7 @@ public class JacksonThings {
 		}
 	}
 
-	public static class ScalarWithExtra {
+	public static final class ScalarWithExtra {
 		private final double value;
 		private final JacksonThings extra;
 
@@ -620,7 +891,7 @@ public class JacksonThings {
 		}
 	}
 
-	public static class ValueClassWithAnnotatedCreatorConstructor {
+	public static final class ValueClassWithAnnotatedCreatorConstructor {
 		public final String name;
 		public final String description;
 		public final BigDecimal price;
@@ -654,7 +925,7 @@ public class JacksonThings {
 		}
 	}
 
-	public static class ValueClassWithDelegateCreatorConstructor {
+	public static final class ValueClassWithDelegateCreatorConstructor {
 		public final String name;
 		public final String description;
 		public final BigDecimal price;
@@ -982,7 +1253,8 @@ public class JacksonThings {
 
 	public static final class UnwrappedUpper {
 		public String name;
-		@JsonUnwrapped public UnwrappedLower lower;
+		@JsonUnwrapped
+		public UnwrappedLower lower;
 
 		@Override
 		public int hashCode() {
@@ -991,9 +1263,7 @@ public class JacksonThings {
 
 		@Override
 		public boolean equals(Object obj) {
-			if (!(obj instanceof UnwrappedUpper)) {
-				return false;
-			}
+			if (!(obj instanceof UnwrappedUpper)) { return false; }
 			UnwrappedUpper other = (UnwrappedUpper) obj;
 			return Objects.equals(name, other.name) && Objects.equals(lower, other.lower);
 		}
@@ -1014,9 +1284,7 @@ public class JacksonThings {
 
 		@Override
 		public boolean equals(Object obj) {
-			if (!(obj instanceof UnwrappedLower)) {
-				return false;
-			}
+			if (!(obj instanceof UnwrappedLower)) { return false; }
 			UnwrappedLower other = (UnwrappedLower) obj;
 			return Objects.equals(value, other.value);
 		}
@@ -1029,8 +1297,10 @@ public class JacksonThings {
 
 	public static final class UnwrappedHead {
 		public String name;
-		@JsonUnwrapped public UnwrappedLeftLeg left;
-		@JsonUnwrapped public UnwrappedRightLeg right;
+		@JsonUnwrapped
+		public UnwrappedLeftLeg left;
+		@JsonUnwrapped
+		public UnwrappedRightLeg right;
 
 		@Override
 		public int hashCode() {
@@ -1039,11 +1309,10 @@ public class JacksonThings {
 
 		@Override
 		public boolean equals(Object obj) {
-			if (!(obj instanceof UnwrappedHead)) {
-				return false;
-			}
+			if (!(obj instanceof UnwrappedHead)) { return false; }
 			UnwrappedHead other = (UnwrappedHead) obj;
-			return Objects.equals(name, other.name) && Objects.equals(left, other.left) && Objects.equals(right, other.right);
+			return Objects.equals(name, other.name) && Objects.equals(left, other.left)
+					&& Objects.equals(right, other.right);
 		}
 
 		@Override
@@ -1063,9 +1332,7 @@ public class JacksonThings {
 
 		@Override
 		public boolean equals(Object obj) {
-			if (!(obj instanceof UnwrappedLeftLeg)) {
-				return false;
-			}
+			if (!(obj instanceof UnwrappedLeftLeg)) { return false; }
 			UnwrappedLeftLeg other = (UnwrappedLeftLeg) obj;
 			return Objects.equals(value, other.value);
 		}
@@ -1087,9 +1354,7 @@ public class JacksonThings {
 
 		@Override
 		public boolean equals(Object obj) {
-			if (!(obj instanceof UnwrappedRightLeg)) {
-				return false;
-			}
+			if (!(obj instanceof UnwrappedRightLeg)) { return false; }
 			UnwrappedRightLeg other = (UnwrappedRightLeg) obj;
 			return Objects.equals(value, other.value);
 		}
@@ -1105,9 +1370,7 @@ public class JacksonThings {
 		return new TypeSafeDiagnosingMatcher<byte[]>() {
 			@Override
 			protected boolean matchesSafely(byte[] item, Description mismatchDescription) {
-				if (Arrays.equals(item, exampleBytes)) {
-					return true;
-				}
+				if (Arrays.equals(item, exampleBytes)) { return true; }
 				mismatchDescription.appendText("was ").appendValue(escape(item));
 				return false;
 			}
@@ -1116,6 +1379,7 @@ public class JacksonThings {
 			public void describeTo(Description description) {
 				description.appendText("bytes like ").appendValue(escape(exampleBytes));
 			}
+
 			private String escape(byte[] item) {
 				StringBuilder sb = new StringBuilder();
 				for (int i = 0; i < item.length; i++) {
@@ -1129,7 +1393,7 @@ public class JacksonThings {
 					else if (b < 32 || b == 127) {
 						sb.append('\\');
 						sb.append('x');
-						sb.append(String.format("%02x", ((int) b) & 0xff));
+						sb.append(String.format("%02x", (b) & 0xff));
 					}
 					else {
 						sb.append((char) b);
@@ -1140,4 +1404,5 @@ public class JacksonThings {
 			}
 		};
 	}
+
 }
