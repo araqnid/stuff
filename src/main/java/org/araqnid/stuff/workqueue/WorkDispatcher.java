@@ -1,41 +1,30 @@
 package org.araqnid.stuff.workqueue;
 
-import org.araqnid.stuff.activity.AppEventType;
-import org.araqnid.stuff.activity.RequestActivity;
-
-import com.google.common.base.Joiner;
 
 public class WorkDispatcher {
 	private final WorkQueue queue;
 	private final WorkProcessor processor;
-	private final RequestActivity requestActivity;
 
-	public WorkDispatcher(WorkQueue queue, WorkProcessor processor, RequestActivity requestActivity) {
+	public WorkDispatcher(WorkQueue queue, WorkProcessor processor) {
 		this.queue = queue;
 		this.processor = processor;
-		this.requestActivity = requestActivity;
 	}
 
 	public boolean process(String id, byte[] payload) {
-		requestActivity.beginEvent(AppEventType.WorkQueueItem, Joiner.on('\t').join(queue.toString(), id));
+		Work entry = new Work(id);
+		entry.begin();
 		try {
-			Work entry = new Work(id);
-			entry.begin();
-			try {
-				processor.process(id, payload);
-				entry.success();
-				return true;
-			} catch (PermanentWorkProcessorException e) {
-				entry.permanentFailure(e.getMessage(), e);
-				return true;
-			} catch (Exception e) {
-				entry.temporaryFailure(e);
-				return false;
-			} finally {
-				entry.cleanup();
-			}
+			processor.process(id, payload);
+			entry.success();
+			return true;
+		} catch (PermanentWorkProcessorException e) {
+			entry.permanentFailure(e.getMessage(), e);
+			return true;
+		} catch (Exception e) {
+			entry.temporaryFailure(e);
+			return false;
 		} finally {
-			requestActivity.finishEvent(AppEventType.WorkQueueItem);
+			entry.cleanup();
 		}
 	}
 

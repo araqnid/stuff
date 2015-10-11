@@ -4,10 +4,8 @@ import java.util.List;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextListener;
-import javax.servlet.http.HttpServletResponse;
 
 import org.araqnid.stuff.EmbeddedAppStartupBanner;
-import org.araqnid.stuff.activity.RequestActivityFilter;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
 
 import com.google.common.collect.ImmutableList;
@@ -36,21 +34,7 @@ public class EmbeddedWebappConfig extends AbstractModule {
 		});
 		install(new CoreModule());
 		install(new ServletDispatchModule());
-		if (servletApiSupportsRequestGetStatus()) {
-			bind(RequestActivityFilter.RequestLogger.class).to(RequestActivityFilter.BasicRequestLogger.class);
-		}
-		else {
-			bind(RequestActivityFilter.RequestLogger.class).to(RequestActivityFilter.NoStatusRequestLogger.class);
-		}
 		bind(EmbeddedAppStartupBanner.class);
 	}
 
-	private static boolean servletApiSupportsRequestGetStatus() {
-		try {
-			HttpServletResponse.class.getMethod("getStatus", new Class[0]);
-			return true;
-		} catch (NoSuchMethodException e) {
-			return false;
-		}
-	}
 }

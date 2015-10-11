@@ -9,7 +9,6 @@ import javax.inject.Singleton;
 
 import org.araqnid.stuff.ActivateOnStartup;
 import org.araqnid.stuff.RedisEventLoader;
-import org.araqnid.stuff.activity.ActivityScopeControl;
 import org.araqnid.stuff.messages.BeanstalkProcessor;
 import org.araqnid.stuff.messages.DispatchingMessageHandler;
 import org.araqnid.stuff.messages.DispatchingMessageHandler.EventHandler;
@@ -68,8 +67,6 @@ public class SpooledEventsModule extends AbstractModule {
 		private final Provider<T> messageHandlerProvider;
 		private final Dependency<T> messageHandlerDependency;
 		@Inject
-		private ActivityScopeControl scopeControl;
-		@Inject
 		private Provider<Jedis> redisConnectionProvider;
 		@Inject
 		private Provider<Client> beanstalkConnectionProvider;
@@ -111,13 +108,12 @@ public class SpooledEventsModule extends AbstractModule {
 		}
 
 		private Service loader() {
-			return new RedisEventLoader(redisEventTarget(), redisConnectionProvider, redisKeyName, scopeControl,
-					redisLoaderPageSize);
+			return new RedisEventLoader(redisEventTarget(), redisConnectionProvider, redisKeyName, redisLoaderPageSize);
 		}
 
 		private Service processor() {
 			return new BeanstalkProcessor<BeanstalkSpoolingMessageHandlerAdaptor<T>>(beanstalkConnectionProvider,
-					tubeName, scopeControl, new Provider<BeanstalkSpoolingMessageHandlerAdaptor<T>>() {
+					tubeName, new Provider<BeanstalkSpoolingMessageHandlerAdaptor<T>>() {
 						@Override
 						public BeanstalkSpoolingMessageHandlerAdaptor<T> get() {
 							return new BeanstalkSpoolingMessageHandlerAdaptor<T>(messageHandler(), spooler());

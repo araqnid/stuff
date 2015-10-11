@@ -9,9 +9,7 @@ import java.util.concurrent.Executors;
 
 import javax.inject.Singleton;
 
-import org.araqnid.stuff.activity.ActivityEventSink;
 import org.araqnid.stuff.config.StandaloneAppConfig;
-import org.araqnid.stuff.test.integration.CollectActivityEvents.ActivityEventRecord;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
@@ -19,7 +17,6 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.util.thread.ThreadPool;
 
 import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -37,7 +34,6 @@ public class ServerRunner {
 	private Server server;
 	private Injector injector;
 	private int port;
-	private CollectActivityEvents collectActivityEvents = new CollectActivityEvents();
 
 	public void addConfiguration(Module module) {
 		additionalConfig.add(module);
@@ -47,7 +43,6 @@ public class ServerRunner {
 		AbstractModule jettyConfig = new AbstractModule() {
 			@Override
 			protected void configure() {
-				bind(ActivityEventSink.class).toInstance(collectActivityEvents);
 			}
 
 			@Singleton
@@ -58,21 +53,21 @@ public class ServerRunner {
 					public void execute(Runnable command) {
 						SHARED_THREADS.execute(command);
 					}
-					
+
 					@Override
 					public void join() throws InterruptedException {
 					}
-					
+
 					@Override
 					public boolean isLowOnThreads() {
 						return false;
 					}
-					
+
 					@Override
 					public int getThreads() {
 						return 0;
 					}
-					
+
 					@Override
 					public int getIdleThreads() {
 						return 0;
@@ -100,7 +95,6 @@ public class ServerRunner {
 	}
 
 	public void reset() throws Exception {
-		collectActivityEvents.events.clear();
 	}
 
 	public URI uri(String path) throws URISyntaxException {
@@ -110,19 +104,5 @@ public class ServerRunner {
 
 	public Injector getInjector() {
 		return injector;
-	}
-
-	public Iterable<CollectActivityEvents.ActivityEventRecord> activityEvents() {
-		return collectActivityEvents.events;
-	}
-
-	public Iterable<CollectActivityEvents.ActivityEventRecord> activityEventsForRuid(final String ruid) {
-		return Iterables.filter(collectActivityEvents.events,
-				new Predicate<CollectActivityEvents.ActivityEventRecord>() {
-					@Override
-					public boolean apply(ActivityEventRecord input) {
-						return input.ruid.equals(ruid);
-					}
-				});
 	}
 }

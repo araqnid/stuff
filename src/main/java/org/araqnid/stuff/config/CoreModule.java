@@ -13,7 +13,6 @@ import org.araqnid.stuff.AppLifecycleEvent;
 import org.araqnid.stuff.AppStateMonitor;
 import org.araqnid.stuff.AppVersion;
 import org.araqnid.stuff.MerlotRepository;
-import org.araqnid.stuff.activity.ActivityScope;
 
 import redis.clients.jedis.Jedis;
 
@@ -41,18 +40,11 @@ public final class CoreModule extends AbstractModule {
 		bind(JsonFactory.class).to(MappingJsonFactory.class).in(Singleton.class);
 		bindConstant().annotatedWith(ServerIdentity.class).to(gethostname());
 		bind(UUID.class).annotatedWith(ServerIdentity.class).toInstance(UUID.randomUUID());
-		install(new ActivityScope.Module());
 		install(new RawBeanstalkModule());
 		install(new WorkQueueModule());
-		install(new SynchronousActivityEventsModule());
-		install(new ObjectMapperModule()
-				.registerModule(GuavaModule.class)
-				.registerModule(NamingJacksonModule.class)
-				.registerModule(Jdk7Module.class)
-				.registerModule(Jdk8Module.class)
-				.registerModule(JSR310Module.class)
-				.registerModule(AfterburnerModule.class)
-				.registerModule(TextualTimestampsModule.class)
+		install(new ObjectMapperModule().registerModule(GuavaModule.class).registerModule(NamingJacksonModule.class)
+				.registerModule(Jdk7Module.class).registerModule(Jdk8Module.class).registerModule(JSR310Module.class)
+				.registerModule(AfterburnerModule.class).registerModule(TextualTimestampsModule.class)
 				.in(Singleton.class));
 		install(new SpooledEventsModule());
 		bind(MerlotRepository.class);

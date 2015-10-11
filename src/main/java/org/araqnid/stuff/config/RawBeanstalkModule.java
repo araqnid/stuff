@@ -5,7 +5,6 @@ import javax.inject.Singleton;
 
 import org.araqnid.stuff.ActivateOnStartup;
 import org.araqnid.stuff.SometubeHandler;
-import org.araqnid.stuff.activity.ActivityScopeControl;
 import org.araqnid.stuff.messages.BeanstalkProcessor;
 import org.araqnid.stuff.services.Activator;
 import org.araqnid.stuff.services.ServiceActivator;
@@ -33,9 +32,8 @@ public final class RawBeanstalkModule extends AbstractModule {
 
 	@Provides
 	public BeanstalkProcessor<SometubeHandler> sometubeProcessor(Provider<Client> connectionProvider,
-			ActivityScopeControl scopeControl,
 			Provider<SometubeHandler> targetProvider) {
-		return new BeanstalkProcessor<>(connectionProvider, "sometube", scopeControl, targetProvider);
+		return new BeanstalkProcessor<>(connectionProvider, "sometube", targetProvider);
 	}
 
 	private <T extends ServiceActivator<?>> void bindLateService(TypeLiteral<T> type) {

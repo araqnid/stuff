@@ -1,16 +1,6 @@
 package org.araqnid.stuff.test.integration;
 
-import static org.araqnid.stuff.test.integration.CollectActivityEvents.beginRequestRecord;
-import static org.araqnid.stuff.test.integration.CollectActivityEvents.finishRequestRecord;
-import static org.araqnid.stuff.test.integration.HttpClientMatchers.headerWithValue;
-import static org.araqnid.stuff.test.integration.HttpClientMatchers.responseWithHeader;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.any;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.stringContainsInOrder;
-
 import java.util.Iterator;
-import java.util.UUID;
 import java.util.regex.Pattern;
 
 import org.hamcrest.Description;
@@ -20,35 +10,17 @@ import org.junit.Test;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMultimap;
+
+import static org.araqnid.stuff.test.integration.HttpClientMatchers.headerWithValue;
+import static org.araqnid.stuff.test.integration.HttpClientMatchers.responseWithHeader;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.any;
 
 public class ServerIntegrationTest extends IntegrationTest {
-	@Test
-	public void ruid_generated_and_returned_in_http_response() throws Exception {
-		assertThat(doGet("/"), responseWithHeader("X-RUID", headerWithValue(likeAUUID())));
-	}
-
 	@Test
 	public void server_identity_in_http_response() throws Exception {
 		assertThat(doGet("/"),
 				responseWithHeader("X-Server-Identity", headerWithValue(twoParts(any(String.class), likeAUUID()))));
-	}
-
-	@Test
-	public void request_activity_emitted() throws Exception {
-		assertThat(
-				server.activityEventsForRuid(doGet("/").getFirstHeader("X-RUID").getValue()),
-				includesSubsequence(
-						beginRequestRecord(equalTo("HttpRequest")).withDescription(
-								stringContainsInOrder(ImmutableList.of("GET", "/"))),
-						finishRequestRecord(equalTo("HttpRequest"))));
-	}
-
-	@Test
-	public void ruid_echoed_from_http_request() throws Exception {
-		String ourRuid = UUID.randomUUID().toString();
-		assertThat(doGetWithHeaders("/", ImmutableMultimap.of("X-RUID", ourRuid)),
-				responseWithHeader("X-RUID", headerWithValue(equalTo(ourRuid))));
 	}
 
 	public static Matcher<String> likeAUUID() {

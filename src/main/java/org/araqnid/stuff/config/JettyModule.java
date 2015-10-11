@@ -18,7 +18,6 @@ import org.apache.tomcat.InstanceManager;
 import org.apache.tomcat.util.descriptor.tld.TagXml;
 import org.apache.tomcat.util.descriptor.tld.TaglibXml;
 import org.araqnid.stuff.JettyAppService;
-import org.araqnid.stuff.activity.RequestActivityFilter;
 import org.araqnid.stuff.jsp.InjectedInstanceManager;
 import org.araqnid.stuff.jsp.ThingTag;
 import org.araqnid.stuff.jsp.ThingTagInfo;
@@ -64,7 +63,6 @@ public final class JettyModule extends AbstractModule {
 						return ImmutableList.of(new ResteasyModule());
 					}
 				});
-		bind(RequestActivityFilter.RequestLogger.class).to(RequestActivityFilter.BasicRequestLogger.class);
 		Multibinder<Service> services = Multibinder.newSetBinder(binder(), Service.class);
 		services.addBinding().to(JettyAppService.class);
 		requestStaticInjection(UUIDPropertyEditor.class);

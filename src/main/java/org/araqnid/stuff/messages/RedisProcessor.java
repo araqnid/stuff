@@ -1,12 +1,9 @@
 package org.araqnid.stuff.messages;
 
-import static org.araqnid.stuff.activity.AppRequestType.RedisMessage;
-
 import java.net.SocketException;
 
 import javax.inject.Provider;
 
-import org.araqnid.stuff.activity.ActivityScopeControl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -14,7 +11,6 @@ import org.slf4j.MDC;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 
-import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.google.common.util.concurrent.Monitor;
 
@@ -24,7 +20,6 @@ public class RedisProcessor<T extends RedisProcessor.DeliveryTarget> extends Abs
 	private final String processingSuffix = ".working";
 	private final Provider<T> targetProvider;
 	private final Logger log;
-	private final ActivityScopeControl scopeControl;
 	private final Monitor monitor = new Monitor();
 	private final Monitor.Guard notCurrentlyDelivering = new Monitor.Guard(monitor) {
 		@Override
@@ -35,14 +30,10 @@ public class RedisProcessor<T extends RedisProcessor.DeliveryTarget> extends Abs
 	private Jedis jedis;
 	private boolean delivering;
 
-	public RedisProcessor(Provider<Jedis> connectionProvider,
-			String key,
-			ActivityScopeControl scopeControl,
-			Provider<T> targetProvider) {
+	public RedisProcessor(Provider<Jedis> connectionProvider, String key, Provider<T> targetProvider) {
 		this.connectionProvider = connectionProvider;
 		this.key = key;
 		this.targetProvider = targetProvider;
-		this.scopeControl = scopeControl;
 		this.log = LoggerFactory.getLogger(RedisProcessor.class.getName() + "." + key);
 	}
 
@@ -134,12 +125,7 @@ public class RedisProcessor<T extends RedisProcessor.DeliveryTarget> extends Abs
 	}
 
 	private boolean dispatchDelivery(String value) {
-		scopeControl.beginRequest(RedisMessage, Joiner.on('\t').join(key, value));
-		try {
-			return targetProvider.get().deliver(value);
-		} finally {
-			scopeControl.finishRequest(RedisMessage);
-		}
+		return targetProvider.get().deliver(value);
 	}
 
 	@Override

@@ -2,13 +2,10 @@ package org.araqnid.stuff.messages;
 
 import javax.inject.Provider;
 
-import org.araqnid.stuff.activity.ActivityScopeControl;
-import org.araqnid.stuff.activity.AppRequestType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.surftools.BeanstalkClient.BeanstalkException;
 import com.surftools.BeanstalkClient.Client;
@@ -18,20 +15,15 @@ public class BeanstalkProcessor<T extends BeanstalkProcessor.DeliveryTarget> ext
 	private static final Logger LOG = LoggerFactory.getLogger(BeanstalkProcessor.class);
 	private final Provider<Client> connectionProvider;
 	private final String tubeName;
-	private final ActivityScopeControl scopeControl;
 	private final Provider<T> targetProvider;
 	private final Logger log;
 	private boolean completed = false;
 	private boolean haltRequested = false;
 	private Client connection;
 
-	public BeanstalkProcessor(Provider<Client> connectionProvider,
-			String tubeName,
-			ActivityScopeControl scopeControl,
-			Provider<T> targetProvider) {
+	public BeanstalkProcessor(Provider<Client> connectionProvider, String tubeName, Provider<T> targetProvider) {
 		this.connectionProvider = connectionProvider;
 		this.tubeName = tubeName;
-		this.scopeControl = scopeControl;
 		this.targetProvider = targetProvider;
 		this.log = LoggerFactory.getLogger(BeanstalkProcessor.class.getName() + "." + tubeName);
 	}
@@ -138,12 +130,7 @@ public class BeanstalkProcessor<T extends BeanstalkProcessor.DeliveryTarget> ext
 	}
 
 	private boolean dispatchDelivery(Job job) {
-		scopeControl.beginRequest(AppRequestType.BeanstalkMessage, Joiner.on('\t').join(tubeName, job.getJobId()));
-		try {
-			return targetProvider.get().deliver(job.getData());
-		} finally {
-			scopeControl.finishRequest(AppRequestType.BeanstalkMessage);
-		}
+		return targetProvider.get().deliver(job.getData());
 	}
 
 	@Override

@@ -1,7 +1,5 @@
 package org.araqnid.stuff.workqueue;
 
-import static org.araqnid.stuff.activity.AppRequestType.Initialisation;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -25,9 +23,6 @@ import javax.sql.DataSource;
 
 import org.araqnid.stuff.AppVersion;
 import org.araqnid.stuff.PostgresqlDataSourceProviderService;
-import org.araqnid.stuff.activity.ActivityScopeControl;
-import org.araqnid.stuff.activity.AppEventType;
-import org.araqnid.stuff.activity.RequestActivity;
 import org.araqnid.stuff.config.ServerIdentity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,30 +82,26 @@ public class SqlWorkQueue implements WorkQueue {
 	private final AppVersion appVersion;
 	private final UUID instanceId;
 	private final String hostname;
-	private final RequestActivity requestActivity;
 
 	public SqlWorkQueue(String queueCode,
 			Accessor accessor,
 			ObjectMapper objectMapper,
 			AppVersion appVersion,
 			@ServerIdentity UUID instanceId,
-			@ServerIdentity String hostname,
-			RequestActivity requestActivity) {
+			@ServerIdentity String hostname) {
 		this.queueCode = queueCode;
 		this.accessor = accessor;
 		this.objectMapper = objectMapper;
 		this.appVersion = appVersion;
 		this.instanceId = instanceId;
 		this.hostname = hostname;
-		this.requestActivity = requestActivity;
 	}
 
 	public String context() {
 		try {
 			return objectMapper.writer().writeValueAsString(
 					ImmutableMap.<String, Object> of("app_version", Optional.fromNullable(appVersion.version),
-							"instance_id", instanceId, "host", hostname, "thread", Thread.currentThread().getName(),
-							"ruid", requestActivity.getRuid()));
+							"instance_id", instanceId, "host", hostname, "thread", Thread.currentThread().getName()));
 		} catch (JsonProcessingException e) {
 			throw new RuntimeException(e);
 		}
@@ -163,22 +154,15 @@ public class SqlWorkQueue implements WorkQueue {
 
 	public static class Accessor {
 		private final DataSource dataSource;
-		private final RequestActivity requestActivity;
 
 		@Inject
-		public Accessor(DataSource dataSource, RequestActivity requestActivity) {
+		public Accessor(DataSource dataSource) {
 			this.dataSource = dataSource;
-			this.requestActivity = requestActivity;
 		}
 
 		public void doSql(String caller, Sql... commands) {
 			try (Connection conn = dataSource.getConnection()) {
-				requestActivity.beginEvent(AppEventType.DatabaseTransaction, caller);
-				try {
-					doSqlTransaction(caller, conn, commands);
-				} finally {
-					requestActivity.finishEvent(AppEventType.DatabaseTransaction);
-				}
+				doSqlTransaction(caller, conn, commands);
 			} catch (SQLException e) {
 				for (SQLException se = e; se != null; se = se.getNextException()) {
 					LOG.error(
@@ -213,12 +197,7 @@ public class SqlWorkQueue implements WorkQueue {
 
 		private void doSqlInTransaction(String caller, Connection conn, Sql... commands) throws SQLException {
 			for (Sql command : commands) {
-				requestActivity.beginEvent(AppEventType.DatabaseStatement, Joiner.on('\t').join(caller, command));
-				try {
-					doSqlCommand(conn, command);
-				} finally {
-					requestActivity.finishEvent(AppEventType.DatabaseStatement);
-				}
+				doSqlCommand(conn, command);
 			}
 		}
 
@@ -241,38 +220,28 @@ public class SqlWorkQueue implements WorkQueue {
 
 	public static class Setup extends AbstractIdleService {
 		private final Provider<Accessor> accessorProvider;
-		private final ActivityScopeControl scopeControl;
 		private final PostgresqlDataSourceProviderService dataSourceService;
 
 		@Inject
-		public Setup(Provider<Accessor> accessorProvider,
-				ActivityScopeControl scopeControl,
-				PostgresqlDataSourceProviderService dataSourceService) {
+		public Setup(Provider<Accessor> accessorProvider, PostgresqlDataSourceProviderService dataSourceService) {
 			this.accessorProvider = accessorProvider;
-			this.scopeControl = scopeControl;
 			this.dataSourceService = dataSourceService;
 		}
 
 		@Override
 		protected void startUp() throws Exception {
 			dataSourceService.awaitRunning();
-			scopeControl.beginRequest(Initialisation, getClass().getName());
-			try {
-				Accessor accessor = accessorProvider.get();
-				ImmutableList<SqlCatalogue> commands = ImmutableList.of(SqlCatalogue.SetupCreateSchema,
-						SqlCatalogue.SetupCreateTableItemStatus, SqlCatalogue.SetupCreateTableItemEventType,
-						SqlCatalogue.SetupCreateTableItem, SqlCatalogue.SetupCreateTableItemEvent,
-						SqlCatalogue.SetupPopulateItemStatus, SqlCatalogue.SetupPopulateItemEventType);
-				accessor.doSql("Setup",
-						Iterables.toArray(Iterables.transform(commands, new Function<SqlCatalogue, Sql>() {
-							@Override
-							public Sql apply(SqlCatalogue input) {
-								return Sql.exec(input);
-							}
-						}), Sql.class));
-			} finally {
-				scopeControl.finishRequest(Initialisation);
-			}
+			Accessor accessor = accessorProvider.get();
+			ImmutableList<SqlCatalogue> commands = ImmutableList.of(SqlCatalogue.SetupCreateSchema,
+					SqlCatalogue.SetupCreateTableItemStatus, SqlCatalogue.SetupCreateTableItemEventType,
+					SqlCatalogue.SetupCreateTableItem, SqlCatalogue.SetupCreateTableItemEvent,
+					SqlCatalogue.SetupPopulateItemStatus, SqlCatalogue.SetupPopulateItemEventType);
+			accessor.doSql("Setup", Iterables.toArray(Iterables.transform(commands, new Function<SqlCatalogue, Sql>() {
+				@Override
+				public Sql apply(SqlCatalogue input) {
+					return Sql.exec(input);
+				}
+			}), Sql.class));
 		}
 
 		@Override
