@@ -16,8 +16,6 @@ import org.araqnid.stuff.MerlotRepository;
 
 import redis.clients.jedis.Jedis;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.databind.MappingJsonFactory;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk7.Jdk7Module;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
@@ -36,7 +34,6 @@ public final class CoreModule extends AbstractModule {
 		install(EventCast.eventCastModuleBuilder().implement(AppLifecycleEvent.class).build());
 		bind(AppStateMonitor.class);
 		bind(ActivateOnStartup.class);
-		bind(JsonFactory.class).to(MappingJsonFactory.class).in(Singleton.class);
 		bindConstant().annotatedWith(ServerIdentity.class).to(gethostname());
 		bind(UUID.class).annotatedWith(ServerIdentity.class).toInstance(UUID.randomUUID());
 		install(new RawBeanstalkModule());

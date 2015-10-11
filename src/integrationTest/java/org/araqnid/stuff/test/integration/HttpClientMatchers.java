@@ -20,7 +20,7 @@ import org.hamcrest.Matchers;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 import com.fasterxml.jackson.core.TreeNode;
-import com.fasterxml.jackson.databind.MappingJsonFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.ByteStreams;
 
 import static org.hamcrest.Matchers.either;
@@ -173,9 +173,12 @@ public final class HttpClientMatchers {
 	@Factory
 	public static <T extends TreeNode> Matcher<HttpResponse> responseWithJsonContent(final Matcher<T> contentMatcher) {
 		return responseWithContent(new HttpContentMatcher<T>(equalTo("application/json"), contentMatcher) {
+			private final ObjectMapper mapper = new ObjectMapper();
+
+			@SuppressWarnings("unchecked")
 			@Override
 			protected T doParse(HttpEntity item) throws IOException {
-				return new MappingJsonFactory().createParser(item.getContent()).readValueAsTree();
+				return (T) mapper.readTree(item.getContent());
 			}
 		});
 	}
