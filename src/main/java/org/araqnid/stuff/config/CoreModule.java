@@ -34,7 +34,6 @@ public final class CoreModule extends AbstractModule {
 	@Override
 	protected void configure() {
 		install(EventCast.eventCastModuleBuilder().implement(AppLifecycleEvent.class).build());
-		bind(AppVersion.class).toInstance(appVersion());
 		bind(AppStateMonitor.class);
 		bind(ActivateOnStartup.class);
 		bind(JsonFactory.class).to(MappingJsonFactory.class).in(Singleton.class);
@@ -62,7 +61,9 @@ public final class CoreModule extends AbstractModule {
 		return new ServiceManager(services);
 	}
 
-	private AppVersion appVersion() {
+	@Provides
+	@Singleton
+	public AppVersion appVersion() {
 		Package pkg = getClass().getPackage();
 		String title = getClass().getPackage().getImplementationTitle();
 		String vendor = pkg.getImplementationVendor();
