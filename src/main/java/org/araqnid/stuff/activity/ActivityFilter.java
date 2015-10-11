@@ -1,8 +1,6 @@
 package org.araqnid.stuff.activity;
 
 import java.io.IOException;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,45 +17,15 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 
 @Singleton
 public class ActivityFilter implements Filter {
-	private static final Logger LOG = LoggerFactory.getLogger(ActivityFilter.class);
-	private final ObjectMapper mapper;
-	private final ActivityEventSink activityEventSink = new ActivityEventSink() {
-		@Override
-		public void activityNodeStart(UUID activityId,
-				long nodeId,
-				long nodeParentId,
-				String type,
-				Instant started,
-				Object attributes) {
-			LOG.info("start {} {} {} {} {} {}", activityId, nodeId, nodeParentId, type, started, toJson(attributes));
-		}
-
-		@Override
-		public void activityNodeEnd(UUID activityId, long nodeId, boolean success, Duration duration, Object attributes) {
-			LOG.info("end   {} {} {} {} {}", activityId, nodeId, success ? "OK" : "BAD", duration, toJson(attributes));
-		}
-
-		private String toJson(Object attributes) {
-			try {
-				return mapper.writeValueAsString(attributes);
-			} catch (JsonProcessingException e) {
-				return "/* error */ null";
-			}
-		}
-	};
+	private final ActivityEventSink activityEventSink;
 
 	@Inject
-	public ActivityFilter(ObjectMapper mapper) {
-		this.mapper = mapper;
+	public ActivityFilter(ActivityEventSink activityEventSink) {
+		this.activityEventSink = activityEventSink;
 	}
 
 	@Override

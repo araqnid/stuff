@@ -14,7 +14,7 @@
 	<root level="info">
 		<appender-ref ref="STDOUT" />
 	</root>
-	<logger name="org.araqnid.stuff.activity.ActivityFilter" additivity="false" level="info">
+	<logger name="org.araqnid.stuff.activity.LogActivityEvents" additivity="false" level="info">
 		<appender-ref ref="STDOUT_ACTIVITY" />
 	</logger>
 </configuration>
