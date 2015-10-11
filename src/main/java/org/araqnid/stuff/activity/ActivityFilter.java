@@ -1,7 +1,6 @@
 package org.araqnid.stuff.activity;
 
 import java.io.IOException;
-import java.util.Optional;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -40,9 +39,7 @@ public class ActivityFilter implements Filter {
 			throws IOException, ServletException {
 		UUID activityId = UUID.randomUUID();
 		Activity activity = new Activity(activityId, "HttpRequest", ImmutableMap.of("method", request.getMethod(),
-				"host", Optional.ofNullable(request.getHeader("Host")), "path", request.getServletPath(), "protocol",
-				request.getProtocol(), "userAgent", Optional.ofNullable(request.getHeader("User-Agent"))),
-				activityEventSink);
+				"path", request.getServletPath()), activityEventSink);
 		response.setHeader("X-Activity", activityId.toString() + " " + activity.root.id);
 		boolean success = false;
 		ThreadActivity.attach(activity.root);

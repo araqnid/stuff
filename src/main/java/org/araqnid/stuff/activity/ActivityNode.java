@@ -10,6 +10,7 @@ import javax.annotation.Nullable;
 import com.google.common.base.Stopwatch;
 
 public class ActivityNode {
+	public static final long NO_PARENT = 0L;
 	private static final AtomicLong EVENT_ID_SOURCE = new AtomicLong();
 	public final long id = EVENT_ID_SOURCE.incrementAndGet();
 	@Nullable
@@ -46,8 +47,8 @@ public class ActivityNode {
 	}
 
 	void begin() {
-		activity.sink
-				.activityNodeStart(activity.id, id, parent != null ? parent.id : -1, type, started, nodeAttributes);
+		activity.sink.activityNodeStart(activity.id, id, parent != null ? parent.id : NO_PARENT, type, started,
+				nodeAttributes);
 		ThreadActivity.transition(parent, this);
 	}
 
