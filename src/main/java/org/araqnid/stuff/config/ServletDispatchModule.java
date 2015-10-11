@@ -1,5 +1,6 @@
 package org.araqnid.stuff.config;
 
+import org.araqnid.stuff.AccessLogFilter;
 import org.araqnid.stuff.RootServlet;
 import org.araqnid.stuff.ServerIdentityFilter;
 import org.araqnid.stuff.activity.ActivityFilter;
@@ -16,5 +17,6 @@ public class ServletDispatchModule extends ServletModule {
 		serve("/hello/*").with(HttpServlet30Dispatcher.class);
 		filter("/*").through(ServerIdentityFilter.class);
 		filter("/*").through(ActivityFilter.class);
+		filter("/*").through(AccessLogFilter.class);
 	}
 }
