@@ -80,6 +80,7 @@ dependencies {
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-json-org:' + jacksonVersion
     compile 'com.fasterxml.jackson.module:jackson-module-afterburner:' + jacksonVersion
     compile 'com.fasterxml.jackson.module:jackson-module-mrbean:' + jacksonVersion
+    compile 'org.elasticsearch:elasticsearch:1.7.3'
     compile 'org.json:json:20141113'
     compile 'com.lexicalscope.eventcast:eventcast:1.0.2'
     compile 'org.postgresql:postgresql:9.4-1203-jdbc42'
