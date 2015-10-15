@@ -31,7 +31,7 @@ import org.eclipse.jetty.server.session.HashSessionIdManager;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.util.resource.FileResource;
+import org.eclipse.jetty.util.resource.PathResource;
 import org.eclipse.jetty.util.resource.Resource;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
 import org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher;
@@ -106,7 +106,7 @@ public final class JettyModule extends AbstractModule {
 			return new EmbeddedResource(classLoader, "stuff/web", ClassPath.from(classLoader));
 		}
 		else {
-			return new FileResource(new File("web").toURI());
+			return new PathResource(new File("web").toURI());
 		}
 	}
 
