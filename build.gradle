@@ -72,6 +72,7 @@ dependencies {
     compile 'com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:' + jacksonVersion
     compile 'com.fasterxml.jackson.module:jackson-module-guice:' + jacksonVersion
     compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-smile:' + jacksonVersion
+    compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-csv:' + jacksonVersion
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-guava:' + jacksonVersion
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk7:' + jacksonVersion
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:' + jacksonVersion
@@ -80,6 +81,7 @@ dependencies {
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-json-org:' + jacksonVersion
     compile 'com.fasterxml.jackson.module:jackson-module-afterburner:' + jacksonVersion
     compile 'com.fasterxml.jackson.module:jackson-module-mrbean:' + jacksonVersion
+    compile 'com.fasterxml.jackson.module:jackson-module-paranamer:' + jacksonVersion
     compile 'org.elasticsearch:elasticsearch:1.7.3'
     compile 'org.json:json:20141113'
     compile 'com.lexicalscope.eventcast:eventcast:1.0.2'
