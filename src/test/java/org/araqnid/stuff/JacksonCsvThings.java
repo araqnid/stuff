@@ -18,10 +18,12 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import com.fasterxml.jackson.module.paranamer.ParanamerModule;
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 public class JacksonCsvThings {
@@ -94,6 +96,43 @@ public class JacksonCsvThings {
 			assertThat(iter.readAll(),
 					contains(new ColourData(1, "Red"), new ColourData(2, "Green"), new ColourData(3, "Blue")));
 		}
+	}
+
+	@Test
+	public void writes_csv_row_from_map_using_specified_schema() throws Exception {
+		CsvMapper mapper = new CsvMapper();
+		CsvSchema schema = CsvSchema.builder().addColumn("id").addColumn("name").build();
+		ObjectWriter writer = mapper.writer().with(schema);
+		String csv = writer.writeValueAsString(ImmutableMap.of("id", "1", "name", "Red"));
+		assertThat(csv, equalTo("1,Red\n"));
+	}
+
+	@Test
+	public void writes_csv_row_from_object() throws Exception {
+		CsvMapper mapper = new CsvMapper();
+		CsvSchema schema = mapper.schemaFor(ColourData.class);
+		ObjectWriter writer = mapper.writer().with(schema);
+		String csv = writer.writeValueAsString(new ColourData(1, "Red"));
+		assertThat(csv, equalTo("1,Red\n"));
+	}
+
+	@Test
+	public void writes_csv_row_and_header_from_object() throws Exception {
+		CsvMapper mapper = new CsvMapper();
+		CsvSchema schema = mapper.schemaFor(ColourData.class).withHeader();
+		ObjectWriter writer = mapper.writer().with(schema);
+		String csv = writer.writeValueAsString(new ColourData(1, "Red"));
+		assertThat(csv, equalTo("id,name\n1,Red\n"));
+	}
+
+	@Test
+	public void writes_csv_from_object_list() throws Exception {
+		CsvMapper mapper = new CsvMapper();
+		CsvSchema schema = mapper.schemaFor(ColourData.class);
+		ObjectWriter writer = mapper.writer().with(schema);
+		String csv = writer.writeValueAsString(ImmutableList.of(new ColourData(1, "Red"), new ColourData(2, "Green"),
+				new ColourData(3, "Blue")));
+		assertThat(csv, equalTo("1,Red\n2,Green\n3,Blue\n"));
 	}
 
 	@JsonPropertyOrder({ "id", "name" })
