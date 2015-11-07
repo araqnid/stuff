@@ -52,6 +52,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationConfig;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.deser.Deserializers;
 import com.fasterxml.jackson.databind.deser.std.StdNodeBasedDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -79,6 +80,7 @@ import com.google.inject.Injector;
 import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentJsonNode;
 import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasProperty;
@@ -206,7 +208,8 @@ public class JacksonThings {
 			}
 		});
 		assertThat(mapper.writeValueAsString(new Data(3.14)), equalTo("/*test*/null"));
-		assertThat(mapper.writeValueAsString(ImmutableMap.of("key", new Data(3.14))), equalTo("{\"key\"/*test*/:null}"));
+		assertThat(mapper.writeValueAsString(ImmutableMap.of("key", new Data(3.14))),
+				equalTo("{\"key\"/*test*/:null}"));
 	}
 
 	@Test
@@ -342,8 +345,9 @@ public class JacksonThings {
 							BeanDescription beanDesc) throws JsonMappingException {
 						if (type.getRawClass() == Either.class) {
 							JavaType[] types = config.getTypeFactory().findTypeParameters(type, Either.class);
-							if (types[0].getRawClass() == Data.class && types[1].getRawClass() == SimpleData.class) { return new StdNodeBasedDeserializer<Either<Data, SimpleData>>(
-									type) {
+							if (types[0].getRawClass() == Data.class && types[1]
+									.getRawClass() == SimpleData.class) { return new StdNodeBasedDeserializer<Either<Data, SimpleData>>(
+											type) {
 								@Override
 								public Either<Data, SimpleData> convert(JsonNode root, DeserializationContext ctxt)
 										throws IOException {
@@ -358,8 +362,8 @@ public class JacksonThings {
 										return Either.right(new SimpleData(root.get("value").asDouble()));
 									}
 									else {
-										throw JsonMappingException.from(ctxt.getParser(), "Unhandled type: "
-												+ typeString);
+										throw JsonMappingException.from(ctxt.getParser(),
+												"Unhandled type: " + typeString);
 									}
 								}
 							}; }
@@ -390,7 +394,7 @@ public class JacksonThings {
 		assertThat(mapper.readValue("[ { type: 'data', value: 3.14 }, { type: 'simpledata', value: 3.14 } ]",
 				new TypeReference<List<Either<Data, SimpleData>>>() {
 				}), IsIterableContainingInOrder.<Either<Data, SimpleData>> contains(isLeft(equalTo(new Data(3.14))),
-				isRight(equalTo(new SimpleData(3.14)))));
+						isRight(equalTo(new SimpleData(3.14)))));
 	}
 
 	@SuppressWarnings("serial")
@@ -403,8 +407,8 @@ public class JacksonThings {
 		});
 		mapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
 		assertThat(mapper.writeValueAsString(new EarthCoords(49.9, -0.01)), equivalentTo("{ lat: 49.9, long: -0.01 }"));
-		assertThat(mapper.readValue("{ lat: 49.9, long: -0.01 }", EarthCoords.class), equalTo(new EarthCoords(49.9,
-				-0.01)));
+		assertThat(mapper.readValue("{ lat: 49.9, long: -0.01 }", EarthCoords.class),
+				equalTo(new EarthCoords(49.9, -0.01)));
 	}
 
 	@Test
@@ -413,12 +417,13 @@ public class JacksonThings {
 		mapper.registerModule(new JSR310Module());
 		mapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
 		mapper.enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES);
-		assertThat(mapper.readValue(
-				"{ id: '82eee21e-4754-461c-a1b5-59fb883f4ea3', timestamp: '2015-04-17T00:45:00Z', name: 'Test' }",
-				SimpleEventInterface.class), Matchers.allOf(
-				hasProperty("id", equalTo(UUID.fromString("82eee21e-4754-461c-a1b5-59fb883f4ea3"))),
-				hasProperty("timestamp", equalTo(Instant.parse("2015-04-17T00:45:00Z"))),
-				hasProperty("name", equalTo("Test"))));
+		assertThat(
+				mapper.readValue(
+						"{ id: '82eee21e-4754-461c-a1b5-59fb883f4ea3', timestamp: '2015-04-17T00:45:00Z', name: 'Test' }",
+						SimpleEventInterface.class),
+				Matchers.allOf(hasProperty("id", equalTo(UUID.fromString("82eee21e-4754-461c-a1b5-59fb883f4ea3"))),
+						hasProperty("timestamp", equalTo(Instant.parse("2015-04-17T00:45:00Z"))),
+						hasProperty("name", equalTo("Test"))));
 	}
 
 	@Test
@@ -428,14 +433,18 @@ public class JacksonThings {
 		mapper.enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES);
 		ObjectReader reader = mapper.reader(new TypeReference<Event<?>>() {
 		});
-		assertThat(reader.readValue("{ id: '82eee21e-4754-461c-a1b5-59fb883f4ea3', timestamp: '2015-04-17T00:45:00Z',"
-				+ " type: 'this-event', data: { content: 'foo' } }"), Matchers.<Event<?>> allOf(
-				eventId(equalTo(UUID.fromString("82eee21e-4754-461c-a1b5-59fb883f4ea3"))),
-				eventTimestamp(equalTo(Instant.parse("2015-04-17T00:45:00Z"))), event(thisEvent(equalTo("foo")))));
-		assertThat(reader.readValue("{ id: '82eee21e-4754-461c-a1b5-59fb883f4ea3', timestamp: '2015-04-17T00:45:00Z',"
-				+ " type: 'that-event', data: { value: 1234 } }"), Matchers.<Event<?>> allOf(
-				eventId(equalTo(UUID.fromString("82eee21e-4754-461c-a1b5-59fb883f4ea3"))),
-				eventTimestamp(equalTo(Instant.parse("2015-04-17T00:45:00Z"))), event(thatEvent(equalTo(1234L)))));
+		assertThat(
+				reader.readValue("{ id: '82eee21e-4754-461c-a1b5-59fb883f4ea3', timestamp: '2015-04-17T00:45:00Z',"
+						+ " type: 'this-event', data: { content: 'foo' } }"),
+				Matchers.<Event<?>> allOf(eventId(equalTo(UUID.fromString("82eee21e-4754-461c-a1b5-59fb883f4ea3"))),
+						eventTimestamp(equalTo(Instant.parse("2015-04-17T00:45:00Z"))),
+						event(thisEvent(equalTo("foo")))));
+		assertThat(
+				reader.readValue("{ id: '82eee21e-4754-461c-a1b5-59fb883f4ea3', timestamp: '2015-04-17T00:45:00Z',"
+						+ " type: 'that-event', data: { value: 1234 } }"),
+				Matchers.<Event<?>> allOf(eventId(equalTo(UUID.fromString("82eee21e-4754-461c-a1b5-59fb883f4ea3"))),
+						eventTimestamp(equalTo(Instant.parse("2015-04-17T00:45:00Z"))),
+						event(thatEvent(equalTo(1234L)))));
 	}
 
 	@Test
@@ -502,9 +511,8 @@ public class JacksonThings {
 		SmileFactory sf = new SmileFactory();
 		ObjectMapper smileMapper = new ObjectMapper(sf);
 		assertThat(
-				smileMapper.writer().writeValueAsBytes(
-						ImmutableMap.of(
-								"values",
+				smileMapper.writer()
+						.writeValueAsBytes(ImmutableMap.of("values",
 								ImmutableList.of(ImmutableMap.of("colour", "red", "value", 1.2345),
 										ImmutableMap.of("colour", "orange", "value", 1.2345),
 										ImmutableMap.of("colour", "green", "value", 1.2345),
@@ -564,8 +572,8 @@ public class JacksonThings {
 			}
 
 			@Override
-			public void serialize(Data value, JsonGenerator jgen, SerializerProvider provider) throws IOException,
-					JsonGenerationException {
+			public void serialize(Data value, JsonGenerator jgen, SerializerProvider provider)
+					throws IOException, JsonGenerationException {
 				throw new UnsupportedOperationException();
 			}
 		}
@@ -607,8 +615,8 @@ public class JacksonThings {
 			}
 
 			@Override
-			public void serialize(Data value, JsonGenerator jgen, SerializerProvider provider) throws IOException,
-					JsonGenerationException {
+			public void serialize(Data value, JsonGenerator jgen, SerializerProvider provider)
+					throws IOException, JsonGenerationException {
 				throw new UnsupportedOperationException();
 			}
 		}
@@ -659,8 +667,8 @@ public class JacksonThings {
 			}
 
 			@Override
-			public void serialize(InnerData value, JsonGenerator jgen, SerializerProvider provider) throws IOException,
-					JsonGenerationException {
+			public void serialize(InnerData value, JsonGenerator jgen, SerializerProvider provider)
+					throws IOException, JsonGenerationException {
 				throw new UnsupportedOperationException();
 			}
 		}
@@ -708,8 +716,8 @@ public class JacksonThings {
 			}
 
 			@Override
-			public void serialize(InnerData value, JsonGenerator jgen, SerializerProvider provider) throws IOException,
-					JsonGenerationException {
+			public void serialize(InnerData value, JsonGenerator jgen, SerializerProvider provider)
+					throws IOException, JsonGenerationException {
 				throw new UnsupportedOperationException();
 			}
 		}
@@ -762,8 +770,8 @@ public class JacksonThings {
 			}
 
 			@Override
-			public void serialize(InnerData value, JsonGenerator jgen, SerializerProvider provider) throws IOException,
-					JsonGenerationException {
+			public void serialize(InnerData value, JsonGenerator jgen, SerializerProvider provider)
+					throws IOException, JsonGenerationException {
 				throw new UnsupportedOperationException();
 			}
 		}
@@ -786,6 +794,42 @@ public class JacksonThings {
 			fail("Expected exception");
 		} catch (RuntimeException e) {
 			assertThat(e.getMessage(), equalTo("expected failure"));
+		}
+	}
+
+	@Test
+	public void builder_used_for_data_object() throws Exception {
+		DataWithBuilder data = new ObjectMapper().reader(DataWithBuilder.class)
+				.with(JsonParser.Feature.ALLOW_SINGLE_QUOTES).with(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES)
+				.readValue("{ left: 'foo', right: 'bar' }");
+		assertThat(data, both(hasProperty("left", equalTo("foo"))).and(hasProperty("right", equalTo("bar"))));
+	}
+
+	@JsonDeserialize(builder = DataWithBuilder.Builder.class)
+	public static final class DataWithBuilder {
+		private final String left;
+		private final String right;
+
+		private DataWithBuilder(String left, String right) {
+			this.left = left;
+			this.right = right;
+		}
+
+		public String getLeft() {
+			return left;
+		}
+
+		public String getRight() {
+			return right;
+		}
+
+		public static final class Builder {
+			public String left;
+			public String right;
+
+			public DataWithBuilder build() {
+				return new DataWithBuilder(left, right);
+			}
 		}
 	}
 
