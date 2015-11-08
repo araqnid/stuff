@@ -1,9 +1,5 @@
 package org.araqnid.stuff;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.equalTo;
-
 import java.util.Map;
 import java.util.Objects;
 
@@ -21,10 +17,14 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
-import com.fasterxml.jackson.module.paranamer.ParanamerModule;
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.equalTo;
 
 public class JacksonCsvThings {
 	@Test
@@ -58,7 +58,7 @@ public class JacksonCsvThings {
 	public void parses_csv_row_to_object_without_parameter_annotations() throws Exception {
 		String csv = "1,Red\n2,Green\n3,Blue";
 		CsvMapper mapper = new CsvMapper();
-		mapper.registerModule(new ParanamerModule());
+		mapper.registerModule(new ParameterNamesModule());
 		CsvSchema schema = mapper.schemaFor(ColourDataSimpleConstructor.class);
 		ObjectReader reader = mapper.reader(ColourDataSimpleConstructor.class).with(schema);
 		assertThat(reader.readValue(csv), equalTo(new ColourDataSimpleConstructor(1, "Red")));
@@ -130,8 +130,8 @@ public class JacksonCsvThings {
 		CsvMapper mapper = new CsvMapper();
 		CsvSchema schema = mapper.schemaFor(ColourData.class);
 		ObjectWriter writer = mapper.writer().with(schema);
-		String csv = writer.writeValueAsString(ImmutableList.of(new ColourData(1, "Red"), new ColourData(2, "Green"),
-				new ColourData(3, "Blue")));
+		String csv = writer.writeValueAsString(
+				ImmutableList.of(new ColourData(1, "Red"), new ColourData(2, "Green"), new ColourData(3, "Blue")));
 		assertThat(csv, equalTo("1,Red\n2,Green\n3,Blue\n"));
 	}
 

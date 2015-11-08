@@ -4,6 +4,9 @@ apply plugin: 'application'
 
 mainClassName = 'org.araqnid.stuff.Main'
 sourceCompatibility = 1.8
+tasks.withType(JavaCompile) {
+  options.compilerArgs << '-parameters'
+}
 
 ext {
   jettyVersion = '9.3.5.v20151012'
@@ -81,7 +84,7 @@ dependencies {
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-json-org:' + jacksonVersion
     compile 'com.fasterxml.jackson.module:jackson-module-afterburner:' + jacksonVersion
     compile 'com.fasterxml.jackson.module:jackson-module-mrbean:' + jacksonVersion
-    compile 'com.fasterxml.jackson.module:jackson-module-paranamer:' + jacksonVersion
+    compile 'com.fasterxml.jackson.module:jackson-module-parameter-names:' + jacksonVersion
     compile 'org.elasticsearch:elasticsearch:1.7.3'
     compile 'org.json:json:20141113'
     compile 'com.lexicalscope.eventcast:eventcast:1.0.2'
