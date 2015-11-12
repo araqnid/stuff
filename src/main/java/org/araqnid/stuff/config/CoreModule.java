@@ -1,5 +1,6 @@
 package org.araqnid.stuff.config;
 
+import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.Clock;
@@ -18,8 +19,6 @@ import org.araqnid.stuff.activity.ActivityScope;
 import org.araqnid.stuff.activity.LogActivityEvents;
 import org.araqnid.stuff.activity.ThreadActivity;
 
-import redis.clients.jedis.Jedis;
-
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk7.Jdk7Module;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
@@ -31,6 +30,8 @@ import com.google.common.util.concurrent.ServiceManager;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.lexicalscope.eventcast.EventCast;
+
+import redis.clients.jedis.Jedis;
 
 public final class CoreModule extends AbstractModule {
 	@Override
@@ -47,7 +48,7 @@ public final class CoreModule extends AbstractModule {
 				.registerModule(AfterburnerModule.class).registerModule(TextualTimestampsModule.class)
 				.in(Singleton.class));
 		install(new SpooledEventsModule());
-		install(new ElasticSearchModule());
+		install(new ElasticSearchModule("testcluster", new File("/tmp/data")));
 		bind(MerlotRepository.class);
 		bind(Clock.class).toInstance(Clock.systemDefaultZone());
 		bind(ActivityScope.class).toInstance(ThreadActivity::get);
