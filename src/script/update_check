@@ -36,7 +36,7 @@ check_for_updates com.google.inject           guice            4.0
 check_for_updates joda-time                   joda-time        2.9.1
 check_for_updates org.eclipse.jetty           jetty-server     9.3.6.v20151106  '^9\.3\.[0-9]+\.[^RM]'
 check_for_updates org.jboss.resteasy          resteasy-jaxrs   3.0.13.Final
-check_for_updates org.slf4j                   slf4j-api        1.7.12
+check_for_updates org.slf4j                   slf4j-api        1.7.13
 check_for_updates org.postgresql              postgresql       9.4-1203-jdbc42
 check_for_updates redis.clients               jedis            2.7.3
 check_for_updates com.surftools               BeanstalkClient  1.4.6
