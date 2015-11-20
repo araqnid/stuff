@@ -9,7 +9,7 @@ tasks.withType(JavaCompile) {
 }
 
 ext {
-  jettyVersion = '9.3.5.v20151012'
+  jettyVersion = '9.3.6.v20151106'
   jacksonVersion = '2.5.3'
   resteasyVersion = '3.0.13.Final'
   hibernateVersion = '4.3.8.Final'
