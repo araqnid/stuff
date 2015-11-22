@@ -92,46 +92,46 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 public class JacksonThings {
-	private final ObjectMapper mapper = new ObjectMapper();
-
 	@Test
 	public void writer_closes_output_stream() throws Exception {
 		OutputStream stream = mock(OutputStream.class);
-		mapper.writer().writeValue(stream, new Data(3.14));
+		new ObjectMapper().writer().writeValue(stream, new Data(3.14));
 		verify(stream).close();
 	}
 
 	@Test
 	public void writer_does_not_close_output_stream_when_feature_disabled() throws Exception {
 		OutputStream stream = mock(OutputStream.class);
-		mapper.writer().without(Feature.AUTO_CLOSE_TARGET).writeValue(stream, new Data(3.14));
+		new ObjectMapper().writer().without(Feature.AUTO_CLOSE_TARGET).writeValue(stream, new Data(3.14));
 		verify(stream, never()).close();
 	}
 
 	@Test(expected = JsonMappingException.class)
 	public void writer_accepts_specific_type_only() throws Exception {
-		mapper.writerFor(Data.class).writeValueAsString("foo");
+		new ObjectMapper().writerFor(Data.class).writeValueAsString("foo");
 	}
 
 	@Test
 	public void reader_converts_value_to_object_by_calling_simple_constructor() throws Exception {
-		assertThat(mapper.readValue("3.14", Data.class), equalTo(new Data(3.14)));
+		assertThat(new ObjectMapper().readValue("3.14", Data.class), equalTo(new Data(3.14)));
 	}
 
 	@Test
 	public void read_and_write_is_not_necessarily_idempotent() throws Exception {
+		ObjectMapper mapper = new ObjectMapper();
 		assertThat(mapper.writeValueAsString(mapper.readValue("3.14", Data.class)), not(equalTo("3.14")));
 		assertThat(mapper.writeValueAsString(mapper.readValue("3.14", Data.class)), equalTo("{\"score\":3.14}"));
 	}
 
 	@Test
 	public void read_and_write_of_simple_value_can_be_made_to_be_idempotent() throws Exception {
+		ObjectMapper mapper = new ObjectMapper();
 		assertThat(mapper.writeValueAsString(mapper.readValue("3.14", SimpleData.class)), equalTo("3.14"));
 	}
 
 	@Test
 	public void writer_can_be_reused() throws Exception {
-		ObjectWriter dataWriter = mapper.writerFor(Data.class);
+		ObjectWriter dataWriter = new ObjectMapper().writerFor(Data.class);
 		ExecutorService x = Executors.newCachedThreadPool();
 		for (int i = 0; i < 100; i++) {
 			x.execute(() -> {
@@ -150,12 +150,14 @@ public class JacksonThings {
 
 	@Test
 	public void nan_written_as_a_string() throws Exception {
+		ObjectMapper mapper = new ObjectMapper();
 		assertThat(mapper.writeValueAsString(Double.NaN), equivalentTo("\"NaN\""));
 		assertThat(mapper.writeValueAsString(Float.NaN), equivalentTo("\"NaN\""));
 	}
 
 	@Test
 	public void infinity_written_as_a_string() throws Exception {
+		ObjectMapper mapper = new ObjectMapper();
 		assertThat(mapper.writeValueAsString(Double.POSITIVE_INFINITY), equivalentTo("\"Infinity\""));
 		assertThat(mapper.writeValueAsString(Double.NEGATIVE_INFINITY), equivalentTo("\"-Infinity\""));
 		assertThat(mapper.writeValueAsString(Float.POSITIVE_INFINITY), equivalentTo("\"Infinity\""));
@@ -164,12 +166,14 @@ public class JacksonThings {
 
 	@Test
 	public void maps_are_json_objects() throws Exception {
+		ObjectMapper mapper = new ObjectMapper();
 		assertThat(mapper.writeValueAsString(ImmutableMap.<String, Object> of("a", 1)), equivalentTo("{\"a\":1}"));
 		assertThat(mapper.readValue("{\"a\":1}", Map.class), equalTo(ImmutableMap.<String, Object> of("a", 1)));
 	}
 
 	@Test
 	public void lists_are_json_arrays() throws Exception {
+		ObjectMapper mapper = new ObjectMapper();
 		assertThat(mapper.writeValueAsString(ImmutableList.of(1, 2)), equivalentTo("[1,2]"));
 		assertThat(mapper.readValue("[1,2]", List.class), equalTo(ImmutableList.of(1, 2)));
 		assertThat(mapper.readValue("[1,2]", List.class), not(equalTo(mapper.readValue("[2,1]", List.class))));
@@ -177,6 +181,7 @@ public class JacksonThings {
 
 	@Test
 	public void sets_are_json_arrays() throws Exception {
+		ObjectMapper mapper = new ObjectMapper();
 		assertThat(mapper.writeValueAsString(ImmutableSet.of(1, 2)), equivalentTo("[1,2]"));
 		assertThat(mapper.readValue("[1,2]", Set.class), equalTo(ImmutableSet.of(1, 2)));
 		assertThat(mapper.readValue("[1,2]", Set.class), equalTo(mapper.readValue("[2,1]", Set.class)));
@@ -185,7 +190,7 @@ public class JacksonThings {
 	@SuppressWarnings("serial")
 	@Test
 	public void serializers_can_be_configured_on_demand() throws Exception {
-		mapper.registerModule(new SimpleModule() {
+		ObjectMapper mapper = new ObjectMapper().registerModule(new SimpleModule() {
 			@Override
 			public void setupModule(SetupContext context) {
 				context.addSerializers(new Serializers.Base() {
@@ -238,19 +243,21 @@ public class JacksonThings {
 
 	@Test
 	public void data_object_can_be_converted_to_tree_node() throws Exception {
+		ObjectMapper mapper = new ObjectMapper();
 		assertThat(mapper.valueToTree(new Data(3.14)), equalTo(mapper.readTree("{\"score\":3.14}")));
 		assertThat(mapper.convertValue(new Data(3.14), JsonNode.class), equalTo(mapper.readTree("{\"score\":3.14}")));
 	}
 
 	@Test
 	public void tree_node_objects_can_be_used_for_equality_checks() throws Exception {
+		ObjectMapper mapper = new ObjectMapper();
 		assertThat(mapper.readTree("{\"a\":1,\"b\":2}"), equalTo(mapper.readTree("{ \"b\" : 2, \"a\": 1 }")));
 	}
 
 	@SuppressWarnings("serial")
 	@Test
 	public void converting_data_object_to_tree_node_uses_serializers() throws Exception {
-		mapper.registerModule(new SimpleModule() {
+		ObjectMapper mapper = new ObjectMapper().registerModule(new SimpleModule() {
 			{
 				addSerializer(Data.class, new StdScalarSerializer<Data>(Data.class) {
 					@Override
@@ -268,13 +275,13 @@ public class JacksonThings {
 
 	@Test
 	public void immutable_sets_can_be_read() throws Exception {
-		mapper.registerModule(new GuavaModule());
+		ObjectMapper mapper = new ObjectMapper().registerModule(new GuavaModule());
 		assertThat(mapper.readValue("[1, 2, 3]", ImmutableSet.class), equalTo(ImmutableSet.of(1, 2, 3)));
 	}
 
 	@Test
 	public void object_reader_can_be_built_specifying_parameterised_type() throws Exception {
-		mapper.registerModule(new GuavaModule());
+		ObjectMapper mapper = new ObjectMapper().registerModule(new GuavaModule());
 		TypeReference<ImmutableSet<Long>> typeToken = new TypeReference<ImmutableSet<Long>>() {
 		};
 		assertThat(mapper.readerFor(typeToken).readValue("[1, 2, 3]"), equalTo(ImmutableSet.of(1L, 2L, 3L)));
@@ -282,21 +289,21 @@ public class JacksonThings {
 
 	@Test
 	public void multimaps_are_objects_with_array_valued_properties() throws Exception {
-		mapper.registerModule(new GuavaModule());
+		ObjectMapper mapper = new ObjectMapper().registerModule(new GuavaModule());
 		assertThat(mapper.valueToTree(ImmutableMultimap.of("a", 1, "a", 2, "b", 3)),
 				equivalentJsonNode("{\"a\":[1,2],\"b\":[3]}"));
 	}
 
 	@Test
 	public void cross_library_with_json_org() throws Exception {
-		mapper.registerModule(new JsonOrgModule());
+		ObjectMapper mapper = new ObjectMapper().registerModule(new JsonOrgModule());
 		assertThat(mapper.valueToTree(new JSONObject().put("a", 1)), equivalentJsonNode("{\"a\":1}"));
 	}
 
 	@Test
 	public void immutable_object_can_be_read_using_constructor_with_annotated_property_names() throws Exception {
-		mapper.enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES);
-		mapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
+		ObjectMapper mapper = new ObjectMapper().enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES)
+				.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
 		ValueClassWithAnnotatedCreatorConstructor value = mapper.readValue(
 				"{name:'the name',description:'the description',price:42.24}",
 				ValueClassWithAnnotatedCreatorConstructor.class);
@@ -309,8 +316,8 @@ public class JacksonThings {
 
 	@Test
 	public void immutable_object_can_be_read_using_delegate_creator() throws Exception {
-		mapper.enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES);
-		mapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
+		ObjectMapper mapper = new ObjectMapper().enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES)
+				.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
 		ValueClassWithDelegateCreatorConstructor value = mapper.readValue(
 				"{name:'the name',description:'the description',price:42.24}",
 				ValueClassWithDelegateCreatorConstructor.class);
@@ -323,7 +330,7 @@ public class JacksonThings {
 
 	@Test
 	public void numbers_can_be_serialized_as_strings() throws Exception {
-		mapper.enable(JsonGenerator.Feature.WRITE_NUMBERS_AS_STRINGS);
+		ObjectMapper mapper = new ObjectMapper().enable(JsonGenerator.Feature.WRITE_NUMBERS_AS_STRINGS);
 		assertThat(
 				mapper.writeValueAsString(ImmutableMap.<String, Number> builder().put("int", 1).put("short", (short) 2)
 						.put("long", 3l).put("double", 4.12).put("float", 5.5f).put("bigdecimal", new BigDecimal(6.78))
@@ -335,46 +342,45 @@ public class JacksonThings {
 	@SuppressWarnings({ "serial", "unchecked" })
 	@Test
 	public void register_deserializer_from_tree_model() throws Exception {
-		mapper.registerModule(new SimpleModule() {
-			@Override
-			public void setupModule(SetupContext context) {
-				context.addDeserializers(new Deserializers.Base() {
+		ObjectMapper mapper = new ObjectMapper().enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES)
+				.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES).registerModule(new SimpleModule() {
 					@Override
-					public JsonDeserializer<?> findBeanDeserializer(JavaType type,
-							DeserializationConfig config,
-							BeanDescription beanDesc) throws JsonMappingException {
-						if (type.getRawClass() == Either.class) {
-							JavaType[] types = config.getTypeFactory().findTypeParameters(type, Either.class);
-							if (types[0].getRawClass() == Data.class && types[1]
-									.getRawClass() == SimpleData.class) { return new StdNodeBasedDeserializer<Either<Data, SimpleData>>(
-											type) {
-								@Override
-								public Either<Data, SimpleData> convert(JsonNode root, DeserializationContext ctxt)
-										throws IOException {
-									JsonNode typeNode = root.get("type");
-									if (typeNode == null)
-										throw JsonMappingException.from(ctxt.getParser(), "No type field");
-									String typeString = typeNode.asText();
-									if (typeString.equals("data")) {
-										return Either.left(new Data(root.get("value").asDouble()));
-									}
-									else if (typeString.equals("simpledata")) {
-										return Either.right(new SimpleData(root.get("value").asDouble()));
-									}
-									else {
-										throw JsonMappingException.from(ctxt.getParser(),
-												"Unhandled type: " + typeString);
-									}
+					public void setupModule(SetupContext context) {
+						context.addDeserializers(new Deserializers.Base() {
+							@Override
+							public JsonDeserializer<?> findBeanDeserializer(JavaType type,
+									DeserializationConfig config,
+									BeanDescription beanDesc) throws JsonMappingException {
+								if (type.getRawClass() == Either.class) {
+									JavaType[] types = config.getTypeFactory().findTypeParameters(type, Either.class);
+									if (types[0].getRawClass() == Data.class && types[1]
+											.getRawClass() == SimpleData.class) { return new StdNodeBasedDeserializer<Either<Data, SimpleData>>(
+													type) {
+										@Override
+										public Either<Data, SimpleData> convert(JsonNode root,
+												DeserializationContext ctxt) throws IOException {
+											JsonNode typeNode = root.get("type");
+											if (typeNode == null)
+												throw JsonMappingException.from(ctxt.getParser(), "No type field");
+											String typeString = typeNode.asText();
+											if (typeString.equals("data")) {
+												return Either.left(new Data(root.get("value").asDouble()));
+											}
+											else if (typeString.equals("simpledata")) {
+												return Either.right(new SimpleData(root.get("value").asDouble()));
+											}
+											else {
+												throw JsonMappingException.from(ctxt.getParser(),
+														"Unhandled type: " + typeString);
+											}
+										}
+									}; }
 								}
-							}; }
-						}
-						return super.findBeanDeserializer(type, config, beanDesc);
+								return super.findBeanDeserializer(type, config, beanDesc);
+							}
+						});
 					}
 				});
-			}
-		});
-		mapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
-		mapper.enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES);
 		ObjectReader reader = mapper.readerFor(new TypeReference<Either<Data, SimpleData>>() {
 		});
 		assertThat(reader.readValue("{ type: 'data', value: 3.14 }"), isLeft(equalTo(new Data(3.14))));
@@ -400,12 +406,11 @@ public class JacksonThings {
 	@SuppressWarnings("serial")
 	@Test
 	public void annotations_can_be_kept_separate_with_mixins() throws Exception {
-		mapper.registerModule(new SimpleModule() {
+		ObjectMapper mapper = new ObjectMapper().registerModule(new SimpleModule() {
 			{
 				setMixInAnnotation(EarthCoords.class, EarthCoordsMixin.class);
 			}
-		});
-		mapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
+		}).enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
 		assertThat(mapper.writeValueAsString(new EarthCoords(49.9, -0.01)), equivalentTo("{ lat: 49.9, long: -0.01 }"));
 		assertThat(mapper.readValue("{ lat: 49.9, long: -0.01 }", EarthCoords.class),
 				equalTo(new EarthCoords(49.9, -0.01)));
@@ -413,10 +418,8 @@ public class JacksonThings {
 
 	@Test
 	public void bean_implementation_can_be_materialised_automagically() throws Exception {
-		mapper.registerModule(new MrBeanModule());
-		mapper.registerModule(new JavaTimeModule());
-		mapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
-		mapper.enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES);
+		ObjectMapper mapper = new ObjectMapper().registerModule(new MrBeanModule()).registerModule(new JavaTimeModule())
+				.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES).enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES);
 		assertThat(
 				mapper.readValue(
 						"{ id: '82eee21e-4754-461c-a1b5-59fb883f4ea3', timestamp: '2015-04-17T00:45:00Z', name: 'Test' }",
@@ -428,9 +431,8 @@ public class JacksonThings {
 
 	@Test
 	public void deserializes_polymorphic_event_structure() throws Exception {
-		mapper.registerModule(new JavaTimeModule());
-		mapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
-		mapper.enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES);
+		ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule())
+				.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES).enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES);
 		ObjectReader reader = mapper.readerFor(new TypeReference<Event<?>>() {
 		});
 		assertThat(
@@ -454,7 +456,8 @@ public class JacksonThings {
 		unwrapped.lower = new UnwrappedLower();
 		unwrapped.lower.value = "the value";
 
-		assertThat(mapper.writeValueAsString(unwrapped), equivalentTo("{ name: 'the name', value: 'the value' }"));
+		assertThat(new ObjectMapper().writeValueAsString(unwrapped),
+				equivalentTo("{ name: 'the name', value: 'the value' }"));
 	}
 
 	@Test
@@ -464,8 +467,8 @@ public class JacksonThings {
 		unwrapped.lower = new UnwrappedLower();
 		unwrapped.lower.value = "the value";
 
-		mapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
-		mapper.enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES);
+		ObjectMapper mapper = new ObjectMapper().enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES)
+				.enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES);
 
 		assertThat(mapper.readValue("{ name: 'the name', value: 'the value' }", UnwrappedUpper.class),
 				equalTo(unwrapped));
@@ -480,7 +483,7 @@ public class JacksonThings {
 		unwrapped.right = new UnwrappedRightLeg();
 		unwrapped.right.value = "the right value";
 
-		assertThat(mapper.writeValueAsString(unwrapped),
+		assertThat(new ObjectMapper().writeValueAsString(unwrapped),
 				equivalentTo("{ name: 'the name', leftValue: 'the left value', rightValue: 'the right value' }"));
 	}
 
@@ -493,8 +496,8 @@ public class JacksonThings {
 		unwrapped.right = new UnwrappedRightLeg();
 		unwrapped.right.value = "the right value";
 
-		mapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
-		mapper.enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES);
+		ObjectMapper mapper = new ObjectMapper().enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES)
+				.enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES);
 
 		assertThat(mapper.readValue("{ name: 'the name', leftValue: 'the left value', rightValue: 'the right value' }",
 				UnwrappedHead.class), equalTo(unwrapped));
