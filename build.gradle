@@ -44,6 +44,9 @@ configurations {
     browserTestRuntime.extendsFrom testRuntime
 
     compile.exclude group: 'org.apache.geronimo.bundles', module: 'json'
+
+    // use jcl-over-slf4j instead
+    compile.exclude group: 'commons-logging', module: 'commons-logging'
 }
 
 repositories {
@@ -88,6 +91,9 @@ dependencies {
     compile 'com.lexicalscope.eventcast:eventcast:1.0.2'
     compile 'org.postgresql:postgresql:9.4-1203-jdbc42'
     compile 'org.slf4j:jcl-over-slf4j:1.7.13'
+    compile 'commons-codec:commons-codec:1.10'
+    compile 'commons-io:commons-io:2.4'
+    compile 'xml-apis:xml-apis:1.4.01'
     runtime 'ch.qos.logback:logback-classic:1.1.3'
     testCompile 'junit:junit:4.12'
     testCompile 'org.hamcrest:hamcrest-library:1.3'
