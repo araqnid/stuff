@@ -8,7 +8,6 @@ import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.Test;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.MappingIterator;
@@ -17,7 +16,6 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
-import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -52,16 +50,6 @@ public class JacksonCsvThings {
 		CsvSchema schema = mapper.schemaFor(ColourData.class);
 		ObjectReader reader = mapper.readerFor(ColourData.class).with(schema);
 		assertThat(reader.readValue(csv), equalTo(new ColourData(1, "Red")));
-	}
-
-	@Test
-	public void parses_csv_row_to_object_without_parameter_annotations() throws Exception {
-		String csv = "1,Red\n2,Green\n3,Blue";
-		CsvMapper mapper = new CsvMapper();
-		mapper.registerModule(new ParameterNamesModule());
-		CsvSchema schema = mapper.schemaFor(ColourDataSimpleConstructor.class);
-		ObjectReader reader = mapper.readerFor(ColourDataSimpleConstructor.class).with(schema);
-		assertThat(reader.readValue(csv), equalTo(new ColourDataSimpleConstructor(1, "Red")));
 	}
 
 	@Test
@@ -155,36 +143,6 @@ public class JacksonCsvThings {
 			if (obj == this) return true;
 			if (!(obj instanceof ColourData)) return false;
 			ColourData other = (ColourData) obj;
-			return other.id == id && Objects.equals(other.name, name);
-		}
-
-		@Override
-		public String toString() {
-			return MoreObjects.toStringHelper(this).add("id", id).add("name", name).toString();
-		}
-	}
-
-	@JsonPropertyOrder({ "id", "name" })
-	public static final class ColourDataSimpleConstructor {
-		public final int id;
-		public final String name;
-
-		@JsonCreator
-		public ColourDataSimpleConstructor(int id, String name) {
-			this.id = id;
-			this.name = name;
-		}
-
-		@Override
-		public int hashCode() {
-			return Objects.hash(id, name);
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (obj == this) return true;
-			if (!(obj instanceof ColourDataSimpleConstructor)) return false;
-			ColourDataSimpleConstructor other = (ColourDataSimpleConstructor) obj;
 			return other.id == id && Objects.equals(other.name, name);
 		}
 
