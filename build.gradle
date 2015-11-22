@@ -10,7 +10,7 @@ tasks.withType(JavaCompile) {
 
 ext {
   jettyVersion = '9.3.6.v20151106'
-  jacksonVersion = '2.5.3'
+  jacksonVersion = '2.6.3'
   resteasyVersion = '3.0.13.Final'
   hibernateVersion = '4.3.8.Final'
   buildNumber = System.getenv("BUILD_NUMBER") ?: System.getenv("TRAVIS_BUILD_NUMBER")
@@ -70,7 +70,6 @@ dependencies {
     compile 'org.hibernate:hibernate-entitymanager:' + hibernateVersion
     compile 'org.jboss.resteasy:resteasy-jaxrs:' + resteasyVersion
     compile 'org.jboss.resteasy:resteasy-guice:' + resteasyVersion
-    compile 'org.jboss.resteasy:resteasy-jackson2-provider:' + resteasyVersion
     compile 'org.jboss.resteasy:async-http-servlet-3.0:' + resteasyVersion
     compile 'com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:' + jacksonVersion
     compile 'com.fasterxml.jackson.module:jackson-module-guice:' + jacksonVersion

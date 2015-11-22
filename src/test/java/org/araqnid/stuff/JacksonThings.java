@@ -63,7 +63,7 @@ import com.fasterxml.jackson.databind.ser.std.StdScalarSerializer;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jsonorg.JsonOrgModule;
-import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.guice.ObjectMapperModule;
 import com.fasterxml.jackson.module.mrbean.MrBeanModule;
 import com.google.common.base.MoreObjects;
@@ -277,7 +277,7 @@ public class JacksonThings {
 		mapper.registerModule(new GuavaModule());
 		TypeReference<ImmutableSet<Long>> typeToken = new TypeReference<ImmutableSet<Long>>() {
 		};
-		assertThat(mapper.reader(typeToken).readValue("[1, 2, 3]"), equalTo(ImmutableSet.of(1L, 2L, 3L)));
+		assertThat(mapper.readerFor(typeToken).readValue("[1, 2, 3]"), equalTo(ImmutableSet.of(1L, 2L, 3L)));
 	}
 
 	@Test
@@ -375,7 +375,7 @@ public class JacksonThings {
 		});
 		mapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
 		mapper.enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES);
-		ObjectReader reader = mapper.reader(new TypeReference<Either<Data, SimpleData>>() {
+		ObjectReader reader = mapper.readerFor(new TypeReference<Either<Data, SimpleData>>() {
 		});
 		assertThat(reader.readValue("{ type: 'data', value: 3.14 }"), isLeft(equalTo(new Data(3.14))));
 		assertThat(reader.readValue("{ type: 'simpledata', value: 3.14 }"), isRight(equalTo(new SimpleData(3.14))));
@@ -414,7 +414,7 @@ public class JacksonThings {
 	@Test
 	public void bean_implementation_can_be_materialised_automagically() throws Exception {
 		mapper.registerModule(new MrBeanModule());
-		mapper.registerModule(new JSR310Module());
+		mapper.registerModule(new JavaTimeModule());
 		mapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
 		mapper.enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES);
 		assertThat(
@@ -428,10 +428,10 @@ public class JacksonThings {
 
 	@Test
 	public void deserializes_polymorphic_event_structure() throws Exception {
-		mapper.registerModule(new JSR310Module());
+		mapper.registerModule(new JavaTimeModule());
 		mapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
 		mapper.enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES);
-		ObjectReader reader = mapper.reader(new TypeReference<Event<?>>() {
+		ObjectReader reader = mapper.readerFor(new TypeReference<Event<?>>() {
 		});
 		assertThat(
 				reader.readValue("{ id: '82eee21e-4754-461c-a1b5-59fb883f4ea3', timestamp: '2015-04-17T00:45:00Z',"
@@ -799,7 +799,7 @@ public class JacksonThings {
 
 	@Test
 	public void builder_used_for_data_object() throws Exception {
-		DataWithBuilder data = new ObjectMapper().reader(DataWithBuilder.class)
+		DataWithBuilder data = new ObjectMapper().readerFor(DataWithBuilder.class)
 				.with(JsonParser.Feature.ALLOW_SINGLE_QUOTES).with(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES)
 				.readValue("{ left: 'foo', right: 'bar' }");
 		assertThat(data, both(hasProperty("left", equalTo("foo"))).and(hasProperty("right", equalTo("bar"))));

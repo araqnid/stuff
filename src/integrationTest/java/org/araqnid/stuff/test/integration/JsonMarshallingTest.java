@@ -14,6 +14,7 @@ import javax.ws.rs.Produces;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.araqnid.stuff.config.ResteasyModule.JacksonContextResolver;
+import org.araqnid.stuff.resteasy.ResteasyJackson2Provider;
 import org.hamcrest.Description;
 import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
@@ -47,22 +48,20 @@ import static org.hamcrest.Matchers.is;
 
 @RunWith(Parameterized.class)
 public class JsonMarshallingTest extends IntegrationTest {
-	@Parameters(name="@{0}")
+	@Parameters(name = "@{0}")
 	public static Instant[] parameters() {
-		ImmutableList<Instant> instants = ImmutableList.of(
-				Instant.parse("2015-04-03T13:29:33.123456789Z"),
-				Instant.parse("2015-04-03T13:29:33.123456000Z"),
-				Instant.parse("2015-04-03T13:29:33.123000000Z"),
-				Instant.parse("2015-04-03T13:29:33.000000000Z"),
-				Instant.parse("2015-04-03T13:29:00.000000000Z"),
-				Instant.parse("2015-04-03T13:00:00.000000000Z")
-				);
+		ImmutableList<Instant> instants = ImmutableList.of(Instant.parse("2015-04-03T13:29:33.123456789Z"),
+				Instant.parse("2015-04-03T13:29:33.123456000Z"), Instant.parse("2015-04-03T13:29:33.123000000Z"),
+				Instant.parse("2015-04-03T13:29:33.000000000Z"), Instant.parse("2015-04-03T13:29:00.000000000Z"),
+				Instant.parse("2015-04-03T13:00:00.000000000Z"));
 		return instants.toArray(new Instant[instants.size()]);
 	}
 
-	@Parameter public Instant instant;
+	@Parameter
+	public Instant instant;
 
-	@Before public void setClock() {
+	@Before
+	public void setClock() {
 		clock.setTime(instant);
 	}
 
@@ -71,29 +70,28 @@ public class JsonMarshallingTest extends IntegrationTest {
 		return new AbstractModule() {
 			@Override
 			protected void configure() {
-				bind(GuiceResteasyBootstrapServletContextListener.class).toInstance(
-						new GuiceResteasyBootstrapServletContextListener() {
+				bind(GuiceResteasyBootstrapServletContextListener.class)
+						.toInstance(new GuiceResteasyBootstrapServletContextListener() {
+					@Override
+					protected List<? extends Module> getModules(ServletContext context) {
+						return ImmutableList.of(new AbstractModule() {
 							@Override
-							protected List<? extends Module> getModules(ServletContext context) {
-								return ImmutableList.of(new AbstractModule() {
-									@Override
-									protected void configure() {
-										bind(TestResource.class);
-										bind(JacksonContextResolver.class);
-									}
-								});
+							protected void configure() {
+								bind(TestResource.class);
+								bind(JacksonContextResolver.class);
+								bind(ResteasyJackson2Provider.class);
 							}
 						});
+					}
+				});
 			}
 		};
 	}
 
 	@Test
 	public void jdk_instant_is_marshalled_as_a_nice_string() throws Exception {
-		assertThat(
-				doGet("/_api/test/jdk/instant"),
-				is(both(ok())
-						.and(responseWithJsonContent(jsonString(like("2015-04-03T13:\\d\\d:\\d\\d(\\.\\d\\d\\d(\\d\\d\\d(\\d\\d\\d)?)?)?Z"))))));
+		assertThat(doGet("/_api/test/jdk/instant"), is(both(ok()).and(responseWithJsonContent(
+				jsonString(like("2015-04-03T13:\\d\\d:\\d\\d(\\.\\d\\d\\d(\\d\\d\\d(\\d\\d\\d)?)?)?Z"))))));
 	}
 
 	@Test
@@ -104,16 +102,14 @@ public class JsonMarshallingTest extends IntegrationTest {
 
 	@Test
 	public void jdk_localtime_is_marshalled_as_a_nice_string() throws Exception {
-		assertThat(doGet("/_api/test/jdk/localtime"),
-				is(both(ok()).and(responseWithJsonContent(jsonString(like("\\d\\d:\\d\\d(:\\d\\d(\\.\\d\\d\\d(\\d\\d\\d(\\d\\d\\d)?)?)?)?"))))));
+		assertThat(doGet("/_api/test/jdk/localtime"), is(both(ok()).and(responseWithJsonContent(
+				jsonString(like("\\d\\d:\\d\\d(:\\d\\d(\\.\\d\\d\\d(\\d\\d\\d(\\d\\d\\d)?)?)?)?"))))));
 	}
 
 	@Test
 	public void jdk_localdatetime_is_marshalled_as_a_nice_string() throws Exception {
-		assertThat(
-				doGet("/_api/test/jdk/localdatetime"),
-				is(both(ok())
-						.and(responseWithJsonContent(jsonString(like("2015-04-03T13:\\d\\d(:\\d\\d(\\.\\d\\d\\d(\\d\\d\\d(\\d\\d\\d(\\d\\d\\d(\\d\\d\\d)?)?)?)?)?)?"))))));
+		assertThat(doGet("/_api/test/jdk/localdatetime"), is(both(ok()).and(responseWithJsonContent(jsonString(like(
+				"2015-04-03T13:\\d\\d(:\\d\\d(\\.\\d\\d\\d(\\d\\d\\d(\\d\\d\\d(\\d\\d\\d(\\d\\d\\d)?)?)?)?)?)?"))))));
 	}
 
 	@Test
@@ -154,18 +150,14 @@ public class JsonMarshallingTest extends IntegrationTest {
 		String key2 = randomString();
 		String value1 = randomString();
 		String value2 = randomString();
-		try (CloseableHttpResponse response = doGet("/_api/test/guava/multimap/"
-				+ Joiner.on('/').join(key1, value1, value2))) {
-			assertThat(
-					response,
-					is(both(ok()).and(
-							responseWithJsonContent(jsonObject().withProperty(key1,
-									jsonArray().of(jsonString(value1), jsonString(value2)))))));
+		try (CloseableHttpResponse response = doGet(
+				"/_api/test/guava/multimap/" + Joiner.on('/').join(key1, value1, value2))) {
+			assertThat(response, is(both(ok()).and(responseWithJsonContent(
+					jsonObject().withProperty(key1, jsonArray().of(jsonString(value1), jsonString(value2)))))));
 		}
-		try (CloseableHttpResponse response = doGet("/_api/test/guava/multimap/"
-				+ Joiner.on('/').join(key1, value1, key2, value2))) {
-			assertThat(
-					response,
+		try (CloseableHttpResponse response = doGet(
+				"/_api/test/guava/multimap/" + Joiner.on('/').join(key1, value1, key2, value2))) {
+			assertThat(response,
 					is(both(ok()).and(
 							responseWithJsonContent(jsonObject().withProperty(key1, jsonArray().of(jsonString(value1)))
 									.withProperty(key2, jsonArray().of(jsonString(value2)))))));

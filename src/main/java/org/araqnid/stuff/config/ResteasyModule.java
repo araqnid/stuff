@@ -9,6 +9,7 @@ import org.araqnid.stuff.InfoResources;
 import org.araqnid.stuff.MerlotResources;
 import org.araqnid.stuff.mvc.HelloWorldController;
 import org.araqnid.stuff.mvc.JspViewRenderer;
+import org.araqnid.stuff.resteasy.ResteasyJackson2Provider;
 import org.jboss.resteasy.core.Dispatcher;
 import org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher;
 import org.jboss.resteasy.spi.Registry;
@@ -27,6 +28,7 @@ public final class ResteasyModule extends AbstractModule {
 		bind(HelloWorldController.class);
 		bind(JacksonContextResolver.class);
 		bind(JspViewRenderer.class);
+		bind(ResteasyJackson2Provider.class);
 		bindConstant().annotatedWith(MvcPathPattern.class).to("/WEB-INF/mvc/%s.jsp");
 	}
 

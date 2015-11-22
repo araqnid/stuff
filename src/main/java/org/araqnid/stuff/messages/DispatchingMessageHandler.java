@@ -23,8 +23,8 @@ public class DispatchingMessageHandler implements MessageHandler {
 
 	public DispatchingMessageHandler(ObjectMapper objectMapper, ImmutableMap<String, EventHandler<?>> handlers) {
 		this.objectMapper = objectMapper;
-		this.eventHandlers = ImmutableMap.copyOf(Maps.transformValues(handlers,
-				new Function<EventHandler<?>, EventHandlerRef<?>>() {
+		this.eventHandlers = ImmutableMap
+				.copyOf(Maps.transformValues(handlers, new Function<EventHandler<?>, EventHandlerRef<?>>() {
 					@Override
 					public EventHandlerRef<?> apply(EventHandler<?> input) {
 						return ref(input);
@@ -54,7 +54,7 @@ public class DispatchingMessageHandler implements MessageHandler {
 	private <T> void dispatch(EventHandlerRef<T> ref, Event event) {
 		T data;
 		try {
-			data = ref.clazz.cast(objectMapper.reader(ref.clazz).readValue(event.data));
+			data = ref.clazz.cast(objectMapper.readerFor(ref.clazz).readValue(event.data));
 		} catch (IOException e) {
 			LOG.error("{} {} unable to parse data", event.type, event.id, e);
 			return;

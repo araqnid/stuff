@@ -23,7 +23,7 @@ public class SometubeHandler implements DeliveryTarget {
 	@Inject
 	public SometubeHandler(ObjectMapper mapper, ActivityScope activityScope) {
 		this.activityScope = activityScope;
-		this.jsonReader = mapper.reader(Payload.class);
+		this.jsonReader = mapper.readerFor(Payload.class);
 	}
 
 	@Override

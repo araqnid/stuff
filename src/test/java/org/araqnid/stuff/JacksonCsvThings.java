@@ -32,7 +32,7 @@ public class JacksonCsvThings {
 		String csv = "1,Red\n2,Green\n3,Blue";
 		ObjectMapper mapper = new CsvMapper();
 		CsvSchema schema = CsvSchema.builder().addColumn("id").addColumn("name").build();
-		ObjectReader reader = mapper.reader(Map.class).with(schema);
+		ObjectReader reader = mapper.readerFor(Map.class).with(schema);
 		assertThat(reader.readValue(csv), sameMapAs(ImmutableMap.of("id", "1", "name", "Red")));
 	}
 
@@ -41,7 +41,7 @@ public class JacksonCsvThings {
 		String csv = "id,name\n1,Red\n2,Green\n3,Blue";
 		ObjectMapper mapper = new CsvMapper();
 		CsvSchema schema = CsvSchema.emptySchema().withHeader();
-		ObjectReader reader = mapper.reader(Map.class).with(schema);
+		ObjectReader reader = mapper.readerFor(Map.class).with(schema);
 		assertThat(reader.readValue(csv), sameMapAs(ImmutableMap.of("id", "1", "name", "Red")));
 	}
 
@@ -50,7 +50,7 @@ public class JacksonCsvThings {
 		String csv = "1,Red\n2,Green\n3,Blue";
 		CsvMapper mapper = new CsvMapper();
 		CsvSchema schema = mapper.schemaFor(ColourData.class);
-		ObjectReader reader = mapper.reader(ColourData.class).with(schema);
+		ObjectReader reader = mapper.readerFor(ColourData.class).with(schema);
 		assertThat(reader.readValue(csv), equalTo(new ColourData(1, "Red")));
 	}
 
@@ -60,7 +60,7 @@ public class JacksonCsvThings {
 		CsvMapper mapper = new CsvMapper();
 		mapper.registerModule(new ParameterNamesModule());
 		CsvSchema schema = mapper.schemaFor(ColourDataSimpleConstructor.class);
-		ObjectReader reader = mapper.reader(ColourDataSimpleConstructor.class).with(schema);
+		ObjectReader reader = mapper.readerFor(ColourDataSimpleConstructor.class).with(schema);
 		assertThat(reader.readValue(csv), equalTo(new ColourDataSimpleConstructor(1, "Red")));
 	}
 
@@ -69,7 +69,7 @@ public class JacksonCsvThings {
 		String csv = "id,name\n1,Red\n2,Green\n3,Blue";
 		CsvMapper mapper = new CsvMapper();
 		CsvSchema schema = mapper.schemaFor(ColourData.class).withHeader();
-		ObjectReader reader = mapper.reader(ColourData.class).with(schema);
+		ObjectReader reader = mapper.readerFor(ColourData.class).with(schema);
 		assertThat(reader.readValue(csv), equalTo(new ColourData(1, "Red")));
 	}
 
@@ -78,7 +78,7 @@ public class JacksonCsvThings {
 		String csv = "id,name\n1,Red\n2,Green\n3,Blue";
 		CsvMapper mapper = new CsvMapper();
 		CsvSchema schema = mapper.schemaFor(ColourData.class).withHeader();
-		ObjectReader reader = mapper.reader(ColourData.class).with(schema);
+		ObjectReader reader = mapper.readerFor(ColourData.class).with(schema);
 		try (MappingIterator<ColourData> iter = reader.readValues(csv)) {
 			assertThat(iter.nextValue(), equalTo(new ColourData(1, "Red")));
 			assertThat(iter.nextValue(), equalTo(new ColourData(2, "Green")));
@@ -91,7 +91,7 @@ public class JacksonCsvThings {
 		String csv = "id,name\n1,Red\n2,Green\n3,Blue";
 		CsvMapper mapper = new CsvMapper();
 		CsvSchema schema = mapper.schemaFor(ColourData.class).withHeader();
-		ObjectReader reader = mapper.reader(ColourData.class).with(schema);
+		ObjectReader reader = mapper.readerFor(ColourData.class).with(schema);
 		try (MappingIterator<ColourData> iter = reader.readValues(csv)) {
 			assertThat(iter.readAll(),
 					contains(new ColourData(1, "Red"), new ColourData(2, "Green"), new ColourData(3, "Blue")));
