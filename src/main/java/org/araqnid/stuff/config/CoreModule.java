@@ -48,7 +48,8 @@ public final class CoreModule extends AbstractModule {
 				.registerModule(AfterburnerModule.class).registerModule(TextualTimestampsModule.class)
 				.in(Singleton.class));
 		install(new SpooledEventsModule());
-		install(new ElasticSearchModule("testcluster", new File("/tmp/data")));
+		install(new ElasticSearchModule("testcluster", new File(new File(System.getProperty("java.io.tmpdir")),
+				"elasticsearch." + System.getProperty("user.name"))));
 		bind(MerlotRepository.class);
 		bind(Clock.class).toInstance(Clock.systemDefaultZone());
 		bind(ActivityScope.class).toInstance(ThreadActivity::get);

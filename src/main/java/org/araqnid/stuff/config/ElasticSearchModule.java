@@ -11,7 +11,6 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
 
-import com.google.common.io.Files;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.Service;
 import com.google.inject.AbstractModule;
@@ -21,16 +20,16 @@ import com.google.inject.multibindings.Multibinder;
 public class ElasticSearchModule extends AbstractModule {
 	private final String clusterName;
 	private final String nodeName;
-	private final File dataPath;
+	private final File home;
 
-	public ElasticSearchModule(String clusterName, String nodeName, File dataPath) {
+	public ElasticSearchModule(String clusterName, String nodeName, File home) {
 		this.clusterName = clusterName;
 		this.nodeName = nodeName;
-		this.dataPath = dataPath;
+		this.home = home;
 	}
 
-	public ElasticSearchModule(String clusterName, File dataPath) {
-		this(clusterName, localhost(), dataPath);
+	public ElasticSearchModule(String clusterName, File home) {
+		this(clusterName, localhost(), home);
 	}
 
 	@Override
@@ -51,7 +50,7 @@ public class ElasticSearchModule extends AbstractModule {
 	@Provides
 	@Singleton
 	public ElasticSearchService service() {
-		return new ElasticSearchService(clusterName, nodeName, dataPath);
+		return new ElasticSearchService(clusterName, nodeName, home);
 	}
 
 	private Multibinder<Service> services() {
@@ -61,26 +60,23 @@ public class ElasticSearchModule extends AbstractModule {
 	public static final class ElasticSearchService extends AbstractIdleService {
 		private final String clusterName;
 		private final String nodeName;
-		private final File dataPath;
+		private final File home;
 
-		public ElasticSearchService(String clusterName, String nodeName, File dataPath) {
+		public ElasticSearchService(String clusterName, String nodeName, File home) {
 			this.clusterName = clusterName;
 			this.nodeName = nodeName;
-			this.dataPath = dataPath;
+			this.home = home;
 		}
 
-		private File home;
 		private Node node;
 		private Client client;
 
 		@Override
 		protected void startUp() throws Exception {
-			home = Files.createTempDir();
 			node = NodeBuilder.nodeBuilder()
 					.settings(Settings.builder().put("node.name", nodeName).put("path.home", home.toString())
-							.put("path.data", dataPath.toString()).put("network.bind_host", "0.0.0.0")
-							.put("network.publish_host", "_non_loopback_").put("http.enabled", true)
-							.put("http.port", 19200).build())
+							.put("network.bind_host", "0.0.0.0").put("network.publish_host", "_non_loopback_")
+							.put("http.enabled", true).put("http.port", 19200).build())
 					.clusterName(clusterName).data(true).local(true).node();
 			client = node.client();
 		}
@@ -89,7 +85,6 @@ public class ElasticSearchModule extends AbstractModule {
 		protected void shutDown() throws Exception {
 			client.close();
 			node.close();
-			cleanupDir(home);
 		}
 	}
 
@@ -99,15 +94,5 @@ public class ElasticSearchModule extends AbstractModule {
 		} catch (UnknownHostException e) {
 			return "localhost";
 		}
-	}
-
-	private static void cleanupDir(File dir) {
-		for (File file : dir.listFiles()) {
-			if (file.isDirectory()) {
-				cleanupDir(file);
-			}
-			file.delete();
-		}
-		dir.delete();
 	}
 }
