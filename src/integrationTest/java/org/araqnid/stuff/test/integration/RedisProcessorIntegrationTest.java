@@ -1,9 +1,11 @@
 package org.araqnid.stuff.test.integration;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.araqnid.stuff.messages.RedisProcessor;
 import org.hamcrest.Description;
@@ -14,9 +16,13 @@ import org.junit.Test;
 import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+
+import com.google.common.collect.ImmutableMap;
 
 import static org.araqnid.stuff.testutil.RandomData.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
@@ -30,7 +36,7 @@ public class RedisProcessorIntegrationTest {
 
 	@Test
 	public void message_delivered_to_target() throws Exception {
-		BlockingQueue<String> delivered = new LinkedBlockingQueue<String>();
+		BlockingQueue<String> delivered = new LinkedBlockingQueue<>();
 		RedisProcessor.DeliveryTarget target = data -> {
 			delivered.add(data);
 			return true;
@@ -42,6 +48,119 @@ public class RedisProcessorIntegrationTest {
 		Optional<String> received = Optional.ofNullable(delivered.poll(500, TimeUnit.MILLISECONDS));
 		processor.stopAsync().awaitTerminated();
 		assertThat(received, isValue(data));
+		TimeUnit.MILLISECONDS.sleep(250);
+		assertThat(delivered, is(emptyIterable()));
+	}
+
+	@Test
+	public void mdc_values_set_during_delivery() throws Exception {
+		BlockingQueue<Map<String, String>> delivered = new LinkedBlockingQueue<>();
+		RedisProcessor.DeliveryTarget target = data -> {
+			delivered.add(MDC.getCopyOfContextMap());
+			return true;
+		};
+		RedisProcessor<?> processor = new RedisProcessor<>(() -> new Jedis("localhost"), redis.key(), target);
+		processor.startAsync().awaitRunning();
+		String data = randomString();
+		redis.push(data);
+		Optional<Map<String, String>> received = Optional.ofNullable(delivered.poll(500, TimeUnit.MILLISECONDS));
+		processor.stopAsync().awaitTerminated();
+		assertThat(received, isPresent(equalTo(ImmutableMap.of("jobId", data, "queue", redis.key()))));
+		TimeUnit.MILLISECONDS.sleep(250);
+		assertThat(delivered, is(emptyIterable()));
+	}
+
+	@Test
+	public void during_delivery_data_is_on_in_progress_key() throws Exception {
+		BlockingQueue<QueueSizes> delivered = new LinkedBlockingQueue<>();
+		RedisProcessor.DeliveryTarget target = data -> {
+			long queueSize = redis.connection().llen(redis.key());
+			long inProgressSize = redis.connection().llen(redis.key() + ".working");
+			delivered.add(new QueueSizes(queueSize, inProgressSize));
+			return true;
+		};
+		RedisProcessor<?> processor = new RedisProcessor<>(() -> new Jedis("localhost"), redis.key(), target);
+		processor.startAsync().awaitRunning();
+		String data = randomString();
+		redis.push(data);
+		Optional<QueueSizes> received = Optional.ofNullable(delivered.poll(500, TimeUnit.MILLISECONDS));
+		processor.stopAsync().awaitTerminated();
+		assertThat(received, isPresent(queueSize(0, 1)));
+		assertThat(delivered, is(emptyIterable()));
+	}
+
+	@Test
+	public void false_return_from_delivery_target_causes_redelivery() throws Exception {
+		AtomicInteger deliveryCount = new AtomicInteger();
+		BlockingQueue<String> delivered = new LinkedBlockingQueue<>();
+		RedisProcessor.DeliveryTarget target = data -> {
+			delivered.add(data);
+			return deliveryCount.getAndIncrement() == 0 ? false : true; // return false on 1st delivery
+		};
+		RedisProcessor<?> processor = new RedisProcessor<>(() -> new Jedis("localhost"), redis.key(), target);
+		processor.startAsync().awaitRunning();
+		String data = randomString();
+		redis.push(data);
+		Optional<String> received1 = Optional.ofNullable(delivered.poll(500, TimeUnit.MILLISECONDS));
+		Optional<String> received2 = Optional.ofNullable(delivered.poll(500, TimeUnit.MILLISECONDS));
+		processor.stopAsync().awaitTerminated();
+		assertThat(received1, isValue(data));
+		assertThat(received2, isValue(data));
+		TimeUnit.MILLISECONDS.sleep(250);
+		assertThat(delivered, is(emptyIterable()));
+	}
+
+	@Test
+	public void runtime_exception_from_delivery_target_leaves_item_on_in_progress_key() throws Exception {
+		BlockingQueue<String> delivered = new LinkedBlockingQueue<>();
+		RedisProcessor.DeliveryTarget target = data -> {
+			delivered.add(data);
+			throw new RuntimeException("boom");
+		};
+		RedisProcessor<?> processor = new RedisProcessor<>(() -> new Jedis("localhost"), redis.key(), target);
+		processor.startAsync().awaitRunning();
+		String data = randomString();
+		redis.push(data);
+		Optional<String> received = Optional.ofNullable(delivered.poll(500, TimeUnit.MILLISECONDS));
+		processor.stopAsync().awaitTerminated();
+		assertThat(received, isValue(data));
+		assertThat(redis.connection().llen(redis.key() + ".working"), equalTo(1L));
+		assertThat(redis.connection().lindex(redis.key() + ".working", 0), equalTo(data));
+		TimeUnit.MILLISECONDS.sleep(250);
+		assertThat(delivered, is(emptyIterable()));
+	}
+
+	private static final class QueueSizes {
+		private final long queueSize;
+		private final long inProgressSize;
+
+		public QueueSizes(long queueSize, long inProgressSize) {
+			this.queueSize = queueSize;
+			this.inProgressSize = inProgressSize;
+		}
+	}
+
+	private static Matcher<QueueSizes> queueSize(long queueSize, long inProgressSize) {
+		return new TypeSafeDiagnosingMatcher<QueueSizes>() {
+			@Override
+			protected boolean matchesSafely(QueueSizes item, Description mismatchDescription) {
+				if (item.queueSize != queueSize) {
+					mismatchDescription.appendText("queue size is ").appendValue(item.queueSize);
+					return false;
+				}
+				if (item.inProgressSize != inProgressSize) {
+					mismatchDescription.appendText("in-progress size is ").appendValue(item.inProgressSize);
+					return false;
+				}
+				return true;
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendText("queueSize=").appendValue(queueSize).appendText(", inProgressSize=")
+						.appendValue(inProgressSize);
+			}
+		};
 	}
 
 	public static final class RedisSetup extends ExternalResource {
