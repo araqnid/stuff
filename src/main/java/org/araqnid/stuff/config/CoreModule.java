@@ -19,6 +19,7 @@ import org.araqnid.stuff.activity.ActivityScope;
 import org.araqnid.stuff.activity.LogActivityEvents;
 import org.araqnid.stuff.activity.ThreadActivity;
 
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk7.Jdk7Module;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
@@ -28,6 +29,7 @@ import com.fasterxml.jackson.module.guice.ObjectMapperModule;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
 import com.google.inject.AbstractModule;
+import com.google.inject.Key;
 import com.google.inject.Provides;
 import com.lexicalscope.eventcast.EventCast;
 
@@ -44,6 +46,10 @@ public final class CoreModule extends AbstractModule {
 		install(new RawBeanstalkModule());
 		install(new WorkQueueModule());
 		install(new ObjectMapperModule().registerModule(GuavaModule.class).registerModule(NamingJacksonModule.class)
+				.registerModule(Jdk7Module.class).registerModule(Jdk8Module.class).registerModule(JavaTimeModule.class)
+				.registerModule(AfterburnerModule.class).registerModule(TextualTimestampsModule.class)
+				.in(Singleton.class));
+		install(new XmlMapperModule().registerModule(GuavaModule.class).registerModule(NamingJacksonModule.class)
 				.registerModule(Jdk7Module.class).registerModule(Jdk8Module.class).registerModule(JavaTimeModule.class)
 				.registerModule(AfterburnerModule.class).registerModule(TextualTimestampsModule.class)
 				.in(Singleton.class));

@@ -16,6 +16,7 @@ import org.jboss.resteasy.spi.Registry;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.jaxrs.xml.JacksonJaxbXMLProvider;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -28,6 +29,7 @@ public final class ResteasyModule extends AbstractModule {
 		bind(MerlotResources.class);
 		bind(HelloWorldController.class);
 		bind(JacksonContextResolver.class);
+		bind(JacksonXmlContextResolver.class);
 		bind(JspViewRenderer.class);
 		bind(ResteasyJackson2Provider.class);
 		bind(JacksonJaxbXMLProvider.class);
@@ -80,6 +82,21 @@ public final class ResteasyModule extends AbstractModule {
 
 		@Override
 		public ObjectMapper getContext(Class<?> type) {
+			return objectMapper;
+		}
+	}
+
+	@Provider
+	public static class JacksonXmlContextResolver implements ContextResolver<XmlMapper> {
+		private final XmlMapper objectMapper;
+
+		@Inject
+		public JacksonXmlContextResolver(XmlMapper objectMapper) {
+			this.objectMapper = objectMapper;
+		}
+
+		@Override
+		public XmlMapper getContext(Class<?> type) {
 			return objectMapper;
 		}
 	}
