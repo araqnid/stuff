@@ -47,6 +47,9 @@ configurations {
 
     // use jcl-over-slf4j instead
     compile.exclude group: 'commons-logging', module: 'commons-logging'
+
+    // use version 5 in com.fasterxml.woodstock group instead
+    compile.exclude module: 'woodstox-core-asl'
 }
 
 repositories {
