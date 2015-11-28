@@ -18,7 +18,7 @@ public class RedisProcessor<T extends RedisProcessor.DeliveryTarget> extends Abs
 	private final Provider<Jedis> connectionProvider;
 	private final String key;
 	private final String processingSuffix = ".working";
-	private final Provider<T> targetProvider;
+	private final DeliveryTarget target;
 	private final Logger log;
 	private final Monitor monitor = new Monitor();
 	private final Monitor.Guard notCurrentlyDelivering = new Monitor.Guard(monitor) {
@@ -30,10 +30,10 @@ public class RedisProcessor<T extends RedisProcessor.DeliveryTarget> extends Abs
 	private Jedis jedis;
 	private boolean delivering;
 
-	public RedisProcessor(Provider<Jedis> connectionProvider, String key, Provider<T> targetProvider) {
+	public RedisProcessor(Provider<Jedis> connectionProvider, String key, DeliveryTarget target) {
 		this.connectionProvider = connectionProvider;
 		this.key = key;
-		this.targetProvider = targetProvider;
+		this.target = target;
 		this.log = LoggerFactory.getLogger(RedisProcessor.class.getName() + "." + key);
 	}
 
@@ -125,12 +125,12 @@ public class RedisProcessor<T extends RedisProcessor.DeliveryTarget> extends Abs
 	}
 
 	private boolean dispatchDelivery(String value) {
-		return targetProvider.get().deliver(value);
+		return target.deliver(value);
 	}
 
 	@Override
 	public String toString() {
-		return "RedisProcessor:" + key + " => " + targetProvider + " [" + state() + "]";
+		return "RedisProcessor:" + key + " => " + target + " [" + state() + "]";
 	}
 
 	public interface DeliveryTarget {

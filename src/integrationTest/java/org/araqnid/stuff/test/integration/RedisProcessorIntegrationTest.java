@@ -15,8 +15,6 @@ import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.inject.util.Providers;
-
 import static org.araqnid.stuff.testutil.RandomData.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -37,8 +35,7 @@ public class RedisProcessorIntegrationTest {
 			delivered.add(data);
 			return true;
 		};
-		RedisProcessor<?> processor = new RedisProcessor<>(() -> new Jedis("localhost"), redis.key(),
-				Providers.of(target));
+		RedisProcessor<?> processor = new RedisProcessor<>(() -> new Jedis("localhost"), redis.key(), target);
 		processor.startAsync().awaitRunning();
 		String data = randomString();
 		redis.push(data);
