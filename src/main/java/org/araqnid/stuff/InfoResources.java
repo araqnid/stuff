@@ -1,5 +1,7 @@
 package org.araqnid.stuff;
 
+import static java.util.stream.Collectors.joining;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -52,8 +54,6 @@ import com.google.common.collect.Sets;
 import com.google.common.io.Resources;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
-import static java.util.stream.Collectors.joining;
-
 @Path("_api/info")
 public class InfoResources {
 	private static final Logger LOG = LoggerFactory.getLogger(InfoResources.class);
@@ -99,7 +99,7 @@ public class InfoResources {
 
 	@GET
 	@Path("version")
-	@Produces("application/json")
+	@Produces({ "application/json", "application/xml" })
 	public AppVersion getVersion() {
 		return appVersion;
 	}

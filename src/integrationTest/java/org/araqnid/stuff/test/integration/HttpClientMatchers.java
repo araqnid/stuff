@@ -1,11 +1,18 @@
 package org.araqnid.stuff.test.integration;
 
+import static org.hamcrest.Matchers.either;
+import static org.hamcrest.Matchers.equalTo;
+
 import java.io.IOException;
 import java.net.HttpCookie;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import nu.xom.Builder;
+import nu.xom.Document;
+import nu.xom.ParsingException;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -22,9 +29,6 @@ import org.hamcrest.TypeSafeDiagnosingMatcher;
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.ByteStreams;
-
-import static org.hamcrest.Matchers.either;
-import static org.hamcrest.Matchers.equalTo;
 
 public final class HttpClientMatchers {
 	private HttpClientMatchers() {
@@ -202,6 +206,35 @@ public final class HttpClientMatchers {
 				return new String(bytes, StandardCharsets.UTF_8);
 			}
 		});
+	}
+
+	public static Matcher<HttpResponse> responseWithXmlContent(final Matcher<Document> contentMatcher) {
+		return responseWithContent(new HttpContentMatcher<Document>(equalTo("application/xml"), dumpXmlContentOnMismatch(contentMatcher)) {
+			@Override
+			protected Document doParse(HttpEntity item) throws IOException {
+				try {
+					Builder parser = new Builder();
+					return parser.build(item.getContent());
+				} catch (ParsingException e) {
+					throw new IOException("Failed to parse XML document", e);
+				}
+			}
+		});
+	}
+
+	private static Matcher<Document> dumpXmlContentOnMismatch(Matcher<Document> underlying) {
+		return new TypeSafeDiagnosingMatcher<Document>() {
+			@Override
+			protected boolean matchesSafely(Document item, Description mismatchDescription) {
+				boolean matches = underlying.matches(item);
+				mismatchDescription.appendText("\n\nDocument:\n").appendText(item.toXML());
+				return matches;
+			}
+			@Override
+			public void describeTo(Description description) {
+				underlying.describeTo(description);
+			}
+		};
 	}
 
 	@Factory

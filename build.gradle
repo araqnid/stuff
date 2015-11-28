@@ -72,6 +72,7 @@ dependencies {
     compile 'org.jboss.resteasy:resteasy-guice:' + resteasyVersion
     compile 'org.jboss.resteasy:async-http-servlet-3.0:' + resteasyVersion
     compile 'com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:' + jacksonVersion
+    compile 'com.fasterxml.jackson.jaxrs:jackson-jaxrs-xml-provider:' + jacksonVersion
     compile 'com.fasterxml.jackson.module:jackson-module-guice:' + jacksonVersion
     compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-smile:' + jacksonVersion
     compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-csv:' + jacksonVersion
@@ -101,6 +102,7 @@ dependencies {
     testCompile 'org.mockito:mockito-core:1.10.19'
     testCompile 'joda-time:joda-time:2.9.1'
     testCompile 'org.threeten:threeten-extra:0.9'
+    testCompile 'xom:xom:1.2.5'
     browserTestCompile ('org.seleniumhq.selenium:selenium-java:2.48.2') {
         exclude module: 'httpclient'
     }

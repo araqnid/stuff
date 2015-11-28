@@ -16,6 +16,7 @@ import org.jboss.resteasy.spi.Registry;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.jaxrs.xml.JacksonJaxbXMLProvider;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 
@@ -29,6 +30,7 @@ public final class ResteasyModule extends AbstractModule {
 		bind(JacksonContextResolver.class);
 		bind(JspViewRenderer.class);
 		bind(ResteasyJackson2Provider.class);
+		bind(JacksonJaxbXMLProvider.class);
 		bindConstant().annotatedWith(MvcPathPattern.class).to("/WEB-INF/mvc/%s.jsp");
 	}
 

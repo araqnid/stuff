@@ -6,14 +6,24 @@ import static org.araqnid.stuff.JsonStructureMatchers.jsonString;
 import static org.araqnid.stuff.test.integration.HttpClientMatchers.ok;
 import static org.araqnid.stuff.test.integration.HttpClientMatchers.responseWithContent;
 import static org.araqnid.stuff.test.integration.HttpClientMatchers.responseWithJsonContent;
+import static org.araqnid.stuff.test.integration.HttpClientMatchers.responseWithXmlContent;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.any;
 import static org.hamcrest.Matchers.either;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Matchers.anyString;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import nu.xom.Document;
+import nu.xom.Element;
+import nu.xom.Node;
+import nu.xom.Nodes;
+import nu.xom.Text;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -48,6 +58,64 @@ public class InfoResourcesIntegrationTest extends IntegrationTest {
 							responseWithJsonContent(jsonObject().withProperty("title", jsonAny())
 									.withProperty("vendor", jsonAny()).withProperty("version", jsonAny())))));
 		}
+	}
+
+	@Test
+	public void version_resource_as_xml() throws Exception {
+		try (CloseableHttpResponse response = doGetWithHeaders("/_api/info/version",
+				ImmutableMultimap.of("Accept", "application/xml"))) {
+			assertThat(
+					response,
+					is(allOf(
+							ok(),
+							responseWithXmlContent(allOf(textAtXpath("/app-version/title", is(anyString())),
+									textAtXpath("/app-version/vendor", is(anyString())),
+									textAtXpath("/app-version/version", is(anyString())))))));
+		}
+	}
+
+	private static Matcher<Document> textAtXpath(String xpathExpr, Matcher<String> textMatcher) {
+		return new TypeSafeDiagnosingMatcher<Document>() {
+			@Override
+			protected boolean matchesSafely(Document doc, Description mismatchDescription) {
+				Nodes selected = doc.query(xpathExpr);
+				if (selected.size() == 0) {
+					mismatchDescription.appendText("did not match any nodes");
+					return false;
+				}
+				if (selected.size() > 1) {
+					mismatchDescription.appendText("matched multiple nodes ").appendValue(selected);
+					return false;
+				}
+				Node node = selected.get(0);
+				if (node instanceof Element) {
+					List<String> containedElements = new ArrayList<>();
+					for (int i = 0; i < node.getChildCount(); i++) {
+						Node childNode = node.getChild(i);
+						if (childNode instanceof Element) {
+							containedElements.add(((Element) childNode).getLocalName());
+						}
+					}
+					if (!containedElements.isEmpty()) {
+						mismatchDescription.appendText("matched non-leaf element containing ");
+						mismatchDescription.appendValue(containedElements);
+						return false;
+					}
+				} else if (!(node instanceof Text)) {
+					mismatchDescription.appendText("was not a text node: ").appendValue(node);
+					return false;
+				}
+				mismatchDescription.appendText(xpathExpr).appendText(" ");
+				textMatcher.describeMismatch(node.getValue(), mismatchDescription);
+				return textMatcher.matches(node.getValue());
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				description.appendText("xpath ").appendValue(xpathExpr).appendText(" ")
+						.appendDescriptionOf(textMatcher);
+			}
+		};
 	}
 
 	@Test
