@@ -28,8 +28,8 @@ public class ActivityFilter implements Filter {
 	}
 
 	@Override
-	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException,
-			ServletException {
+	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+			throws IOException, ServletException {
 		if (request instanceof HttpServletRequest && response instanceof HttpServletResponse) {
 			doFilterHttp((HttpServletRequest) request, (HttpServletResponse) response, chain);
 		}
@@ -38,8 +38,8 @@ public class ActivityFilter implements Filter {
 	private void doFilterHttp(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
 		UUID activityId = UUID.randomUUID();
-		Activity activity = new Activity(activityId, "HttpRequest", ImmutableMap.of("method", request.getMethod(),
-				"path", request.getServletPath()), activityEventSink);
+		Activity activity = new Activity(activityId, "HttpRequest",
+				ImmutableMap.of("method", request.getMethod(), "path", request.getServletPath()), activityEventSink);
 		response.setHeader("X-Activity", activityId.toString() + " " + activity.root.id);
 		boolean success = false;
 		ThreadActivity.attach(activity.root);
@@ -79,7 +79,6 @@ public class ActivityFilter implements Filter {
 			}
 			else {
 				activity.complete(success, ImmutableMap.of("status", response.getStatus()));
-				ThreadActivity.detach(activity.root);
 			}
 		}
 	}

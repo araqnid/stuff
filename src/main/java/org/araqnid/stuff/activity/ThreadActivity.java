@@ -2,6 +2,8 @@ package org.araqnid.stuff.activity;
 
 import java.util.Optional;
 
+import javax.annotation.Nullable;
+
 import org.slf4j.MDC;
 
 import com.google.common.base.Preconditions;
@@ -41,8 +43,10 @@ public final class ThreadActivity {
 		return current().orElseThrow(() -> new IllegalStateException("No activity attached to this thread"));
 	}
 
-	public static void transition(ActivityNode from, ActivityNode to) {
-		if (STATE.get() == from) STATE.set(to);
+	public static void transition(ActivityNode from, @Nullable ActivityNode to) {
+		if (to == null)
+			detach(from);
+		else if (STATE.get() == from) STATE.set(to);
 	}
 
 	public static Scoper reattach(ActivityNode node) {
