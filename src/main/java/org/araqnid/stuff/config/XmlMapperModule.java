@@ -4,15 +4,20 @@ import java.lang.annotation.Annotation;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Qualifier;
 import javax.inject.Scope;
 
 import com.fasterxml.jackson.databind.Module;
+import com.fasterxml.jackson.databind.introspect.AnnotationIntrospectorPair;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.fasterxml.jackson.module.guice.GuiceAnnotationIntrospector;
+import com.fasterxml.jackson.module.guice.GuiceInjectableValues;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
+import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
@@ -71,6 +76,8 @@ public class XmlMapperModule extends AbstractModule {
 	private static final class MapperProvider implements ProviderWithDependencies<XmlMapper> {
 		private final Set<Provider<? extends Module>> providers;
 		private final Set<Dependency<?>> dependencies;
+		@Inject
+		private Injector injector;
 
 		private MapperProvider(Set<Provider<? extends Module>> providers, Set<Dependency<?>> dependencies) {
 			this.providers = ImmutableSet.copyOf(providers);
@@ -83,7 +90,18 @@ public class XmlMapperModule extends AbstractModule {
 			for (Provider<? extends Module> provider : providers) {
 				mapper.registerModule(provider.get());
 			}
+			mapper.setInjectableValues(new GuiceInjectableValues(injector));
+			addGuiceIntrospector(mapper);
 			return mapper;
+		}
+
+		private void addGuiceIntrospector(XmlMapper mapper) {
+			GuiceAnnotationIntrospector guiceIntrospector = new GuiceAnnotationIntrospector();
+			AnnotationIntrospectorPair ser = new AnnotationIntrospectorPair(guiceIntrospector, mapper
+					.getSerializationConfig().getAnnotationIntrospector());
+			AnnotationIntrospectorPair deser = new AnnotationIntrospectorPair(guiceIntrospector, mapper
+					.getDeserializationConfig().getAnnotationIntrospector());
+			mapper.setAnnotationIntrospectors(ser, deser);
 		}
 
 		@Override
