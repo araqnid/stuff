@@ -65,7 +65,7 @@ public class RedisProcessorIntegrationTest {
 		redis.push(data);
 		Optional<Map<String, String>> received = Optional.ofNullable(delivered.poll(500, TimeUnit.MILLISECONDS));
 		processor.stopAsync().awaitTerminated();
-		assertThat(received, isPresent(equalTo(ImmutableMap.of("jobId", data, "queue", redis.key()))));
+		assertThat(received, isPresent(equalTo(ImmutableMap.of("queue", redis.key()))));
 		TimeUnit.MILLISECONDS.sleep(250);
 		assertThat(delivered, is(emptyIterable()));
 	}

@@ -7,6 +7,7 @@ import javax.inject.Provider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.slf4j.MDC.MDCCloseable;
 
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.google.common.util.concurrent.Monitor;
@@ -115,12 +116,8 @@ public class RedisProcessor extends AbstractExecutionThreadService {
 	}
 
 	private boolean deliver(String value) {
-		PushedMdcValue queue = new PushedMdcValue("queue", key);
-		PushedMdcValue jobId = new PushedMdcValue("jobId", value);
-		try {
+		try (MDCCloseable m = MDC.putCloseable("queue", key)) {
 			return dispatchDelivery(value);
-		} finally {
-			PushedMdcValue.restoreValues(queue, jobId);
 		}
 	}
 
@@ -135,31 +132,5 @@ public class RedisProcessor extends AbstractExecutionThreadService {
 
 	public interface DeliveryTarget {
 		boolean deliver(String data);
-	}
-
-	private static final class PushedMdcValue {
-		private final String key;
-		private final String oldValue;
-
-		public PushedMdcValue(String key, String newValue) {
-			this.key = key;
-			oldValue = MDC.get(key);
-			MDC.put(key, newValue);
-		}
-
-		public void restore() {
-			if (oldValue != null) {
-				MDC.put(key, oldValue);
-			}
-			else {
-				MDC.remove(key);
-			}
-		}
-
-		public static void restoreValues(PushedMdcValue... values) {
-			for (PushedMdcValue value : values) {
-				value.restore();
-			}
-		}
 	}
 }
