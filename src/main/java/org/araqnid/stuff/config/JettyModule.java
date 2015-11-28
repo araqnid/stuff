@@ -37,6 +37,7 @@ import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.util.resource.PathResource;
 import org.eclipse.jetty.util.resource.Resource;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
 import org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher;
 
@@ -156,6 +157,7 @@ public final class JettyModule extends AbstractModule {
 		server.setConnectors(new Connector[] { connector });
 		server.setSessionIdManager(sessionIdManager);
 		server.setHandler(handler);
+		server.getBean(QueuedThreadPool.class).setName("Jetty");
 		return server;
 	}
 }
