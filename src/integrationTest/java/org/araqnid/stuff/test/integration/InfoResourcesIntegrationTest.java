@@ -68,7 +68,6 @@ public class InfoResourcesIntegrationTest extends IntegrationTest {
 	}
 
 	@Test
-	@Ignore
 	public void state_resource_default_is_json() throws Exception {
 		try (CloseableHttpResponse response = doGet("/_api/info/state")) {
 			assertThat(response, is(allOf(ok(), responseWithJsonContent(jsonAny()))));
