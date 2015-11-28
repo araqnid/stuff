@@ -8,11 +8,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.exceptions.JedisConnectionException;
-
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.google.common.util.concurrent.Monitor;
+
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 
 public class RedisProcessor<T extends RedisProcessor.DeliveryTarget> extends AbstractExecutionThreadService {
 	private final Provider<Jedis> connectionProvider;
@@ -62,7 +62,7 @@ public class RedisProcessor<T extends RedisProcessor.DeliveryTarget> extends Abs
 			if (value != null) {
 				monitor.enter();
 				try {
-					if (isRunning()) {
+					if (!isRunning()) {
 						log.error("<{}> aborting delivery due to shutdown", value);
 						jedis.rpush(key, value);
 						jedis.lrem(inProgressKey, 0, value);
