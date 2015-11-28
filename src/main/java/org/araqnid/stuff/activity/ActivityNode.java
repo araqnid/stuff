@@ -9,7 +9,7 @@ import javax.annotation.Nullable;
 
 import com.google.common.base.Stopwatch;
 
-public class ActivityNode {
+public class ActivityNode implements Completable {
 	public static final long NO_PARENT = 0L;
 	private static final AtomicLong EVENT_ID_SOURCE = new AtomicLong();
 	public final long id = EVENT_ID_SOURCE.incrementAndGet();
@@ -38,12 +38,12 @@ public class ActivityNode {
 		return node;
 	}
 
-	public Rec recordActivity(String type) {
+	public Completable.Rec<ActivityNode> recordActivity(String type) {
 		return recordActivity(type, null);
 	}
 
-	public Rec recordActivity(String type, Object attributes) {
-		return new Rec(begin(type, attributes));
+	public Completable.Rec<ActivityNode> recordActivity(String type, Object attributes) {
+		return new Completable.Rec<>(begin(type, attributes));
 	}
 
 	void begin() {
@@ -52,37 +52,10 @@ public class ActivityNode {
 		ThreadActivity.transition(parent, this);
 	}
 
-	public void complete(boolean success) {
-		complete(success, null);
-	}
-
+	@Override
 	public void complete(boolean success, Object completionAttributes) {
 		activity.sink.activityNodeEnd(activity.id, id, success,
 				Duration.ofNanos(stopwatch.elapsed(TimeUnit.NANOSECONDS)), completionAttributes);
 		ThreadActivity.transition(this, parent);
-	}
-
-	public static class Rec implements AutoCloseable {
-		private final ActivityNode node;
-		private boolean success;
-		private Object attributes;
-
-		public Rec(ActivityNode node) {
-			this.node = node;
-		}
-
-		public void markSuccess() {
-			this.success = true;
-		}
-
-		public void markSuccess(Object attributes) {
-			this.success = true;
-			this.attributes = attributes;
-		}
-
-		@Override
-		public void close() {
-			node.complete(success, attributes);
-		}
 	}
 }
