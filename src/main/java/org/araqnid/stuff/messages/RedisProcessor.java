@@ -14,7 +14,7 @@ import com.google.common.util.concurrent.Monitor;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 
-public class RedisProcessor<T extends RedisProcessor.DeliveryTarget> extends AbstractExecutionThreadService {
+public class RedisProcessor extends AbstractExecutionThreadService {
 	private final Provider<Jedis> connectionProvider;
 	private final String key;
 	private final String processingSuffix = ".working";

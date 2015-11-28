@@ -191,9 +191,7 @@ public final class WorkQueueModule extends AbstractModule {
 		}
 
 		for (final QueueConfiguration queue : redis) {
-			final TypeLiteral<RedisProcessor<WorkQueueRedisHandler>> processorType = new TypeLiteral<RedisProcessor<WorkQueueRedisHandler>>() {
-			};
-			final TypeLiteral<ServiceActivator<RedisProcessor<WorkQueueRedisHandler>>> activatorType = new TypeLiteral<ServiceActivator<RedisProcessor<WorkQueueRedisHandler>>>() {
+			final TypeLiteral<ServiceActivator<RedisProcessor>> activatorType = new TypeLiteral<ServiceActivator<RedisProcessor>>() {
 			};
 			bind(WorkQueueRedisHandler.class).annotatedWith(queue.bindingAnnotation)
 					.toProvider(new ProviderWithDependencies<WorkQueueRedisHandler>() {
@@ -211,8 +209,8 @@ public final class WorkQueueModule extends AbstractModule {
 							return new WorkQueueRedisHandler(dispatcherProvider.get());
 						}
 					});
-			bind(processorType).annotatedWith(queue.bindingAnnotation)
-					.toProvider(new ProviderWithDependencies<RedisProcessor<WorkQueueRedisHandler>>() {
+			bind(RedisProcessor.class).annotatedWith(queue.bindingAnnotation)
+					.toProvider(new ProviderWithDependencies<RedisProcessor>() {
 						private final Key<WorkQueueRedisHandler> handlerKey = Key.get(WorkQueueRedisHandler.class,
 								queue.bindingAnnotation);
 						private final Provider<WorkQueueRedisHandler> targetProvider = binder().getProvider(handlerKey);
@@ -228,21 +226,20 @@ public final class WorkQueueModule extends AbstractModule {
 						}
 
 						@Override
-						public RedisProcessor<WorkQueueRedisHandler> get() {
-							return new RedisProcessor<WorkQueueRedisHandler>(connectionProvider, queue.name,
+						public RedisProcessor get() {
+							return new RedisProcessor(connectionProvider, queue.name,
 									data -> targetProvider.get().deliver(data));
 						}
 					});
-			bind(activatorType).annotatedWith(queue.bindingAnnotation).toProvider(
-					new ProviderWithDependencies<ServiceActivator<RedisProcessor<WorkQueueRedisHandler>>>() {
-						private final Key<RedisProcessor<WorkQueueRedisHandler>> consumerServiceKey = Key
-								.get(processorType, queue.bindingAnnotation);
-						private final Provider<RedisProcessor<WorkQueueRedisHandler>> provider = binder()
-								.getProvider(consumerServiceKey);
+			bind(activatorType).annotatedWith(queue.bindingAnnotation)
+					.toProvider(new ProviderWithDependencies<ServiceActivator<RedisProcessor>>() {
+						private final Key<RedisProcessor> consumerServiceKey = Key.get(RedisProcessor.class,
+								queue.bindingAnnotation);
+						private final Provider<RedisProcessor> provider = binder().getProvider(consumerServiceKey);
 
 						@Override
-						public ServiceActivator<RedisProcessor<WorkQueueRedisHandler>> get() {
-							return new ServiceActivator<RedisProcessor<WorkQueueRedisHandler>>(provider, autostart);
+						public ServiceActivator<RedisProcessor> get() {
+							return new ServiceActivator<RedisProcessor>(provider, autostart);
 						}
 
 						@Override
@@ -250,8 +247,7 @@ public final class WorkQueueModule extends AbstractModule {
 							return ImmutableSet.<Dependency<?>> of(Dependency.get(consumerServiceKey));
 						}
 					}).in(Singleton.class);
-			final Key<ServiceActivator<RedisProcessor<WorkQueueRedisHandler>>> activatorKey = Key.get(activatorType,
-					queue.bindingAnnotation);
+			final Key<ServiceActivator<RedisProcessor>> activatorKey = Key.get(activatorType, queue.bindingAnnotation);
 			services.addBinding().to(activatorKey);
 			activateOnStartup.addBinding().to(activatorKey);
 		}

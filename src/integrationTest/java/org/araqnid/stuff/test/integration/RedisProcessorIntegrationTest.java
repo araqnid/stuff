@@ -41,7 +41,7 @@ public class RedisProcessorIntegrationTest {
 			delivered.add(data);
 			return true;
 		};
-		RedisProcessor<?> processor = new RedisProcessor<>(() -> new Jedis("localhost"), redis.key(), target);
+		RedisProcessor processor = new RedisProcessor(() -> new Jedis("localhost"), redis.key(), target);
 		processor.startAsync().awaitRunning();
 		String data = randomString();
 		redis.push(data);
@@ -59,7 +59,7 @@ public class RedisProcessorIntegrationTest {
 			delivered.add(MDC.getCopyOfContextMap());
 			return true;
 		};
-		RedisProcessor<?> processor = new RedisProcessor<>(() -> new Jedis("localhost"), redis.key(), target);
+		RedisProcessor processor = new RedisProcessor(() -> new Jedis("localhost"), redis.key(), target);
 		processor.startAsync().awaitRunning();
 		String data = randomString();
 		redis.push(data);
@@ -79,7 +79,7 @@ public class RedisProcessorIntegrationTest {
 			delivered.add(new QueueSizes(queueSize, inProgressSize));
 			return true;
 		};
-		RedisProcessor<?> processor = new RedisProcessor<>(() -> new Jedis("localhost"), redis.key(), target);
+		RedisProcessor processor = new RedisProcessor(() -> new Jedis("localhost"), redis.key(), target);
 		processor.startAsync().awaitRunning();
 		String data = randomString();
 		redis.push(data);
@@ -97,7 +97,7 @@ public class RedisProcessorIntegrationTest {
 			delivered.add(data);
 			return deliveryCount.getAndIncrement() == 0 ? false : true; // return false on 1st delivery
 		};
-		RedisProcessor<?> processor = new RedisProcessor<>(() -> new Jedis("localhost"), redis.key(), target);
+		RedisProcessor processor = new RedisProcessor(() -> new Jedis("localhost"), redis.key(), target);
 		processor.startAsync().awaitRunning();
 		String data = randomString();
 		redis.push(data);
@@ -117,7 +117,7 @@ public class RedisProcessorIntegrationTest {
 			delivered.add(data);
 			throw new RuntimeException("boom");
 		};
-		RedisProcessor<?> processor = new RedisProcessor<>(() -> new Jedis("localhost"), redis.key(), target);
+		RedisProcessor processor = new RedisProcessor(() -> new Jedis("localhost"), redis.key(), target);
 		processor.startAsync().awaitRunning();
 		String data = randomString();
 		redis.push(data);
