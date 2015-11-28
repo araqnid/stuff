@@ -30,6 +30,7 @@ import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SessionIdManager;
+import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.server.session.HashSessionIdManager;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.FilterHolder;
@@ -99,7 +100,14 @@ public final class JettyModule extends AbstractModule {
 		context.setAttribute(InstanceManager.class.getName(), instanceManager);
 		context.addEventListener(new JettyJspServletContextListener(jspTempDir, embeddedTaglibs));
 		context.addEventListener(resteasyListener);
-		return context;
+
+		return gzip(context);
+	}
+
+	private Handler gzip(Handler underlying) {
+		GzipHandler gzipHandler = new GzipHandler();
+		gzipHandler.setHandler(underlying);
+		return gzipHandler;
 	}
 
 	@Provides
