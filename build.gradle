@@ -66,6 +66,7 @@ dependencies {
     compile 'org.eclipse.jetty:jetty-servlet:' + jettyVersion
     compile 'org.eclipse.jetty:apache-jsp:' + jettyVersion
     compile 'org.eclipse.jetty:apache-jstl:' + jettyVersion
+    compile 'org.eclipse.jetty.http2:http2-server:' + jettyVersion
     compile 'com.surftools:BeanstalkClient:1.4.6'
     compile 'redis.clients:jedis:2.8.0'
     compile 'com.google.code.findbugs:jsr305:3.0.0'

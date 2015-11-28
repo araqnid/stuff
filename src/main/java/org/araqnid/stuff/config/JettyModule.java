@@ -22,8 +22,11 @@ import org.araqnid.stuff.jsp.InjectedInstanceManager;
 import org.araqnid.stuff.jsp.ThingTag;
 import org.araqnid.stuff.jsp.ThingTagInfo;
 import org.araqnid.stuff.jsp.UUIDPropertyEditor;
+import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.HttpConfiguration;
+import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SessionIdManager;
@@ -56,8 +59,8 @@ public final class JettyModule extends AbstractModule {
 
 	@Override
 	protected void configure() {
-		bind(GuiceResteasyBootstrapServletContextListener.class).toInstance(
-				new GuiceResteasyBootstrapServletContextListener() {
+		bind(GuiceResteasyBootstrapServletContextListener.class)
+				.toInstance(new GuiceResteasyBootstrapServletContextListener() {
 					@Override
 					protected List<? extends Module> getModules(ServletContext context) {
 						return ImmutableList.of(new ResteasyModule());
@@ -137,7 +140,10 @@ public final class JettyModule extends AbstractModule {
 	@Singleton
 	public Server server(Handler handler, SessionIdManager sessionIdManager) {
 		Server server = new Server();
-		ServerConnector connector = new ServerConnector(server);
+		HttpConfiguration config = new HttpConfiguration();
+		HttpConnectionFactory http1 = new HttpConnectionFactory(config);
+		HTTP2CServerConnectionFactory http2c = new HTTP2CServerConnectionFactory(config);
+		ServerConnector connector = new ServerConnector(server, http1, http2c);
 		connector.setPort(port);
 		server.setConnectors(new Connector[] { connector });
 		server.setSessionIdManager(sessionIdManager);
