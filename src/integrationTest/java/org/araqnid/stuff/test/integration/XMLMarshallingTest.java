@@ -36,7 +36,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
-import com.fasterxml.jackson.jaxrs.xml.JacksonJaxbXMLProvider;
+import com.fasterxml.jackson.jaxrs.xml.JacksonXMLProvider;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -78,7 +78,7 @@ public class XMLMarshallingTest extends IntegrationTest {
 							protected void configure() {
 								bind(TestResource.class);
 								bind(JacksonXmlContextResolver.class);
-								bind(JacksonJaxbXMLProvider.class);
+								bind(JacksonXMLProvider.class);
 							}
 						});
 					}

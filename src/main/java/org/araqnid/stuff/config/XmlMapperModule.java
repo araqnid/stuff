@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.introspect.AnnotationIntrospectorPair;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.module.guice.GuiceAnnotationIntrospector;
 import com.fasterxml.jackson.module.guice.GuiceInjectableValues;
+import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
@@ -31,6 +32,7 @@ public class XmlMapperModule extends AbstractModule {
 	private com.google.inject.Scope scope = Scopes.NO_SCOPE;
 	private Class<? extends Annotation> scopeAnnotationClass;
 	private final Key<XmlMapper> key;
+	private boolean enableJaxbIntrospection;
 
 	public XmlMapperModule() {
 		key = Key.get(XmlMapper.class);
@@ -65,7 +67,7 @@ public class XmlMapperModule extends AbstractModule {
 			binder().requestInjection(module);
 			providers.add(Providers.of(module));
 		}
-		MapperProvider mapperProvider = new MapperProvider(providers, dependencies);
+		MapperProvider mapperProvider = new MapperProvider(providers, dependencies, enableJaxbIntrospection);
 		if (scope != null) {
 			bind(key).toProvider(mapperProvider).in(scope);
 		} else {
@@ -76,12 +78,15 @@ public class XmlMapperModule extends AbstractModule {
 	private static final class MapperProvider implements ProviderWithDependencies<XmlMapper> {
 		private final Set<Provider<? extends Module>> providers;
 		private final Set<Dependency<?>> dependencies;
+		private final boolean enableJaxbIntrospection;
 		@Inject
 		private Injector injector;
 
-		private MapperProvider(Set<Provider<? extends Module>> providers, Set<Dependency<?>> dependencies) {
+		private MapperProvider(Set<Provider<? extends Module>> providers, Set<Dependency<?>> dependencies,
+				boolean enableJaxbIntrospection) {
 			this.providers = ImmutableSet.copyOf(providers);
 			this.dependencies = ImmutableSet.copyOf(dependencies);
+			this.enableJaxbIntrospection = enableJaxbIntrospection;
 		}
 
 		@Override
@@ -92,6 +97,9 @@ public class XmlMapperModule extends AbstractModule {
 			}
 			mapper.setInjectableValues(new GuiceInjectableValues(injector));
 			addGuiceIntrospector(mapper);
+			if (enableJaxbIntrospection) {
+				addJaxbIntrospector(mapper);
+			}
 			return mapper;
 		}
 
@@ -100,6 +108,15 @@ public class XmlMapperModule extends AbstractModule {
 			AnnotationIntrospectorPair ser = new AnnotationIntrospectorPair(guiceIntrospector, mapper
 					.getSerializationConfig().getAnnotationIntrospector());
 			AnnotationIntrospectorPair deser = new AnnotationIntrospectorPair(guiceIntrospector, mapper
+					.getDeserializationConfig().getAnnotationIntrospector());
+			mapper.setAnnotationIntrospectors(ser, deser);
+		}
+
+		private void addJaxbIntrospector(XmlMapper mapper) {
+			JaxbAnnotationIntrospector jaxbIntrospector = new JaxbAnnotationIntrospector(mapper.getTypeFactory());
+			AnnotationIntrospectorPair ser = new AnnotationIntrospectorPair(jaxbIntrospector, mapper
+					.getSerializationConfig().getAnnotationIntrospector());
+			AnnotationIntrospectorPair deser = new AnnotationIntrospectorPair(jaxbIntrospector, mapper
 					.getDeserializationConfig().getAnnotationIntrospector());
 			mapper.setAnnotationIntrospectors(ser, deser);
 		}
@@ -131,6 +148,11 @@ public class XmlMapperModule extends AbstractModule {
 	public XmlMapperModule in(com.google.inject.Scope scopeInstance) {
 		this.scope = scopeInstance;
 		this.scopeAnnotationClass = null;
+		return this;
+	}
+
+	public XmlMapperModule usingJaxbAnnotations() {
+		this.enableJaxbIntrospection = true;
 		return this;
 	}
 
