@@ -73,31 +73,31 @@ public final class ResteasyModule extends AbstractModule {
 
 	@Provider
 	public static class JacksonContextResolver implements ContextResolver<ObjectMapper> {
-		private final ObjectMapper objectMapper;
+		private final javax.inject.Provider<ObjectMapper> objectMapper;
 
 		@Inject
-		public JacksonContextResolver(ObjectMapper objectMapper) {
+		public JacksonContextResolver(javax.inject.Provider<ObjectMapper> objectMapper) {
 			this.objectMapper = objectMapper;
 		}
 
 		@Override
 		public ObjectMapper getContext(Class<?> type) {
-			return objectMapper;
+			return objectMapper.get();
 		}
 	}
 
 	@Provider
 	public static class JacksonXmlContextResolver implements ContextResolver<XmlMapper> {
-		private final XmlMapper objectMapper;
+		private final javax.inject.Provider<XmlMapper> objectMapper;
 
 		@Inject
-		public JacksonXmlContextResolver(XmlMapper objectMapper) {
+		public JacksonXmlContextResolver(javax.inject.Provider<XmlMapper> objectMapper) {
 			this.objectMapper = objectMapper;
 		}
 
 		@Override
 		public XmlMapper getContext(Class<?> type) {
-			return objectMapper;
+			return objectMapper.get();
 		}
 	}
 }
