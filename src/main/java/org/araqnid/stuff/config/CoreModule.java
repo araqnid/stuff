@@ -6,6 +6,8 @@ import java.net.UnknownHostException;
 import java.time.Clock;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.inject.Singleton;
 
@@ -19,7 +21,6 @@ import org.araqnid.stuff.activity.ActivityScope;
 import org.araqnid.stuff.activity.LogActivityEvents;
 import org.araqnid.stuff.activity.ThreadActivity;
 import org.araqnid.stuff.zedis.Zedis;
-import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
 import redis.clients.jedis.Jedis;
 
@@ -31,6 +32,7 @@ import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import com.fasterxml.jackson.module.guice.ObjectMapperModule;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.lexicalscope.eventcast.EventCast;
@@ -70,9 +72,8 @@ public final class CoreModule extends AbstractModule {
 
 	@Provides
 	public Zedis zedis() {
-		QueuedThreadPool threadPool = new QueuedThreadPool();
-		threadPool.setName("Zedis-localhost-6379");
-		threadPool.setDaemon(true);
+		ExecutorService threadPool = Executors.newCachedThreadPool(new ThreadFactoryBuilder()
+				.setNameFormat("Zedis-localhost-6379-%d").setDaemon(true).build());
 		return new Zedis(threadPool, "localhost", 6379);
 	}
 
