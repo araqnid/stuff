@@ -1,7 +1,5 @@
 package org.araqnid.stuff.zedis;
 
-import static org.araqnid.stuff.zedis.Marshaller.marshal;
-
 import java.io.Closeable;
 import java.io.EOFException;
 import java.io.IOException;
@@ -10,9 +8,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
-import java.rmi.RemoteException;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Deque;
 import java.util.Optional;
 import java.util.concurrent.BlockingDeque;
@@ -36,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
 
 public class Zedis implements Closeable {
 	private static final Logger LOG = LoggerFactory.getLogger(Zedis.class);
@@ -51,55 +46,6 @@ public class Zedis implements Closeable {
 		this.scheduler = new TimerScheduler("Zedis-timer", false);
 		this.selectorManager = new ZedisSelectorManager(executor, scheduler);
 		this.address = new InetSocketAddress(host, port);
-	}
-
-	private static class Command {
-		private final CompletableFuture<Object> responseCallback;
-		private final byte[] string;
-		private final ResponseParser parser;
-		private final String command;
-		private final ImmutableList<Object> args;
-
-		Command(String command, Object... args) {
-			this.command = command;
-			this.args = ImmutableList.copyOf(args);
-			String[] parts = new String[args.length + 1];
-			parts[0] = command;
-			for (int i = 0; i < args.length; i++) {
-				if (args[i] != null) {
-					parts[i + 1] = String.valueOf(args[i]);
-				}
-			}
-			this.string = marshal(Arrays.asList(parts));
-			this.responseCallback = new CompletableFuture<Object>();
-			this.parser = new ResponseParser();
-		}
-
-		public boolean received(ByteBuffer buf) {
-			if (!parser.consume(buf)) return false;
-			Object value = parser.get();
-			if (value instanceof ErrorMessage)
-				responseCallback.completeExceptionally(new RemoteException(((ErrorMessage) value).message()));
-			responseCallback.complete(value);
-			return true;
-		}
-
-		public CompletableFuture<Object> future() {
-			return responseCallback;
-		}
-
-		public void failed(Throwable x) {
-			responseCallback.completeExceptionally(x);
-		}
-
-		public boolean isBlocking() {
-			return string[0] == 'B';
-		}
-
-		@Override
-		public String toString() {
-			return "Zedis.Command{" + command + " " + args + " | " + parser + "}";
-		}
 	}
 
 	public void connect() throws IOException {
@@ -268,7 +214,7 @@ public class Zedis implements Closeable {
 			public SendCommand(Command command, Callback callback) {
 				this.command = command;
 				this.callback = callback;
-				msg = ByteBuffer.wrap(command.string);
+				msg = ByteBuffer.wrap(command.asBytes());
 			}
 
 			@Override
