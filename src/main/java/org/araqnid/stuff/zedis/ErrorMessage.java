@@ -11,6 +11,7 @@ public final class ErrorMessage {
 		return message;
 	}
 
+	@Override
 	public String toString() {
 		return "ErrorMessage(" + message + ")";
 	}
