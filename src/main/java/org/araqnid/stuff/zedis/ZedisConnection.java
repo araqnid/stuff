@@ -15,7 +15,7 @@ import org.eclipse.jetty.util.IteratingCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class ZedisConnection extends AbstractConnection {
+public final class ZedisConnection extends AbstractConnection implements ZedisCommands {
 	private static final Logger LOG = LoggerFactory.getLogger(ZedisConnection.class);
 	private ZedisConnection.SendState sendState = ZedisConnection.SendState.CONNECTING;
 	private ZedisConnection.ReceiveState recvState = ZedisConnection.ReceiveState.CONNECTING;
@@ -109,6 +109,7 @@ public final class ZedisConnection extends AbstractConnection {
 		super.onOpen();
 	}
 
+	@Override
 	public CompletableFuture<Object> command(String command, Object... args) {
 		Command commandObject = new Command(command, args);
 		send(commandObject);

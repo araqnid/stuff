@@ -22,12 +22,12 @@ import org.araqnid.stuff.services.ServiceActivator;
 import org.araqnid.stuff.workqueue.HibernateWorkQueue;
 import org.araqnid.stuff.workqueue.SqlWorkQueue;
 import org.araqnid.stuff.workqueue.SqlWorkQueue.Accessor;
-import org.araqnid.stuff.zedis.Zedis;
 import org.araqnid.stuff.workqueue.WorkDispatcher;
 import org.araqnid.stuff.workqueue.WorkProcessor;
 import org.araqnid.stuff.workqueue.WorkQueue;
 import org.araqnid.stuff.workqueue.WorkQueueBeanstalkHandler;
 import org.araqnid.stuff.workqueue.WorkQueueRedisHandler;
+import org.araqnid.stuff.zedis.ZedisClient;
 import org.hibernate.SessionFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -214,7 +214,7 @@ public final class WorkQueueModule extends AbstractModule {
 								queue.bindingAnnotation);
 						private final Provider<WorkQueueRedisHandler> targetProvider = binder().getProvider(handlerKey);
 						@Inject
-						private Provider<Zedis> connectionProvider;
+						private Provider<ZedisClient> client;
 
 						@Override
 						public Set<Dependency<?>> getDependencies() {
@@ -226,7 +226,7 @@ public final class WorkQueueModule extends AbstractModule {
 
 						@Override
 						public RedisProcessor get() {
-							return new RedisProcessor(connectionProvider, queue.name,
+							return new RedisProcessor(client.get(), queue.name,
 									data -> targetProvider.get().deliver(data));
 						}
 					});

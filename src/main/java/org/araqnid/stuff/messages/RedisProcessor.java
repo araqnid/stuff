@@ -1,11 +1,10 @@
 package org.araqnid.stuff.messages;
 
-import java.io.IOException;
-import java.net.SocketException;
+import java.io.EOFException;
+import java.util.concurrent.CompletionException;
 
-import javax.inject.Provider;
-
-import org.araqnid.stuff.zedis.Zedis;
+import org.araqnid.stuff.zedis.ZedisClient;
+import org.araqnid.stuff.zedis.ZedisConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -14,10 +13,11 @@ import org.slf4j.MDC.MDCCloseable;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.google.common.util.concurrent.Monitor;
 
-import redis.clients.jedis.exceptions.JedisConnectionException;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.concurrent.CompletableFuture.allOf;
 
 public class RedisProcessor extends AbstractExecutionThreadService {
-	private final Provider<Zedis> connectionProvider;
+	private final ZedisClient client;
 	private final String key;
 	private final String processingSuffix = ".working";
 	private final DeliveryTarget target;
@@ -29,11 +29,11 @@ public class RedisProcessor extends AbstractExecutionThreadService {
 			return !delivering;
 		}
 	};
-	private Zedis jedis;
+	private ZedisConnection conn;
 	private boolean delivering;
 
-	public RedisProcessor(Provider<Zedis> connectionProvider, String key, DeliveryTarget target) {
-		this.connectionProvider = connectionProvider;
+	public RedisProcessor(ZedisClient client, String key, DeliveryTarget target) {
+		this.client = client;
 		this.key = key;
 		this.target = target;
 		this.log = LoggerFactory.getLogger(RedisProcessor.class.getName() + "." + key);
@@ -41,8 +41,7 @@ public class RedisProcessor extends AbstractExecutionThreadService {
 
 	@Override
 	protected void startUp() throws Exception {
-		jedis = connectionProvider.get();
-		jedis.connect();
+		conn = client.connect().join();
 	}
 
 	@Override
@@ -53,9 +52,9 @@ public class RedisProcessor extends AbstractExecutionThreadService {
 			log.debug("retrieving value from list");
 			String value;
 			try {
-				value = jedis.brpoplpush(key, inProgressKey, 30);
-			} catch (JedisConnectionException e) {
-				if (!isRunning() && e.getCause() instanceof SocketException) {
+				value = conn.brpoplpush(key, inProgressKey, 30).thenApply(RedisProcessor::asString).join();
+			} catch (CompletionException e) {
+				if (!isRunning() && e.getCause() instanceof EOFException) {
 					log.debug("Ignoring network exception during shutdown: " + e);
 					return;
 				}
@@ -66,8 +65,7 @@ public class RedisProcessor extends AbstractExecutionThreadService {
 				try {
 					if (!isRunning()) {
 						log.error("<{}> aborting delivery due to shutdown", value);
-						jedis.rpush(key, value);
-						jedis.lrem(inProgressKey, 0, value);
+						allOf(conn.rpush(key, value), conn.lrem(inProgressKey, 0, value)).join();
 						return;
 					}
 					log.debug("<{}> retrieved", value);
@@ -77,12 +75,11 @@ public class RedisProcessor extends AbstractExecutionThreadService {
 				}
 				try {
 					if (deliver(value)) {
-						jedis.lrem(inProgressKey, 0, value);
+						conn.lrem(inProgressKey, 0, value).join();
 						log.debug("<{}> removed", value);
 					}
 					else {
-						jedis.lrem(inProgressKey, 0, value);
-						jedis.lpush(key, value);
+						allOf(conn.lrem(inProgressKey, 0, value), conn.lpush(key, value)).join();
 						log.debug("<{}> recycled", value);
 					}
 				} catch (Exception e) {
@@ -96,22 +93,24 @@ public class RedisProcessor extends AbstractExecutionThreadService {
 				}
 			}
 		}
+		log.debug("exiting main loop");
 	}
 
 	@Override
 	protected void shutDown() throws Exception {
 		log.info("Consumption stopped");
-		jedis.close();
+		conn.close();
 	}
 
 	@Override
 	protected void triggerShutdown() {
 		if (monitor.enterIf(notCurrentlyDelivering)) {
-			try {
-				jedis.close();
-			} catch (IOException e) {
-				log.debug("Ignoring exception closing Zedis", e);
-			}
+			log.debug("closing connection to trigger shutdown");
+			monitor.leave();
+			conn.close();
+		}
+		else {
+			log.debug("currently delivering- leaving connection open");
 		}
 	}
 
@@ -128,6 +127,11 @@ public class RedisProcessor extends AbstractExecutionThreadService {
 
 	private boolean dispatchDelivery(String value) {
 		return target.deliver(value);
+	}
+
+	private static String asString(byte[] bytes) {
+		if (bytes == null) return null;
+		return new String(bytes, UTF_8);
 	}
 
 	@Override

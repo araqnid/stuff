@@ -10,13 +10,13 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.inject.Provider;
-
 import org.araqnid.stuff.messages.RedisProcessor;
-import org.araqnid.stuff.zedis.Zedis;
+import org.araqnid.stuff.zedis.ZedisClient;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
@@ -46,7 +46,18 @@ public class RedisProcessorIntegrationTest {
 	@Rule
 	public final ThreadPoolSetup threadPool = new ThreadPoolSetup();
 
-	private final Provider<Zedis> provider = () -> new Zedis(threadPool.executor(), "localhost", 6379);
+	private ZedisClient client;
+
+	@Before
+	public void setup_client() throws Exception {
+		client = new ZedisClient(threadPool.executor(), "localhost", 6379);
+		client.start();
+	}
+
+	@After
+	public void shutdown_client() throws Exception {
+		client.close();
+	}
 
 	@Test
 	public void message_delivered_to_target() throws Exception {
@@ -55,7 +66,7 @@ public class RedisProcessorIntegrationTest {
 			delivered.add(data);
 			return true;
 		};
-		RedisProcessor processor = new RedisProcessor(provider, redis.key(), target);
+		RedisProcessor processor = new RedisProcessor(client, redis.key(), target);
 		processor.startAsync().awaitRunning();
 		String data = randomString();
 		redis.push(data);
@@ -73,7 +84,7 @@ public class RedisProcessorIntegrationTest {
 			delivered.add(MDC.getCopyOfContextMap());
 			return true;
 		};
-		RedisProcessor processor = new RedisProcessor(provider, redis.key(), target);
+		RedisProcessor processor = new RedisProcessor(client, redis.key(), target);
 		processor.startAsync().awaitRunning();
 		String data = randomString();
 		redis.push(data);
@@ -93,7 +104,7 @@ public class RedisProcessorIntegrationTest {
 			delivered.add(new QueueSizes(queueSize, inProgressSize));
 			return true;
 		};
-		RedisProcessor processor = new RedisProcessor(provider, redis.key(), target);
+		RedisProcessor processor = new RedisProcessor(client, redis.key(), target);
 		processor.startAsync().awaitRunning();
 		String data = randomString();
 		redis.push(data);
@@ -111,7 +122,7 @@ public class RedisProcessorIntegrationTest {
 			delivered.add(data);
 			return deliveryCount.getAndIncrement() == 0 ? false : true; // return false on 1st delivery
 		};
-		RedisProcessor processor = new RedisProcessor(provider, redis.key(), target);
+		RedisProcessor processor = new RedisProcessor(client, redis.key(), target);
 		processor.startAsync().awaitRunning();
 		String data = randomString();
 		redis.push(data);
@@ -131,7 +142,7 @@ public class RedisProcessorIntegrationTest {
 			delivered.add(data);
 			throw new RuntimeException("boom");
 		};
-		RedisProcessor processor = new RedisProcessor(provider, redis.key(), target);
+		RedisProcessor processor = new RedisProcessor(client, redis.key(), target);
 		processor.startAsync().awaitRunning();
 		String data = randomString();
 		redis.push(data);

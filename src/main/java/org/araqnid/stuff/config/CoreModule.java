@@ -9,6 +9,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.inject.Named;
 import javax.inject.Singleton;
 
 import org.araqnid.stuff.ActivateOnStartup;
@@ -21,8 +22,7 @@ import org.araqnid.stuff.activity.ActivityScope;
 import org.araqnid.stuff.activity.LogActivityEvents;
 import org.araqnid.stuff.activity.ThreadActivity;
 import org.araqnid.stuff.zedis.Zedis;
-
-import redis.clients.jedis.Jedis;
+import org.araqnid.stuff.zedis.ZedisClient;
 
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk7.Jdk7Module;
@@ -36,6 +36,8 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.lexicalscope.eventcast.EventCast;
+
+import redis.clients.jedis.Jedis;
 
 public final class CoreModule extends AbstractModule {
 	@Override
@@ -54,8 +56,7 @@ public final class CoreModule extends AbstractModule {
 		install(new XmlMapperModule().registerModule(GuavaModule.class).registerModule(NamingJacksonModule.class)
 				.registerModule(Jdk7Module.class).registerModule(Jdk8Module.class).registerModule(JavaTimeModule.class)
 				.registerModule(AfterburnerModule.class).registerModule(TextualTimestampsModule.class)
-				.usingJaxbAnnotations()
-				.in(Singleton.class));
+				.usingJaxbAnnotations().in(Singleton.class));
 		install(new SpooledEventsModule());
 		install(new ElasticSearchModule("testcluster", new File(new File(System.getProperty("java.io.tmpdir")),
 				"elasticsearch." + System.getProperty("user.name"))));
@@ -71,10 +72,25 @@ public final class CoreModule extends AbstractModule {
 	}
 
 	@Provides
-	public Zedis zedis() {
-		ExecutorService threadPool = Executors.newCachedThreadPool(new ThreadFactoryBuilder()
-				.setNameFormat("Zedis-localhost-6379-%d").setDaemon(true).build());
+	@Singleton
+	@Named("zedis")
+	public ExecutorService zedisThreadPool() {
+		ExecutorService threadPool = Executors.newCachedThreadPool(
+				new ThreadFactoryBuilder().setNameFormat("Zedis-localhost-6379-%d").setDaemon(true).build());
+		return threadPool;
+	}
+
+	@Provides
+	public Zedis zedis(@Named("zedis") ExecutorService threadPool) {
 		return new Zedis(threadPool, "localhost", 6379);
+	}
+
+	@Provides
+	@Singleton
+	public ZedisClient zedisClient(@Named("zedis") ExecutorService threadPool) {
+		ZedisClient client = new ZedisClient(threadPool, "localhost", 6379);
+		client.start();
+		return client;
 	}
 
 	@Provides
