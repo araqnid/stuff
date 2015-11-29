@@ -1,9 +1,11 @@
 package org.araqnid.stuff.messages;
 
+import java.io.IOException;
 import java.net.SocketException;
 
 import javax.inject.Provider;
 
+import org.araqnid.stuff.zedis.Zedis;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -12,11 +14,10 @@ import org.slf4j.MDC.MDCCloseable;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.google.common.util.concurrent.Monitor;
 
-import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 
 public class RedisProcessor extends AbstractExecutionThreadService {
-	private final Provider<Jedis> connectionProvider;
+	private final Provider<Zedis> connectionProvider;
 	private final String key;
 	private final String processingSuffix = ".working";
 	private final DeliveryTarget target;
@@ -28,10 +29,10 @@ public class RedisProcessor extends AbstractExecutionThreadService {
 			return !delivering;
 		}
 	};
-	private Jedis jedis;
+	private Zedis jedis;
 	private boolean delivering;
 
-	public RedisProcessor(Provider<Jedis> connectionProvider, String key, DeliveryTarget target) {
+	public RedisProcessor(Provider<Zedis> connectionProvider, String key, DeliveryTarget target) {
 		this.connectionProvider = connectionProvider;
 		this.key = key;
 		this.target = target;
@@ -100,13 +101,17 @@ public class RedisProcessor extends AbstractExecutionThreadService {
 	@Override
 	protected void shutDown() throws Exception {
 		log.info("Consumption stopped");
-		if (jedis.isConnected()) jedis.disconnect();
+		jedis.close();
 	}
 
 	@Override
 	protected void triggerShutdown() {
 		if (monitor.enterIf(notCurrentlyDelivering)) {
-			jedis.disconnect();
+			try {
+				jedis.close();
+			} catch (IOException e) {
+				log.debug("Ignoring exception closing Zedis", e);
+			}
 		}
 	}
 

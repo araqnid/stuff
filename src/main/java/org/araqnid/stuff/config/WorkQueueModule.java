@@ -22,6 +22,7 @@ import org.araqnid.stuff.services.ServiceActivator;
 import org.araqnid.stuff.workqueue.HibernateWorkQueue;
 import org.araqnid.stuff.workqueue.SqlWorkQueue;
 import org.araqnid.stuff.workqueue.SqlWorkQueue.Accessor;
+import org.araqnid.stuff.zedis.Zedis;
 import org.araqnid.stuff.workqueue.WorkDispatcher;
 import org.araqnid.stuff.workqueue.WorkProcessor;
 import org.araqnid.stuff.workqueue.WorkQueue;
@@ -42,8 +43,6 @@ import com.google.inject.spi.Dependency;
 import com.google.inject.spi.InjectionPoint;
 import com.google.inject.spi.ProviderWithDependencies;
 import com.surftools.BeanstalkClient.Client;
-
-import redis.clients.jedis.Jedis;
 
 public final class WorkQueueModule extends AbstractModule {
 	private final Collection<QueueConfiguration> beanstalk = ImmutableSet.of(
@@ -215,7 +214,7 @@ public final class WorkQueueModule extends AbstractModule {
 								queue.bindingAnnotation);
 						private final Provider<WorkQueueRedisHandler> targetProvider = binder().getProvider(handlerKey);
 						@Inject
-						private Provider<Jedis> connectionProvider;
+						private Provider<Zedis> connectionProvider;
 
 						@Override
 						public Set<Dependency<?>> getDependencies() {
