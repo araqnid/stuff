@@ -18,6 +18,8 @@ import org.araqnid.stuff.activity.ActivityEventSink;
 import org.araqnid.stuff.activity.ActivityScope;
 import org.araqnid.stuff.activity.LogActivityEvents;
 import org.araqnid.stuff.activity.ThreadActivity;
+import org.araqnid.stuff.zedis.Zedis;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
 import redis.clients.jedis.Jedis;
 
@@ -64,6 +66,14 @@ public final class CoreModule extends AbstractModule {
 	@Provides
 	public Jedis jedis() {
 		return new Jedis("localhost");
+	}
+
+	@Provides
+	public Zedis zedis() {
+		QueuedThreadPool threadPool = new QueuedThreadPool();
+		threadPool.setName("Zedis-localhost-6379");
+		threadPool.setDaemon(true);
+		return new Zedis(threadPool, "localhost", 6379);
 	}
 
 	@Provides
