@@ -10,6 +10,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
+import java.rmi.RemoteException;
 import java.time.Duration;
 import java.util.Deque;
 import java.util.Optional;
@@ -68,7 +69,10 @@ public class Zedis implements Closeable {
 
 		public boolean received(ByteBuffer buf) {
 			if (!parser.consume(buf)) return false;
-			responseCallback.complete(parser.get());
+			Object value = parser.get();
+			if (value instanceof ErrorMessage)
+				responseCallback.completeExceptionally(new RemoteException(((ErrorMessage) value).message()));
+			responseCallback.complete(value);
 			return true;
 		}
 
