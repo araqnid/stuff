@@ -10,6 +10,7 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Deque;
+import java.util.Optional;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -182,11 +183,13 @@ public class Zedis implements Closeable {
 
 	public String brpoplpush(String key1, String key2, int timeoutSeconds) throws IOException {
 		return command(String.format("BRPOPLPUSH %s %s %d\r\n", key1, key2, timeoutSeconds))
-				.thenApply(o -> new String((byte[]) o, StandardCharsets.UTF_8)).handle((String value, Throwable ex) -> {
+				.thenApply(
+						o -> Optional.ofNullable((byte[]) o).map((byte[] b) -> new String(b, StandardCharsets.UTF_8)))
+				.handle((Optional<String> value, Throwable ex) -> {
 					if (ex instanceof EOFException) return null;
 					if (ex instanceof CompletionException && ex.getCause() instanceof EOFException) return null;
 					if (ex != null) throw Throwables.propagate(ex);
-					return value;
+					return value.orElse(null);
 				}).join();
 	}
 
