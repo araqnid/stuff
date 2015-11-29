@@ -56,7 +56,7 @@ public class Zedis implements Closeable {
 	}
 
 	public void lpush(String key, String value) throws IOException {
-		command("RPUSH", key, value).join();
+		command("LPUSH", key, value).join();
 	}
 
 	public void rpush(String key, String value) throws IOException {
