@@ -1,5 +1,8 @@
 package org.araqnid.stuff.zedis;
 
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static org.araqnid.stuff.zedis.Marshaller.marshal;
+
 import java.io.Closeable;
 import java.io.EOFException;
 import java.io.IOException;
@@ -32,10 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Throwables;
-
-import static java.nio.charset.StandardCharsets.ISO_8859_1;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.araqnid.stuff.zedis.Marshaller.marshal;
+import com.google.common.collect.ImmutableList;
 
 public class Zedis implements Closeable {
 	private static final Logger LOG = LoggerFactory.getLogger(Zedis.class);
@@ -56,10 +56,14 @@ public class Zedis implements Closeable {
 		private final CompletableFuture<Object> responseCallback;
 		private final byte[] string;
 		private final ResponseParser parser;
+		private final String command;
+		private final ImmutableList<Object> args;
 
-		Command(CompletableFuture<Object> responseCallback, byte[] string) {
-			this.string = string;
-			this.responseCallback = responseCallback;
+		Command(String command, Object... args) {
+			this.command = command;
+			this.args = ImmutableList.copyOf(args);
+			this.string = marshal(command, args);
+			this.responseCallback = new CompletableFuture<Object>();
 			this.parser = new ResponseParser();
 		}
 
@@ -67,6 +71,10 @@ public class Zedis implements Closeable {
 			if (!parser.consume(buf)) return false;
 			responseCallback.complete(parser.get());
 			return true;
+		}
+
+		public CompletableFuture<Object> future() {
+			return responseCallback;
 		}
 
 		public void failed(Throwable x) {
@@ -79,15 +87,7 @@ public class Zedis implements Closeable {
 
 		@Override
 		public String toString() {
-			int limit = 0;
-			while (limit < 128) {
-				if (string[limit] == '\r') {
-					break;
-				}
-				++limit;
-			}
-			String substring = new String(string, 0, limit, ISO_8859_1);
-			return "Zedis.Command{\"" + substring + "\" | " + parser + "}";
+			return "Zedis.Command{" + command + " " + args + " | " + parser + "}";
 		}
 	}
 
@@ -152,30 +152,26 @@ public class Zedis implements Closeable {
 		LOG.debug("connection invalidated");
 	}
 
-	public CompletableFuture<Object> command(String command) throws IOException {
-		return command(marshal(command));
-	}
-
-	public CompletableFuture<Object> command(byte[] command) throws IOException {
-		CompletableFuture<Object> future = new CompletableFuture<>();
-		commandQueue.add(new Command(future, command));
+	public CompletableFuture<Object> command(String command, Object... args) throws IOException {
+		Command commandObject = new Command(command, args);
+		commandQueue.add(commandObject);
 		ZedisConnection connection = readyConnection.get();
 		if (connection != null) {
 			connection.sendCommands();
 		}
-		return future;
+		return commandObject.future();
 	}
 
 	public void lpush(String key, String value) throws IOException {
-		command(marshal("RPUSH", key, value));
+		command("RPUSH", key, value);
 	}
 
 	public void rpush(String key, String value) throws IOException {
-		command(marshal("RPUSH", key, value));
+		command("RPUSH", key, value);
 	}
 
 	public void lrem(String key, int count, String value) throws IOException {
-		command(marshal("LREM", key, count, value));
+		command("LREM", key, count, value);
 	}
 
 	public String brpoplpush(String key1, String key2, Duration timeout) throws IOException {
@@ -183,7 +179,7 @@ public class Zedis implements Closeable {
 	}
 
 	public String brpoplpush(String key1, String key2, int timeoutSeconds) throws IOException {
-		return command(marshal("BRPOPLPUSH", key1, key2, timeoutSeconds))
+		return command("BRPOPLPUSH", key1, key2, timeoutSeconds)
 				.thenApply(
 						o -> Optional.ofNullable((byte[]) o).map((byte[] b) -> new String(b, StandardCharsets.UTF_8)))
 				.handle((Optional<String> value, Throwable ex) -> {
