@@ -1,6 +1,5 @@
 package org.araqnid.stuff.zedis;
 
-import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.araqnid.stuff.zedis.Marshaller.marshal;
 
 import java.io.Closeable;
@@ -62,7 +61,7 @@ public class Zedis implements Closeable {
 		Command(String command, Object... args) {
 			this.command = command;
 			this.args = ImmutableList.copyOf(args);
-			this.string = marshal(command, args);
+			this.string = marshal(ImmutableList.builder().add(command).addAll(this.args).build());
 			this.responseCallback = new CompletableFuture<Object>();
 			this.parser = new ResponseParser();
 		}
