@@ -35,6 +35,7 @@ import com.google.common.base.Throwables;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.araqnid.stuff.zedis.Marshaller.marshal;
 
 public class Zedis implements Closeable {
 	private static final Logger LOG = LoggerFactory.getLogger(Zedis.class);
@@ -152,7 +153,7 @@ public class Zedis implements Closeable {
 	}
 
 	public CompletableFuture<Object> command(String command) throws IOException {
-		return command(command.getBytes(UTF_8));
+		return command(marshal(command));
 	}
 
 	public CompletableFuture<Object> command(byte[] command) throws IOException {
@@ -166,15 +167,15 @@ public class Zedis implements Closeable {
 	}
 
 	public void lpush(String key, String value) throws IOException {
-		command(String.format("RPUSH %s %s\r\n", key, value));
+		command(marshal("RPUSH", key, value));
 	}
 
 	public void rpush(String key, String value) throws IOException {
-		command(String.format("RPUSH %s %s\r\n", key, value));
+		command(marshal("RPUSH", key, value));
 	}
 
 	public void lrem(String key, int count, String value) throws IOException {
-		command(String.format("LREM %s %d %s\r\n", key, count, value));
+		command(marshal("LREM", key, count, value));
 	}
 
 	public String brpoplpush(String key1, String key2, Duration timeout) throws IOException {
@@ -182,7 +183,7 @@ public class Zedis implements Closeable {
 	}
 
 	public String brpoplpush(String key1, String key2, int timeoutSeconds) throws IOException {
-		return command(String.format("BRPOPLPUSH %s %s %d\r\n", key1, key2, timeoutSeconds))
+		return command(marshal("BRPOPLPUSH", key1, key2, timeoutSeconds))
 				.thenApply(
 						o -> Optional.ofNullable((byte[]) o).map((byte[] b) -> new String(b, StandardCharsets.UTF_8)))
 				.handle((Optional<String> value, Throwable ex) -> {
