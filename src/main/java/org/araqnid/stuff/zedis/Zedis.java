@@ -12,6 +12,7 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.rmi.RemoteException;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.Optional;
 import java.util.concurrent.BlockingDeque;
@@ -62,7 +63,14 @@ public class Zedis implements Closeable {
 		Command(String command, Object... args) {
 			this.command = command;
 			this.args = ImmutableList.copyOf(args);
-			this.string = marshal(ImmutableList.builder().add(command).addAll(this.args).build());
+			String[] parts = new String[args.length + 1];
+			parts[0] = command;
+			for (int i = 0; i < args.length; i++) {
+				if (args[i] != null) {
+					parts[i + 1] = String.valueOf(args[i]);
+				}
+			}
+			this.string = marshal(Arrays.asList(parts));
 			this.responseCallback = new CompletableFuture<Object>();
 			this.parser = new ResponseParser();
 		}
