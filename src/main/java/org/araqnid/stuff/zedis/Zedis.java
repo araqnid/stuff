@@ -40,7 +40,7 @@ public class Zedis implements Closeable {
 	private final Scheduler scheduler;
 	private SocketChannel socket;
 	private final AtomicReference<ZedisConnection> readyConnection = new AtomicReference<>();
-	private final BlockingDeque<Command> commandQueue = new LinkedBlockingDeque<>();
+	private final BlockingDeque<Command> pendingCommands = new LinkedBlockingDeque<>();
 
 	public Zedis(Executor executor, String host, int port) {
 		this.scheduler = new TimerScheduler("Zedis-timer", false);
@@ -102,6 +102,9 @@ public class Zedis implements Closeable {
 	public void connectionReady(ZedisConnection connection) {
 		readyConnection.set(connection);
 		LOG.debug("connection ready");
+		for (Command command : pendingCommands) {
+			connection.send(command);
+		}
 	}
 
 	public void connectionInvalid(ZedisConnection connection) {
@@ -111,10 +114,12 @@ public class Zedis implements Closeable {
 
 	public CompletableFuture<Object> command(String command, Object... args) throws IOException {
 		Command commandObject = new Command(command, args);
-		commandQueue.add(commandObject);
 		ZedisConnection connection = readyConnection.get();
 		if (connection != null) {
-			connection.sendCommands();
+			connection.send(commandObject);
+		}
+		else {
+			pendingCommands.add(commandObject);
 		}
 		return commandObject.future();
 	}
@@ -197,7 +202,8 @@ public class Zedis implements Closeable {
 	public class ZedisConnection extends AbstractConnection {
 		private SendState sendState = SendState.CONNECTING;
 		private ReceiveState recvState = ReceiveState.CONNECTING;
-		private Deque<Command> commandsSent = new LinkedBlockingDeque<>();
+		private final Deque<Command> commandsSent = new LinkedBlockingDeque<>();
+		private final Deque<Command> commandQueue = new LinkedBlockingDeque<>();
 		private final ByteBuffer responseBuf = ByteBuffer.allocate(1024);
 
 		public ZedisConnection(EndPoint endp, Executor executor) {
@@ -273,9 +279,15 @@ public class Zedis implements Closeable {
 		@Override
 		public void onOpen() {
 			super.onOpen();
+			synchronized (this) {
+				sendState = SendState.IDLE;
+				recvState = ReceiveState.IDLE;
+			}
 			connectionReady(this);
-			sendState = SendState.IDLE;
-			recvState = ReceiveState.IDLE;
+		}
+
+		public void send(Command command) {
+			commandQueue.add(command);
 			sendCommands();
 		}
 
