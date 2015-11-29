@@ -49,7 +49,7 @@ final class Command {
 	}
 
 	public boolean isBlocking() {
-		return marshalled[0] == 'B';
+		return command.charAt(0) == 'B';
 	}
 
 	public byte[] asBytes() {
