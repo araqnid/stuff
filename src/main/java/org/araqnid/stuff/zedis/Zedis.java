@@ -56,15 +56,15 @@ public class Zedis implements Closeable {
 	}
 
 	public void lpush(String key, String value) throws IOException {
-		command("RPUSH", key, value);
+		command("RPUSH", key, value).join();
 	}
 
 	public void rpush(String key, String value) throws IOException {
-		command("RPUSH", key, value);
+		command("RPUSH", key, value).join();
 	}
 
 	public void lrem(String key, int count, String value) throws IOException {
-		command("LREM", key, count, value);
+		command("LREM", key, count, value).join();
 	}
 
 	public String brpoplpush(String key1, String key2, Duration timeout) throws IOException {
