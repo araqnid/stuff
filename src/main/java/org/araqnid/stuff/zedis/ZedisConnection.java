@@ -4,6 +4,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Deque;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingDeque;
 
@@ -106,6 +107,12 @@ public final class ZedisConnection extends AbstractConnection {
 			recvState = ZedisConnection.ReceiveState.IDLE;
 		}
 		super.onOpen();
+	}
+
+	public CompletableFuture<Object> command(String command, Object... args) {
+		Command commandObject = new Command(command, args);
+		send(commandObject);
+		return commandObject.future();
 	}
 
 	public void send(Command command) {

@@ -3,115 +3,56 @@ package org.araqnid.stuff.zedis;
 import java.io.Closeable;
 import java.io.EOFException;
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.Executors;
 
-import org.eclipse.jetty.io.Connection;
-import org.eclipse.jetty.io.EndPoint;
-import org.eclipse.jetty.io.ManagedSelector;
-import org.eclipse.jetty.io.SelectChannelEndPoint;
-import org.eclipse.jetty.io.SelectorManager;
-import org.eclipse.jetty.util.thread.Scheduler;
-import org.eclipse.jetty.util.thread.TimerScheduler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import javax.annotation.Nullable;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 public class Zedis implements Closeable {
-	private static final Logger LOG = LoggerFactory.getLogger(Zedis.class);
-	private final ZedisSelectorManager selectorManager;
-	private final InetSocketAddress address;
-	private final Scheduler scheduler;
-	private final AtomicReference<ZedisConnection> readyConnection = new AtomicReference<>();
-	private final BlockingDeque<Command> pendingCommands = new LinkedBlockingDeque<>();
+	private final ZedisClient client;
+	@Nullable
+	private ZedisConnection connection;
+
+	public Zedis() {
+		this("localhost");
+	}
+
+	public Zedis(String host) {
+		this(host, 6379);
+	}
+
+	public Zedis(String host, int port) {
+		this(Executors.newCachedThreadPool(
+				new ThreadFactoryBuilder().setNameFormat("Zedis-" + host + "-" + port + "-%d").setDaemon(true).build()),
+				host, port);
+	}
 
 	public Zedis(Executor executor, String host, int port) {
-		this.scheduler = new TimerScheduler("Zedis-timer", false);
-		this.selectorManager = new ZedisSelectorManager(executor, scheduler);
-		this.address = new InetSocketAddress(host, port);
+		this.client = new ZedisClient(executor, host, port);
 	}
 
 	public void connect() throws IOException {
-		try {
-			scheduler.start();
-		} catch (Exception e) {
-			throw new RuntimeException("Failed to start scheduler", e);
-		}
-		try {
-			selectorManager.start();
-		} catch (Exception e) {
-			throw new RuntimeException("Failed to start selector manager", e);
-		}
-		beginConnection();
-	}
-
-	private void beginConnection() throws IOException {
-		SocketChannel socket = SocketChannel.open();
-		socket.configureBlocking(false);
-		if (socket.connect(address)) {
-			LOG.debug("connected to {}", address);
-			selectorManager.accept(socket, null);
-		}
-		else {
-			LOG.debug("registering for connection to {}", address);
-			selectorManager.connect(socket, null);
-		}
+		client.start();
+		connection = client.connect().join();
 	}
 
 	@Override
 	public void close() throws IOException {
-		@SuppressWarnings("resource")
-		ZedisConnection connection = readyConnection.get();
-		if (connection != null) {
-			LOG.debug("Closing connection");
-			connection.close();
-		}
-		try {
-			selectorManager.stop();
-		} catch (Exception e) {
-			LOG.warn("Failed to stop selector manager", e);
-		}
-		try {
-			scheduler.stop();
-		} catch (Exception e) {
-			LOG.warn("Failed to stop scheduler", e);
-		}
+		client.close();
 	}
 
-	public void connectionReady(ZedisConnection connection) {
-		readyConnection.set(connection);
-		LOG.debug("connection ready");
-		for (Command command : pendingCommands) {
-			connection.send(command);
-		}
-	}
-
-	public void connectionInvalid(ZedisConnection connection) {
-		readyConnection.compareAndSet(connection, null);
-		LOG.debug("connection invalidated");
-	}
-
-	public CompletableFuture<Object> command(String command, Object... args) throws IOException {
-		Command commandObject = new Command(command, args);
-		ZedisConnection connection = readyConnection.get();
-		if (connection != null) {
-			connection.send(commandObject);
-		}
-		else {
-			pendingCommands.add(commandObject);
-		}
-		return commandObject.future();
+	public CompletableFuture<Object> command(String command, Object... args) {
+		Preconditions.checkState(connection != null, "Not connected");
+		return connection.command(command, args);
 	}
 
 	public void lpush(String key, String value) throws IOException {
@@ -140,46 +81,5 @@ public class Zedis implements Closeable {
 					if (ex != null) throw Throwables.propagate(ex);
 					return value.orElse(null);
 				}).join();
-	}
-
-	public class ZedisSelectorManager extends SelectorManager {
-		private final Executor executor;
-
-		public ZedisSelectorManager(Executor executor, Scheduler scheduler) {
-			super(executor, scheduler, 1);
-			this.executor = executor;
-		}
-
-		@Override
-		protected EndPoint newEndPoint(SocketChannel channel, ManagedSelector selector, SelectionKey key)
-				throws IOException {
-			return new SelectChannelEndPoint(channel, selector, key, getScheduler(), 0L);
-		}
-
-		@Override
-		public Connection newConnection(SocketChannel channel, EndPoint endpoint, Object attachment)
-				throws IOException {
-			return new ZedisConnection(endpoint, executor);
-		}
-
-		@Override
-		public void connectionOpened(Connection connection) {
-			super.connectionOpened(connection);
-			Zedis.LOG.info("connected to {}", address);
-			connectionReady((ZedisConnection) connection);
-		}
-
-		@Override
-		public void connectionClosed(Connection connection) {
-			super.connectionClosed(connection);
-			Zedis.LOG.info("connection closed: {}", connection);
-			connectionInvalid((ZedisConnection) connection);
-		}
-
-		@Override
-		protected void connectionFailed(SocketChannel channel, Throwable ex, Object attachment) {
-			super.connectionFailed(channel, ex, attachment);
-			Zedis.LOG.error("connection failed", ex);
-		}
 	}
 }

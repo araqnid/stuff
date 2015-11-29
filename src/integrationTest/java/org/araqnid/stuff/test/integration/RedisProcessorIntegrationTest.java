@@ -3,6 +3,8 @@ package org.araqnid.stuff.test.integration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -18,12 +20,15 @@ import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
+import org.junit.runners.model.Statement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
+import static com.google.common.util.concurrent.MoreExecutors.shutdownAndAwaitTermination;
 import static org.araqnid.stuff.testutil.RandomData.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyIterable;
@@ -38,8 +43,10 @@ public class RedisProcessorIntegrationTest {
 	@Rule
 	public final RedisSetup redis = new RedisSetup();
 
-	private Provider<Zedis> provider = () -> new Zedis(Executors.newCachedThreadPool(), "localhost",
-			6379);
+	@Rule
+	public final ThreadPoolSetup threadPool = new ThreadPoolSetup();
+
+	private final Provider<Zedis> provider = () -> new Zedis(threadPool.executor(), "localhost", 6379);
 
 	@Test
 	public void message_delivered_to_target() throws Exception {
@@ -224,5 +231,31 @@ public class RedisProcessorIntegrationTest {
 				valueMatcher.describeTo(description);
 			}
 		};
+	}
+
+	public static final class ThreadPoolSetup extends ExternalResource {
+		private ExecutorService executor;
+		private String displayName;
+
+		@Override
+		public Statement apply(Statement base, org.junit.runner.Description description) {
+			displayName = description.getMethodName();
+			return super.apply(base, description);
+		}
+
+		@Override
+		protected void before() throws Throwable {
+			executor = Executors.newCachedThreadPool(
+					new ThreadFactoryBuilder().setNameFormat("Zedis-" + displayName + "-%d").build());
+		}
+
+		@Override
+		protected void after() {
+			shutdownAndAwaitTermination(executor, 1, TimeUnit.SECONDS);
+		}
+
+		public Executor executor() {
+			return executor;
+		}
 	}
 }
