@@ -42,7 +42,7 @@ public final class CoreModule extends AbstractModule {
 		bindConstant().annotatedWith(ServerIdentity.class).to(gethostname());
 		bind(UUID.class).annotatedWith(ServerIdentity.class).toInstance(UUID.randomUUID());
 		install(new RawBeanstalkModule());
-		install(new WorkQueueModule());
+		//install(new WorkQueueModule());
 		install(new ObjectMapperModule().registerModule(GuavaModule.class).registerModule(NamingJacksonModule.class)
 				.registerModule(Jdk7Module.class).registerModule(Jdk8Module.class).registerModule(JavaTimeModule.class)
 				.registerModule(AfterburnerModule.class).registerModule(TextualTimestampsModule.class)
