@@ -7,7 +7,7 @@ sourceCompatibility = 1.8
 
 ext {
   jettyVersion = '9.3.6.v20151106'
-  jacksonVersion = '2.6.4'
+  jacksonVersion = '2.6.5'
   resteasyVersion = '3.0.14.Final'
   hibernateVersion = '4.3.8.Final'
   buildNumber = System.getenv("BUILD_NUMBER") ?: System.getenv("TRAVIS_BUILD_NUMBER")
@@ -83,7 +83,6 @@ dependencies {
     compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:' + jacksonVersion
     compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:' + jacksonVersion
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-guava:' + jacksonVersion
-    compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk7:' + jacksonVersion
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:' + jacksonVersion
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:' + jacksonVersion
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-joda:' + jacksonVersion

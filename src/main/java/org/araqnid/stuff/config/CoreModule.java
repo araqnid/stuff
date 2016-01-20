@@ -22,7 +22,6 @@ import org.araqnid.stuff.activity.ThreadActivity;
 import redis.clients.jedis.Jedis;
 
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.datatype.jdk7.Jdk7Module;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
@@ -44,11 +43,11 @@ public final class CoreModule extends AbstractModule {
 		install(new RawBeanstalkModule());
 		//install(new WorkQueueModule());
 		install(new ObjectMapperModule().registerModule(GuavaModule.class).registerModule(NamingJacksonModule.class)
-				.registerModule(Jdk7Module.class).registerModule(Jdk8Module.class).registerModule(JavaTimeModule.class)
+				.registerModule(Jdk8Module.class).registerModule(JavaTimeModule.class)
 				.registerModule(AfterburnerModule.class).registerModule(TextualTimestampsModule.class)
 				.in(Singleton.class));
 		install(new XmlMapperModule().registerModule(GuavaModule.class).registerModule(NamingJacksonModule.class)
-				.registerModule(Jdk7Module.class).registerModule(Jdk8Module.class).registerModule(JavaTimeModule.class)
+				.registerModule(Jdk8Module.class).registerModule(JavaTimeModule.class)
 				.registerModule(AfterburnerModule.class).registerModule(TextualTimestampsModule.class)
 				.usingJaxbAnnotations()
 				.in(Singleton.class));
