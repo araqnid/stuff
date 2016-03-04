@@ -29,14 +29,14 @@ check_for_updates() {
     fi
 }
 
-check_for_updates ch.qos.logback              logback-classic  1.1.5
+check_for_updates ch.qos.logback              logback-classic  1.1.6
 check_for_updates com.fasterxml.jackson.core  jackson-core     2.7.1
 check_for_updates com.google.guava            guava            19.0
 check_for_updates com.google.inject           guice            4.0
 check_for_updates joda-time                   joda-time        2.9.2
 check_for_updates org.eclipse.jetty           jetty-server     9.3.7.v20160115  '^9\.3\.[0-9]+\.[^RM]'
 check_for_updates org.jboss.resteasy          resteasy-jaxrs   3.0.16.Final
-check_for_updates org.slf4j                   slf4j-api        1.7.16
+check_for_updates org.slf4j                   slf4j-api        1.7.18
 check_for_updates org.postgresql              postgresql       9.4-1203-jdbc42
 check_for_updates redis.clients               jedis            2.8.0
 check_for_updates com.surftools               BeanstalkClient  1.4.6
