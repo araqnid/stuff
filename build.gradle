@@ -107,7 +107,7 @@ dependencies {
     testCompile 'joda-time:joda-time:2.9.3'
     testCompile 'org.threeten:threeten-extra:0.9'
     testCompile 'xom:xom:1.2.5'
-    browserTestCompile ('org.seleniumhq.selenium:selenium-java:2.52.0') {
+    browserTestCompile ('org.seleniumhq.selenium:selenium-java:2.53.0') {
         exclude module: 'httpclient'
     }
     integrationTestCompile 'org.apache.httpcomponents:httpclient:4.5.2'
