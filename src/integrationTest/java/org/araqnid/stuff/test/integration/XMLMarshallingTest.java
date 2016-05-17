@@ -30,6 +30,7 @@ import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -127,7 +128,7 @@ public class XMLMarshallingTest extends IntegrationTest {
 		}
 	}
 
-	@Test
+	@Test @Ignore
 	public void present_optional_property_is_marshalled_directly() throws Exception {
 		String value = randomString();
 		try (CloseableHttpResponse response = doGet("/_api/test/guava/object-with-optional/present/" + value)) {
@@ -136,7 +137,7 @@ public class XMLMarshallingTest extends IntegrationTest {
 		}
 	}
 
-	@Test
+	@Test @Ignore
 	public void absent_optional_property_is_marshalled_as_null() throws Exception {
 		try (CloseableHttpResponse response = doGet("/_api/test/guava/object-with-optional/absent")) {
 			assertThat(response,
