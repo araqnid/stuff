@@ -33,7 +33,7 @@ check_for_updates ch.qos.logback              logback-classic  1.1.7
 check_for_updates com.fasterxml.jackson.core  jackson-core     2.7.4
 check_for_updates com.google.guava            guava            19.0
 check_for_updates com.google.inject           guice            4.0
-check_for_updates joda-time                   joda-time        2.9.3
+check_for_updates joda-time                   joda-time        2.9.4
 check_for_updates org.eclipse.jetty           jetty-server     9.3.8.v20160314
 check_for_updates org.jboss.resteasy          resteasy-jaxrs   3.0.17.Final
 check_for_updates org.slf4j                   slf4j-api        1.7.21
