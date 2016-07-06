@@ -53,11 +53,11 @@ public class JacksonCborThings {
 	}
 
 	@Test
-	public void list_written_with_indefinite_length() throws Exception {
+	public void list_written_with_definite_length() throws Exception {
 		ObjectMapper cborMapper = new ObjectMapper(new CBORFactory());
 		assertThat(cborMapper.writer().writeValueAsBytes(ImmutableList.of("abc", "def")),
-				looksLike(new byte[] { cborIntro(CBOR_ARRAY, 31), cborIntro(CBOR_TEXT_STRING, 3), 'a', 'b', 'c',
-						cborIntro(CBOR_TEXT_STRING, 3), 'd', 'e', 'f', cborBreak() }));
+				looksLike(new byte[] { cborIntro(CBOR_ARRAY, 2), cborIntro(CBOR_TEXT_STRING, 3), 'a', 'b', 'c',
+						cborIntro(CBOR_TEXT_STRING, 3), 'd', 'e', 'f' }));
 	}
 
 	@Test
@@ -76,8 +76,8 @@ public class JacksonCborThings {
 	public void true_false_and_null_written_as_single_bytes() throws Exception {
 		ObjectMapper cborMapper = new ObjectMapper(new CBORFactory());
 		assertThat(cborMapper.writer().writeValueAsBytes(Arrays.asList(true, false, null)),
-				looksLike(new byte[] { cborIntro(CBOR_ARRAY, 31), cborIntro(CBOR_SPECIAL, 21),
-						cborIntro(CBOR_SPECIAL, 20), cborIntro(CBOR_SPECIAL, 22), cborBreak() }));
+				looksLike(new byte[] { cborIntro(CBOR_ARRAY, 3), cborIntro(CBOR_SPECIAL, 21),
+						cborIntro(CBOR_SPECIAL, 20), cborIntro(CBOR_SPECIAL, 22) }));
 	}
 
 	private byte cborBreak() {
@@ -107,7 +107,7 @@ public class JacksonCborThings {
 		return new TypeSafeDiagnosingMatcher<byte[]>() {
 			@Override
 			protected boolean matchesSafely(byte[] item, Description mismatchDescription) {
-				if (Arrays.equals(item, exampleBytes)) { return true; }
+				if (Arrays.equals(item, exampleBytes)) return true;
 				mismatchDescription.appendText("was ").appendValue(escape(item));
 				return false;
 			}
