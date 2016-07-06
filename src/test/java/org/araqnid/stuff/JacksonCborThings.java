@@ -38,7 +38,7 @@ public class JacksonCborThings {
 				looksLike(new byte[] {
 						cborIntro(CBOR_MAP, 31),
 							cborIntro(CBOR_TEXT_STRING, 6), 'v', 'a', 'l', 'u', 'e', 's',
-							cborIntro(CBOR_ARRAY, 31),
+							cborIntro(CBOR_ARRAY, 6),
 								cborIntro(CBOR_MAP, 31),
 									cborIntro(CBOR_TEXT_STRING, 6), 'c', 'o', 'l', 'o', 'u', 'r',
 									cborIntro(CBOR_TEXT_STRING, 3), 'r', 'e', 'd',
@@ -75,7 +75,6 @@ public class JacksonCborThings {
 									cborIntro(CBOR_TEXT_STRING, 5), 'v', 'a', 'l', 'u', 'e',
 									cborIntro(CBOR_SPECIAL, 27), '?', (byte) 0xf3, (byte) 0xc0, (byte) 0x83, 0x12, 'n', (byte) 0x97, (byte) 0x8d,
 									cborBreak(),
-								cborBreak(),
 							cborBreak()
 				}));
 	}
