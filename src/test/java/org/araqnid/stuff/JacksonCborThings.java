@@ -115,7 +115,7 @@ public class JacksonCborThings {
 						cborIntro(CBOR_SPECIAL, 20), cborIntro(CBOR_SPECIAL, 22) }));
 	}
 
-	private byte cborBreak() {
+	private static byte cborBreak() {
 		return cborIntro(CBOR_SPECIAL, 31);
 	}
 
