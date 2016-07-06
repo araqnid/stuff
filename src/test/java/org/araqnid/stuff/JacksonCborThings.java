@@ -1,6 +1,5 @@
 package org.araqnid.stuff;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import org.hamcrest.Description;
@@ -36,12 +35,49 @@ public class JacksonCborThings {
 										ImmutableMap.of("colour", "blue", "value", 1.2345),
 										ImmutableMap.of("colour", "indigo", "value", 1.2345),
 										ImmutableMap.of("colour", "violet", "value", 1.2345)))),
-				looksLike("\u00bffvalues\u009f\u00bffcolourcredevalue\u00fb?\u00f3\u00c0\u0083\u0012n\u0097\u008d\u00ff"
-						+ "\u00bffcolourforangeevalue\u00fb?\u00f3\u00c0\u0083\u0012n\u0097\u008d\u00ff"
-						+ "\u00bffcolouregreenevalue\u00fb?\u00f3\u00c0\u0083\u0012n\u0097\u008d\u00ff"
-						+ "\u00bffcolourdblueevalue\u00fb?\u00f3\u00c0\u0083\u0012n\u0097\u008d\u00ff"
-						+ "\u00bffcolourfindigoevalue\u00fb?\u00f3\u00c0\u0083\u0012n\u0097\u008d\u00ff"
-						+ "\u00bffcolourfvioletevalue\u00fb?\u00f3\u00c0\u0083\u0012n\u0097\u008d\u00ff\u00ff\u00ff"));
+				looksLike(new byte[] {
+						cborIntro(CBOR_MAP, 31),
+							cborIntro(CBOR_TEXT_STRING, 6), 'v', 'a', 'l', 'u', 'e', 's',
+							cborIntro(CBOR_ARRAY, 31),
+								cborIntro(CBOR_MAP, 31),
+									cborIntro(CBOR_TEXT_STRING, 6), 'c', 'o', 'l', 'o', 'u', 'r',
+									cborIntro(CBOR_TEXT_STRING, 3), 'r', 'e', 'd',
+									cborIntro(CBOR_TEXT_STRING, 5), 'v', 'a', 'l', 'u', 'e',
+									cborIntro(CBOR_SPECIAL, 27), '?', (byte) 0xf3, (byte) 0xc0, (byte) 0x83, 0x12, 'n', (byte) 0x97, (byte) 0x8d,
+									cborBreak(),
+								cborIntro(CBOR_MAP, 31),
+									cborIntro(CBOR_TEXT_STRING, 6), 'c', 'o', 'l', 'o', 'u', 'r',
+									cborIntro(CBOR_TEXT_STRING, 6), 'o', 'r', 'a', 'n', 'g', 'e',
+									cborIntro(CBOR_TEXT_STRING, 5), 'v', 'a', 'l', 'u', 'e',
+									cborIntro(CBOR_SPECIAL, 27), '?', (byte) 0xf3, (byte) 0xc0, (byte) 0x83, 0x12, 'n', (byte) 0x97, (byte) 0x8d,
+									cborBreak(),
+								cborIntro(CBOR_MAP, 31),
+									cborIntro(CBOR_TEXT_STRING, 6), 'c', 'o', 'l', 'o', 'u', 'r',
+									cborIntro(CBOR_TEXT_STRING, 5), 'g', 'r', 'e', 'e', 'n',
+									cborIntro(CBOR_TEXT_STRING, 5), 'v', 'a', 'l', 'u', 'e',
+									cborIntro(CBOR_SPECIAL, 27), '?', (byte) 0xf3, (byte) 0xc0, (byte) 0x83, 0x12, 'n', (byte) 0x97, (byte) 0x8d,
+									cborBreak(),
+								cborIntro(CBOR_MAP, 31),
+									cborIntro(CBOR_TEXT_STRING, 6), 'c', 'o', 'l', 'o', 'u', 'r',
+									cborIntro(CBOR_TEXT_STRING, 4), 'b', 'l', 'u', 'e',
+									cborIntro(CBOR_TEXT_STRING, 5), 'v', 'a', 'l', 'u', 'e',
+									cborIntro(CBOR_SPECIAL, 27), '?', (byte) 0xf3, (byte) 0xc0, (byte) 0x83, 0x12, 'n', (byte) 0x97, (byte) 0x8d,
+									cborBreak(),
+								cborIntro(CBOR_MAP, 31),
+									cborIntro(CBOR_TEXT_STRING, 6), 'c', 'o', 'l', 'o', 'u', 'r',
+									cborIntro(CBOR_TEXT_STRING, 6), 'i', 'n', 'd', 'i', 'g', 'o',
+									cborIntro(CBOR_TEXT_STRING, 5), 'v', 'a', 'l', 'u', 'e',
+									cborIntro(CBOR_SPECIAL, 27), '?', (byte) 0xf3, (byte) 0xc0, (byte) 0x83, 0x12, 'n', (byte) 0x97, (byte) 0x8d,
+									cborBreak(),
+								cborIntro(CBOR_MAP, 31),
+									cborIntro(CBOR_TEXT_STRING, 6), 'c', 'o', 'l', 'o', 'u', 'r',
+									cborIntro(CBOR_TEXT_STRING, 6), 'v', 'i', 'o', 'l', 'e', 't',
+									cborIntro(CBOR_TEXT_STRING, 5), 'v', 'a', 'l', 'u', 'e',
+									cborIntro(CBOR_SPECIAL, 27), '?', (byte) 0xf3, (byte) 0xc0, (byte) 0x83, 0x12, 'n', (byte) 0x97, (byte) 0x8d,
+									cborBreak(),
+								cborBreak(),
+							cborBreak()
+				}));
 	}
 
 	@Test
@@ -140,9 +176,5 @@ public class JacksonCborThings {
 				return escaped;
 			}
 		};
-	}
-
-	private static Matcher<byte[]> looksLike(String example) {
-		return looksLike(example.getBytes(StandardCharsets.ISO_8859_1));
 	}
 }
