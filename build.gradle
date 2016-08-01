@@ -6,7 +6,7 @@ mainClassName = 'org.araqnid.stuff.Main'
 sourceCompatibility = 1.8
 
 ext {
-  jettyVersion = '9.3.10.v20160621'
+  jettyVersion = '9.3.11.v20160721'
   jacksonVersion = '2.8.1'
   resteasyVersion = '3.0.18.Final'
   hibernateVersion = '4.3.8.Final'
