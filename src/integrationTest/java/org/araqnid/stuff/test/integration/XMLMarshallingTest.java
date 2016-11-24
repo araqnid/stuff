@@ -113,21 +113,6 @@ public class XMLMarshallingTest extends IntegrationTest {
 				"2015-04-03T13:\\d\\d(:\\d\\d(\\.\\d\\d\\d(\\d\\d\\d(\\d\\d\\d(\\d\\d\\d(\\d\\d\\d)?)?)?)?)?)?"))))));
 	}
 
-	@Test
-	public void present_optional_is_marshalled_directly() throws Exception {
-		String value = randomString();
-		try (CloseableHttpResponse response = doGet("/_api/test/guava/optional/present/" + value)) {
-			assertThat(response, is(both(ok()).and(responseWithXmlContent(textAtXpath("/Optional", value)))));
-		}
-	}
-
-	@Test
-	public void absent_optional_is_marshalled_as_null() throws Exception {
-		try (CloseableHttpResponse response = doGet("/_api/test/guava/optional/absent")) {
-			assertThat(response, is(both(ok()).and(responseWithXmlContent(textAtXpath("/Optional", "")))));
-		}
-	}
-
 	@Test @Ignore
 	public void present_optional_property_is_marshalled_directly() throws Exception {
 		String value = randomString();
@@ -218,18 +203,6 @@ public class XMLMarshallingTest extends IntegrationTest {
 		@Path("jdk/localdatetime")
 		public java.time.LocalDateTime jdkLocalDateTime() {
 			return java.time.LocalDateTime.now(clock);
-		}
-
-		@GET
-		@Path("guava/optional/present/{value}")
-		public Optional<String> optional(@PathParam("value") String value) {
-			return Optional.of(value);
-		}
-
-		@GET
-		@Path("guava/optional/absent")
-		public Optional<String> optional() {
-			return Optional.absent();
 		}
 
 		@GET
