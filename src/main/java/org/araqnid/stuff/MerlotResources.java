@@ -1,9 +1,10 @@
 package org.araqnid.stuff;
 
+import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.CookieParam;
@@ -17,8 +18,6 @@ import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 
 import org.araqnid.stuff.MerlotRepository.User;
-
-import com.google.common.base.Optional;
 
 @Path("_api/merlot")
 public class MerlotResources {
@@ -41,15 +40,13 @@ public class MerlotResources {
 	@GET
 	@Produces("application/json")
 	public Status fetchStatus() {
-		return new Status(appVersion.version, optionalUserInfo());
+		return new Status(appVersion.version, optionalUserInfo().orElse(null));
 	}
 
 	@POST
 	@Path("sign-in")
 	public Response signIn(@FormParam("username") String username, @FormParam("password") Password password) {
-		Optional<User> optionalUser = repository.findUserByName(username);
-		if (!optionalUser.isPresent()) throw new NoSuchUsernameException(username);
-		User user = optionalUser.get();
+		User user = repository.findUserByName(username).orElseThrow(() -> new NoSuchUsernameException(username));
 		if (!password.matches(user.password)) throw new InvalidPasswordException(username);
 		return Response.noContent().cookie(newAuthTicket(user)).build();
 	}
@@ -62,9 +59,9 @@ public class MerlotResources {
 	}
 
 	private Optional<UserInfo> optionalUserInfo() {
-		if (userTicket == null) return Optional.absent();
+		if (userTicket == null) return Optional.empty();
 		Optional<User> user = repository.findUserById(userTicket.userId);
-		if (!user.isPresent()) return Optional.absent();
+		if (!user.isPresent()) return Optional.empty();
 		return Optional.of(new UserInfo(user.get().commonName, user.get().username));
 	}
 
@@ -94,9 +91,9 @@ public class MerlotResources {
 
 	public static final class Status {
 		public final String version;
-		public final Optional<UserInfo> userInfo;
+		@Nullable public final UserInfo userInfo;
 
-		public Status(String version, Optional<UserInfo> userInfo) {
+		public Status(String version, @Nullable UserInfo userInfo) {
 			this.version = version;
 			this.userInfo = userInfo;
 		}

@@ -16,6 +16,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
 import javax.inject.Provider;
 
 import org.araqnid.stuff.services.Activator.ActivationListener;
@@ -26,7 +27,6 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import com.google.common.base.Optional;
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.Service.State;
@@ -379,7 +379,7 @@ public class ServiceActivatorTest {
 		return new TypeSafeDiagnosingMatcher<ServiceActivator<?>>() {
 			@Override
 			protected boolean matchesSafely(ServiceActivator<?> item, Description mismatchDescription) {
-				Service service = item.getActiveService().orNull();
+				Service service = item.getActiveService().orElse(null);
 				mismatchDescription.appendText("service field ");
 				serviceMatcher.describeMismatch(service, mismatchDescription);
 				return serviceMatcher.matches(service);

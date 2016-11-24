@@ -1,6 +1,7 @@
 package org.araqnid.stuff;
 
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toSet;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -41,13 +42,11 @@ import org.jboss.resteasy.spi.Registry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Functions;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
@@ -147,9 +146,9 @@ public class InfoResources {
 				Set<String> produces) {
 			this.method = method;
 			this.resourceClass = resourceClass;
-			this.httpMethods = httpMethods;
-			this.consumes = consumes;
-			this.produces = produces;
+			this.httpMethods = ImmutableSet.copyOf(httpMethods);
+			this.consumes = ImmutableSet.copyOf(consumes);
+			this.produces = ImmutableSet.copyOf(produces);
 		}
 	}
 
@@ -167,9 +166,12 @@ public class InfoResources {
 					ResourceMethodInvoker resourceMethodInvoker = (ResourceMethodInvoker) invoker;
 					invokerInfo = new InvokerDetail(method.getName(), resourceMethodInvoker.getResourceClass()
 							.getSimpleName(), resourceMethodInvoker.getHttpMethods(),
-							ImmutableSet.copyOf(Iterables.transform(Arrays.asList(resourceMethodInvoker.getConsumes()),
-									Functions.toStringFunction())), ImmutableSet.copyOf(Iterables.transform(
-									Arrays.asList(resourceMethodInvoker.getProduces()), Functions.toStringFunction())));
+							Arrays.stream(resourceMethodInvoker.getConsumes())
+									.map(Object::toString)
+									.collect(toSet()),
+							Arrays.stream(resourceMethodInvoker.getProduces())
+									.map(Object::toString)
+									.collect(toSet()));
 				}
 				else {
 					invokerInfo = new InvokerDetail(method.getName(), method.getDeclaringClass().getName(), null, null,

@@ -1,21 +1,20 @@
 package org.araqnid.stuff.services;
 
-import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
-
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Executor;
-
 import javax.inject.Provider;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.Service;
 
+import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
+
 public class ServiceActivator<T extends Service> extends AbstractService implements Activator {
 	private final Provider<T> provider;
 	private final boolean activateOnStartup;
-	private Optional<T> service = Optional.absent();
+	private Optional<T> service = Optional.empty();
 	private List<ListenerExecutor> listeners = Lists.newLinkedList();
 	private boolean startupNotificationPending;
 	private boolean shutdownNotificationPending;
@@ -42,7 +41,7 @@ public class ServiceActivator<T extends Service> extends AbstractService impleme
 			public void terminated(State from) {
 				broadcastDeactivated();
 				synchronized (ServiceActivator.this) {
-					service = Optional.absent();
+					service = Optional.empty();
 					if (shutdownNotificationPending) notifyStopped();
 				}
 			}
@@ -51,7 +50,7 @@ public class ServiceActivator<T extends Service> extends AbstractService impleme
 			public void failed(State from, Throwable failure) {
 				broadcastDeactivated();
 				synchronized (ServiceActivator.this) {
-					service = Optional.absent();
+					service = Optional.empty();
 				}
 				notifyFailed(failure);
 			}
@@ -140,7 +139,7 @@ public class ServiceActivator<T extends Service> extends AbstractService impleme
 	}
 
 	public synchronized Optional<T> getActiveService() {
-		if (!service.isPresent() || !service.get().isRunning()) return Optional.absent();
+		if (!service.isPresent() || !service.get().isRunning()) return Optional.empty();
 		return service;
 	}
 }

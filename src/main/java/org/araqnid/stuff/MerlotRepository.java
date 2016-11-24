@@ -2,11 +2,9 @@ package org.araqnid.stuff;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
-
 import javax.inject.Singleton;
-
-import com.google.common.base.Optional;
 
 @Singleton
 public class MerlotRepository {
@@ -32,14 +30,14 @@ public class MerlotRepository {
 	}
 
 	public synchronized Optional<User> findUserById(UUID id) {
-		return Optional.fromNullable(users.get(id));
+		return Optional.ofNullable(users.get(id));
 	}
 
 	public synchronized Optional<User> findUserByName(String username) {
 		for (User user : users.values()) {
 			if (user.username.equals(username)) return Optional.of(user);
 		}
-		return Optional.absent();
+		return Optional.empty();
 	}
 
 	public synchronized void updateUser(User user) {

@@ -2,6 +2,7 @@ package org.araqnid.stuff.config;
 
 import java.lang.annotation.Annotation;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -82,10 +83,10 @@ public final class WorkQueueModule extends AbstractModule {
 					private AppVersion appVersion;
 					@Inject
 					@ServerIdentity
-					private UUID instanceId;
+					private Optional<String> instanceId;
 					@Inject
 					@ServerIdentity
-					private String hostname;
+					private Optional<String> hostname;
 
 					@Override
 					public SqlWorkQueue get() {

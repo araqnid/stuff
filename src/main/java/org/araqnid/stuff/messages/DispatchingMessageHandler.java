@@ -12,24 +12,18 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 
 public class DispatchingMessageHandler implements MessageHandler {
-	static final Logger LOG = LoggerFactory.getLogger(DispatchingMessageHandler.class);
+	private static final Logger LOG = LoggerFactory.getLogger(DispatchingMessageHandler.class);
 	private final ObjectMapper objectMapper;
 	private final Map<String, EventHandlerRef<?>> eventHandlers;
 
-	public DispatchingMessageHandler(ObjectMapper objectMapper, ImmutableMap<String, EventHandler<?>> handlers) {
+	public DispatchingMessageHandler(ObjectMapper objectMapper, Map<String, EventHandler<?>> handlers) {
 		this.objectMapper = objectMapper;
 		this.eventHandlers = ImmutableMap
-				.copyOf(Maps.transformValues(handlers, new Function<EventHandler<?>, EventHandlerRef<?>>() {
-					@Override
-					public EventHandlerRef<?> apply(EventHandler<?> input) {
-						return ref(input);
-					}
-				}));
+				.copyOf(Maps.transformValues(handlers, DispatchingMessageHandler::ref));
 	}
 
 	@Override

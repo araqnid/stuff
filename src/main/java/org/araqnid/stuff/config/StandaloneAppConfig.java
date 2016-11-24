@@ -1,16 +1,13 @@
 package org.araqnid.stuff.config;
 
 import java.util.Map;
-
+import java.util.Optional;
 import javax.inject.Named;
 
-import org.araqnid.stuff.AppStartupBanner;
-
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Function;
-import com.google.common.base.Optional;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
+import org.araqnid.stuff.AppStartupBanner;
 
 public class StandaloneAppConfig extends AbstractModule {
 	private Map<String, String> environment;
@@ -50,15 +47,10 @@ public class StandaloneAppConfig extends AbstractModule {
 	}
 
 	private Optional<String> getenv(String name) {
-		return Optional.fromNullable(environment.get(name));
+		return Optional.ofNullable(environment.get(name));
 	}
 
 	private int port(int defaultPort) {
-		return getenv("PORT").transform(new Function<String, Integer>() {
-			@Override
-			public Integer apply(String input) {
-				return Integer.valueOf(input);
-			}
-		}).or(defaultPort);
+		return getenv("PORT").map(Integer::valueOf).orElse(defaultPort);
 	}
 }

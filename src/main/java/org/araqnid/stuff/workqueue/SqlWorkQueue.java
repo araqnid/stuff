@@ -12,8 +12,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
-import java.util.UUID;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,18 +30,17 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Function;
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
 import com.google.common.io.ByteSource;
 import com.google.common.io.Resources;
 import com.google.common.util.concurrent.AbstractIdleService;
+
+import static java.util.stream.Collectors.toMap;
 
 public class SqlWorkQueue implements WorkQueue {
 	private static final Logger LOG = LoggerFactory.getLogger(SqlWorkQueue.class);
@@ -63,14 +63,12 @@ public class SqlWorkQueue implements WorkQueue {
 			try (InputStream instream = byteSource.openStream()) {
 				properties.load(instream);
 			}
-			sqlCatalogue = Maps.toMap(Arrays.asList(SqlCatalogue.values()), new Function<SqlCatalogue, CompiledSql>() {
-				@Override
-				public CompiledSql apply(SqlCatalogue input) {
-					String value = properties.getProperty(input.toString());
-					if (value == null) throw new RuntimeException("No value for " + input);
-					return new CompiledSql(value);
-				}
-			});
+			sqlCatalogue = Arrays.stream(SqlCatalogue.values())
+					.collect(toMap(Function.identity(), input -> {
+						String value = properties.getProperty(input.toString());
+						if (value == null) throw new RuntimeException("No value for " + input);
+						return new CompiledSql(value);
+					}));
 		} catch (IOException e) {
 			throw new RuntimeException("Unable to load SqlWorkQueue.properties", e);
 		}
@@ -80,15 +78,15 @@ public class SqlWorkQueue implements WorkQueue {
 	private final Accessor accessor;
 	private final ObjectMapper objectMapper;
 	private final AppVersion appVersion;
-	private final UUID instanceId;
-	private final String hostname;
+	private final Optional<String> instanceId;
+	private final Optional<String> hostname;
 
 	public SqlWorkQueue(String queueCode,
 			Accessor accessor,
 			ObjectMapper objectMapper,
 			AppVersion appVersion,
-			@ServerIdentity UUID instanceId,
-			@ServerIdentity String hostname) {
+			@ServerIdentity Optional<String> instanceId,
+			@ServerIdentity Optional<String> hostname) {
 		this.queueCode = queueCode;
 		this.accessor = accessor;
 		this.objectMapper = objectMapper;
@@ -100,7 +98,7 @@ public class SqlWorkQueue implements WorkQueue {
 	public String context() {
 		try {
 			return objectMapper.writer().writeValueAsString(
-					ImmutableMap.<String, Object> of("app_version", Optional.fromNullable(appVersion.version),
+					ImmutableMap.<String, Object> of("app_version", Optional.ofNullable(appVersion.version),
 							"instance_id", instanceId, "host", hostname, "thread", Thread.currentThread().getName()));
 		} catch (JsonProcessingException e) {
 			throw new RuntimeException(e);
@@ -236,12 +234,7 @@ public class SqlWorkQueue implements WorkQueue {
 					SqlCatalogue.SetupCreateTableItemStatus, SqlCatalogue.SetupCreateTableItemEventType,
 					SqlCatalogue.SetupCreateTableItem, SqlCatalogue.SetupCreateTableItemEvent,
 					SqlCatalogue.SetupPopulateItemStatus, SqlCatalogue.SetupPopulateItemEventType);
-			accessor.doSql("Setup", Iterables.toArray(Iterables.transform(commands, new Function<SqlCatalogue, Sql>() {
-				@Override
-				public Sql apply(SqlCatalogue input) {
-					return Sql.exec(input);
-				}
-			}), Sql.class));
+			accessor.doSql("Setup", commands.stream().map(Sql::exec).toArray(Sql[]::new));
 		}
 
 		@Override

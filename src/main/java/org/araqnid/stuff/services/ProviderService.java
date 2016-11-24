@@ -4,10 +4,9 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-
+import java.util.Optional;
 import javax.inject.Provider;
 
-import com.google.common.base.Optional;
 import com.google.common.util.concurrent.AbstractIdleService;
 
 public abstract class ProviderService<T> extends AbstractIdleService implements Provider<T> {
@@ -20,7 +19,7 @@ public abstract class ProviderService<T> extends AbstractIdleService implements 
 	protected abstract T getValue();
 
 	public Optional<T> getActiveValue() {
-		if (!isRunning()) return Optional.absent();
+		if (!isRunning()) return Optional.empty();
 		return Optional.of(getValue());
 	}
 
@@ -40,7 +39,7 @@ public abstract class ProviderService<T> extends AbstractIdleService implements 
 		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 			Optional<T> activeService = getActiveValue();
 			if (method.getName().equals("toString") && method.getParameterTypes().length == 0)
-				return toString(activeService);
+				return activeService.map(s -> "Activated: " + s).orElse("Inactive");
 			if (method.getName().equals("hashCode") && method.getParameterTypes().length == 0) return getHashCode();
 			if (method.getName().equals("equals") && method.getParameterTypes().length == 1) return isEqual(args[0]);
 			if (!activeService.isPresent()) throw new NotAvailableException();
@@ -48,15 +47,6 @@ public abstract class ProviderService<T> extends AbstractIdleService implements 
 				return method.invoke(activeService.get(), args);
 			} catch (InvocationTargetException e) {
 				throw e.getCause();
-			}
-		}
-
-		private String toString(Optional<T> activeService) {
-			if (activeService.isPresent()) {
-				return "Activated: " + activeService.get();
-			}
-			else {
-				return "Inactive";
 			}
 		}
 
@@ -73,7 +63,7 @@ public abstract class ProviderService<T> extends AbstractIdleService implements 
 			if (!Proxy.isProxyClass(other.getClass())) return false;
 			InvocationHandler invocationHandler = Proxy.getInvocationHandler(other);
 			if (!(invocationHandler instanceof ProviderService.ValueProxyInvocationHandler)) return false;
-			return ProviderService.this.equals(((ProviderService<?>.ValueProxyInvocationHandler) invocationHandler)
+			return ProviderService.this.equals(((ValueProxyInvocationHandler) invocationHandler)
 					.provider());
 		}
 	}
