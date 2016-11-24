@@ -31,7 +31,7 @@ check_for_updates() {
 
 check_for_updates ch.qos.logback              logback-classic  1.1.7
 check_for_updates com.fasterxml.jackson.core  jackson-core     2.8.5
-check_for_updates com.google.guava            guava            19.0
+check_for_updates com.google.guava            guava            20.0
 check_for_updates com.google.inject           guice            4.1.0
 check_for_updates joda-time                   joda-time        2.9.6
 check_for_updates org.eclipse.jetty           jetty-server     9.3.14.v20161028 '^9\.3\.'
