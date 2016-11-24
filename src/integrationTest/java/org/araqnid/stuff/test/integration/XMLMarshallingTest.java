@@ -30,7 +30,6 @@ import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -137,16 +136,16 @@ public class XMLMarshallingTest extends IntegrationTest {
 		String value1 = randomString();
 		String value2 = randomString();
 		try (CloseableHttpResponse response = doGet(
-				"/_api/test/guava/multimap/" + Joiner.on('/').join(key1, value1, value2))) {
+				"/_api/test/guava/object-with-multimap/" + Joiner.on('/').join(key1, value1, value2))) {
 			assertThat(response, is(both(ok()).and(responseWithXmlContent(
-					allOf(containsXpath(String.format("/Multimap/item/%s[text() = '%s']", key1, value1)),
-							containsXpath(String.format("/Multimap/item/%s[text() = '%s']", key1, value2)))))));
+					allOf(containsXpath(String.format("/ValueWithMultimap/multimap/multimap/%s[text() = '%s']", key1, value1)),
+							containsXpath(String.format("/ValueWithMultimap/multimap/multimap/%s[text() = '%s']", key1, value2)))))));
 		}
 		try (CloseableHttpResponse response = doGet(
-				"/_api/test/guava/multimap/" + Joiner.on('/').join(key1, value1, key2, value2))) {
+				"/_api/test/guava/object-with-multimap/" + Joiner.on('/').join(key1, value1, key2, value2))) {
 			assertThat(response, is(both(ok()).and(responseWithXmlContent(
-					allOf(textAtXpath("/Multimap/item/" + key1, value1),
-							textAtXpath("/Multimap/item/" + key2, value2))))));
+					allOf(textAtXpath("/ValueWithMultimap/multimap/multimap/" + key1, value1),
+							textAtXpath("/ValueWithMultimap/multimap/multimap/" + key2, value2))))));
 		}
 	}
 
@@ -218,20 +217,20 @@ public class XMLMarshallingTest extends IntegrationTest {
 		}
 
 		@GET
-		@Path("guava/multimap/{key}/{value1}/{value2}")
-		public Multimap<String, String> multimapWithOneKey(@PathParam("key") String key,
+		@Path("guava/object-with-multimap/{key}/{value1}/{value2}")
+		public ValueWithMultimap multimapWithOneKey(@PathParam("key") String key,
 				@PathParam("value1") String value1,
 				@PathParam("value2") String value2) {
-			return ImmutableMultimap.of(key, value1, key, value2);
+			return new ValueWithMultimap<>(ImmutableMultimap.of(key, value1, key, value2));
 		}
 
 		@GET
-		@Path("guava/multimap/{key1}/{value1}/{key2}/{value2}")
-		public Multimap<String, String> multimapWithTwoKeys(@PathParam("key1") String key1,
+		@Path("guava/object-with-multimap/{key1}/{value1}/{key2}/{value2}")
+		public ValueWithMultimap multimapWithTwoKeys(@PathParam("key1") String key1,
 				@PathParam("key2") String key2,
 				@PathParam("value1") String value1,
 				@PathParam("value2") String value2) {
-			return ImmutableMultimap.of(key1, value1, key2, value2);
+			return new ValueWithMultimap<>(ImmutableMultimap.of(key1, value1, key2, value2));
 		}
 	}
 
@@ -244,6 +243,14 @@ public class XMLMarshallingTest extends IntegrationTest {
 
 		public ValueWithOptional(String value) {
 			this.value = Optional.of(value);
+		}
+	}
+
+	public static class ValueWithMultimap<K, V> {
+		public final Multimap<K, V> multimap;
+
+		public ValueWithMultimap(Multimap<K, V> multimap) {
+			this.multimap = multimap;
 		}
 	}
 }
