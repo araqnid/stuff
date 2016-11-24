@@ -113,7 +113,7 @@ public class XMLMarshallingTest extends IntegrationTest {
 				"2015-04-03T13:\\d\\d(:\\d\\d(\\.\\d\\d\\d(\\d\\d\\d(\\d\\d\\d(\\d\\d\\d(\\d\\d\\d)?)?)?)?)?)?"))))));
 	}
 
-	@Test @Ignore
+	@Test
 	public void present_optional_property_is_marshalled_directly() throws Exception {
 		String value = randomString();
 		try (CloseableHttpResponse response = doGet("/_api/test/guava/object-with-optional/present/" + value)) {
@@ -122,7 +122,7 @@ public class XMLMarshallingTest extends IntegrationTest {
 		}
 	}
 
-	@Test @Ignore
+	@Test
 	public void absent_optional_property_is_marshalled_as_null() throws Exception {
 		try (CloseableHttpResponse response = doGet("/_api/test/guava/object-with-optional/absent")) {
 			assertThat(response,
