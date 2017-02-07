@@ -14,15 +14,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
-import org.hamcrest.Matchers;
-import org.hamcrest.TypeSafeDiagnosingMatcher;
-import org.hamcrest.collection.IsIterableContainingInOrder;
-import org.hamcrest.core.StringContains;
-import org.json.JSONObject;
-import org.junit.Test;
-
 import com.fasterxml.jackson.annotation.JacksonInject;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -64,7 +55,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.guice.ObjectMapperModule;
 import com.fasterxml.jackson.module.mrbean.MrBeanModule;
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -73,6 +63,14 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.hamcrest.Matchers;
+import org.hamcrest.TypeSafeDiagnosingMatcher;
+import org.hamcrest.collection.IsIterableContainingInOrder;
+import org.hamcrest.core.StringContains;
+import org.json.JSONObject;
+import org.junit.Test;
 
 import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentJsonNode;
 import static org.araqnid.stuff.JsonEquivalenceMatchers.equivalentTo;
@@ -138,7 +136,7 @@ public class JacksonThings {
 						assertThat(dataWriter.writeValueAsString(new Data(2.18)), equivalentTo("{\"score\":2.18}"));
 					}
 				} catch (IOException e) {
-					throw Throwables.propagate(e);
+					throw new RuntimeException(e);
 				}
 			});
 		}

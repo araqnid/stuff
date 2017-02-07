@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Map;
-
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -15,8 +14,6 @@ import org.apache.jasper.servlet.TldScanner;
 import org.apache.tomcat.util.descriptor.tld.TaglibXml;
 import org.apache.tomcat.util.descriptor.tld.TldResourcePath;
 import org.xml.sax.SAXException;
-
-import com.google.common.base.Throwables;
 
 public class JettyJspServletContextListener implements ServletContextListener {
 	private final File jspTempDir;
@@ -51,7 +48,7 @@ public class JettyJspServletContextListener implements ServletContextListener {
 			};
 			initialiser.onStartup(null, sce.getServletContext());
 		} catch (ServletException e) {
-			throw Throwables.propagate(e);
+			throw new RuntimeException(e);
 		}
 	}
 
