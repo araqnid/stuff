@@ -8,7 +8,7 @@ sourceCompatibility = 1.8
 ext {
   jettyVersion = '9.3.14.v20161028'
   jacksonVersion = '2.8.6'
-  resteasyVersion = '3.0.19.Final'
+  resteasyVersion = '3.1.0.Final'
   hibernateVersion = '4.3.8.Final'
   buildNumber = System.getenv("BUILD_NUMBER") ?: System.getenv("TRAVIS_BUILD_NUMBER")
 }
@@ -74,7 +74,6 @@ dependencies {
     compile 'org.hibernate:hibernate-entitymanager:' + hibernateVersion
     compile 'org.jboss.resteasy:resteasy-jaxrs:' + resteasyVersion
     compile 'org.jboss.resteasy:resteasy-guice:' + resteasyVersion
-    compile 'org.jboss.resteasy:async-http-servlet-3.0:' + resteasyVersion
     compile 'com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:' + jacksonVersion
     compile 'com.fasterxml.jackson.jaxrs:jackson-jaxrs-xml-provider:' + jacksonVersion
     compile 'com.fasterxml.jackson.module:jackson-module-guice:' + jacksonVersion
