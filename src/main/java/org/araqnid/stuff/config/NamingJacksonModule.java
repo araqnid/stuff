@@ -7,6 +7,6 @@ public class NamingJacksonModule extends SimpleModule {
 	private static final long serialVersionUID = 2014082501L;
 
 	public NamingJacksonModule() {
-		setNamingStrategy(PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
+		setNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
 	}
 }
