@@ -6,14 +6,14 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 
 public class DispatchingMessageHandler implements MessageHandler {
 	private static final Logger LOG = LoggerFactory.getLogger(DispatchingMessageHandler.class);
@@ -22,8 +22,9 @@ public class DispatchingMessageHandler implements MessageHandler {
 
 	public DispatchingMessageHandler(ObjectMapper objectMapper, Map<String, EventHandler<?>> handlers) {
 		this.objectMapper = objectMapper;
-		this.eventHandlers = ImmutableMap
-				.copyOf(Maps.transformValues(handlers, DispatchingMessageHandler::ref));
+		this.eventHandlers =  handlers.entrySet().stream()
+						.map(e -> Maps.immutableEntry(e.getKey(), ref(e.getValue())))
+						.collect(toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
 	}
 
 	@Override
