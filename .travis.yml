@@ -4,3 +4,7 @@ jdk:
   - oraclejdk8
 services:
   - redis-server
+addons:
+  apt:
+    packages:
+      - oracle-java8-installer
