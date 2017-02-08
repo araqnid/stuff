@@ -117,7 +117,7 @@ public class MerlotResources {
 
 	public static final class UserTicket {
 		private static final Pattern PATTERN = Pattern
-				.compile("u([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}),x([0-9a-f]{8})");
+				.compile("u([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\\.x([0-9a-f]{8})");
 		public final UUID userId;
 
 		public UserTicket(UUID userId) {
@@ -125,7 +125,7 @@ public class MerlotResources {
 		}
 
 		public String marshal() {
-			return String.format("u%s,x00000000", userId);
+			return String.format("u%s.x00000000", userId);
 		}
 
 		public static UserTicket fromString(String ticket) {

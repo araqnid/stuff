@@ -1,5 +1,16 @@
 package org.araqnid.stuff.test.integration;
 
+import java.util.UUID;
+
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
+import org.araqnid.stuff.MerlotRepository;
+import org.junit.Test;
+
+import static org.araqnid.stuff.JsonStructureMatchers.jsonAny;
+import static org.araqnid.stuff.JsonStructureMatchers.jsonNull;
+import static org.araqnid.stuff.JsonStructureMatchers.jsonObject;
+import static org.araqnid.stuff.JsonStructureMatchers.jsonString;
 import static org.araqnid.stuff.test.integration.HttpClientMatchers.forbidden;
 import static org.araqnid.stuff.test.integration.HttpClientMatchers.newCookie;
 import static org.araqnid.stuff.test.integration.HttpClientMatchers.ok;
@@ -12,19 +23,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-
-import java.util.UUID;
-
-import org.araqnid.stuff.MerlotRepository;
-import org.junit.Test;
-
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMultimap;
-
-import static org.araqnid.stuff.JsonStructureMatchers.jsonAny;
-import static org.araqnid.stuff.JsonStructureMatchers.jsonNull;
-import static org.araqnid.stuff.JsonStructureMatchers.jsonObject;
-import static org.araqnid.stuff.JsonStructureMatchers.jsonString;
 
 public class MerlotResourcesIntegrationTest extends IntegrationTest {
 	@Test
@@ -75,8 +73,8 @@ public class MerlotResourcesIntegrationTest extends IntegrationTest {
 		char[] password = randomString().toCharArray();
 		UUID userId = setupUser(userCN, username, password);
 		assertThat(
-				doPostForm("/_api/merlot/sign-in", ImmutableMap.<String, String> of(),
-						ImmutableMap.<String, String> of("username", username, "password", new String(password))),
+				doPostForm("/_api/merlot/sign-in", ImmutableMap.of(),
+						ImmutableMap.of("username", username, "password", new String(password))),
 				is(both(ok()).and(responseWithCookies(newCookie("ATKT", equalTo(authTicket(userId)))))));
 	}
 
@@ -87,8 +85,8 @@ public class MerlotResourcesIntegrationTest extends IntegrationTest {
 		char[] password = randomString().toCharArray();
 		setupAndDeleteUser(userCN, username, password);
 		assertThat(
-				doPostForm("/_api/merlot/sign-in", ImmutableMap.<String, String> of(),
-						ImmutableMap.<String, String> of("username", username, "password", new String(password))),
+				doPostForm("/_api/merlot/sign-in", ImmutableMap.of(),
+						ImmutableMap.of("username", username, "password", new String(password))),
 				is(forbidden()));
 	}
 
@@ -99,8 +97,8 @@ public class MerlotResourcesIntegrationTest extends IntegrationTest {
 		char[] password = randomString().toCharArray();
 		setupUser(userCN, username, password);
 		assertThat(
-				doPostForm("/_api/merlot/sign-in", ImmutableMap.<String, String> of(),
-						ImmutableMap.<String, String> of("username", username, "password", "!" + new String(password))),
+				doPostForm("/_api/merlot/sign-in", ImmutableMap.of(),
+						ImmutableMap.of("username", username, "password", "!" + new String(password))),
 				is(forbidden()));
 	}
 
@@ -111,15 +109,15 @@ public class MerlotResourcesIntegrationTest extends IntegrationTest {
 		UUID userId = setupUser(userCN, username, randomString().toCharArray());
 		assertThat(
 				doPostForm("/_api/merlot/sign-out", ImmutableMap.of("Cookie", "ATKT=" + authTicket(userId)),
-						ImmutableMap.<String, String> of()),
+						ImmutableMap.of()),
 				is(both(ok()).and(responseWithCookies(removeCookie("ATKT")))));
 	}
 
 	@Test
 	public void sign_out_with_no_cookie_is_a_no_op() throws Exception {
 		assertThat(
-				doPostForm("/_api/merlot/sign-out", ImmutableMap.<String, String> of(),
-						ImmutableMap.<String, String> of()), is(both(ok()).and(responseWithCookies())));
+				doPostForm("/_api/merlot/sign-out", ImmutableMap.of(),
+						ImmutableMap.of()), is(both(ok()).and(responseWithCookies())));
 	}
 
 	private UUID setupUser(String userCN, String username, char[] password) {
@@ -136,6 +134,6 @@ public class MerlotResourcesIntegrationTest extends IntegrationTest {
 	}
 
 	private static String authTicket(UUID userId) {
-		return "u" + userId + ",x00000000";
+		return "u" + userId + ".x00000000";
 	}
 }
