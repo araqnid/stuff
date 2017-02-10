@@ -92,7 +92,7 @@ dependencies {
     compile 'org.json:json:20141113'
     compile 'com.fasterxml.woodstox:woodstox-core:5.0.1'
     compile 'com.lexicalscope.eventcast:eventcast:1.0.2'
-    compile 'org.postgresql:postgresql:9.4-1203-jdbc42'
+    compile 'org.postgresql:postgresql:9.4.1212'
     compile 'org.slf4j:jcl-over-slf4j:1.7.22'
     compile 'commons-codec:commons-codec:1.10'
     compile 'commons-io:commons-io:2.4'
