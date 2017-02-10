@@ -34,7 +34,7 @@ check_for_updates com.fasterxml.jackson.core  jackson-core     2.8.6
 check_for_updates com.google.guava            guava            21.0
 check_for_updates com.google.inject           guice            4.1.0
 check_for_updates joda-time                   joda-time        2.9.7
-check_for_updates org.eclipse.jetty           jetty-server     9.3.14.v20161028 '^9\.3\.'
+check_for_updates org.eclipse.jetty           jetty-server     9.3.16.v20170120 '^9\.3\.'
 check_for_updates org.jboss.resteasy          resteasy-jaxrs   3.1.0.Final '^3\.1\.'
 check_for_updates org.slf4j                   slf4j-api        1.7.21
 check_for_updates org.postgresql              postgresql       9.4-1203-jdbc42
