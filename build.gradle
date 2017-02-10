@@ -97,7 +97,7 @@ dependencies {
     compile 'commons-codec:commons-codec:1.10'
     compile 'commons-io:commons-io:2.4'
     compile 'xml-apis:xml-apis:1.4.01'
-    runtime 'ch.qos.logback:logback-classic:1.1.7'
+    runtime 'ch.qos.logback:logback-classic:1.2.1'
     runtime 'net.java.dev.jna:jna:4.2.1'
     testCompile 'junit:junit:4.12'
     testCompile 'org.hamcrest:hamcrest-library:1.3'
