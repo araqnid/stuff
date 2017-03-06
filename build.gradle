@@ -8,7 +8,7 @@ sourceCompatibility = 1.8
 ext {
   jettyVersion = '9.3.16.v20170120'
   jacksonVersion = '2.8.6'
-  resteasyVersion = '3.1.0.Final'
+  resteasyVersion = '3.1.1.Final'
   hibernateVersion = '4.3.8.Final'
   buildNumber = System.getenv("BUILD_NUMBER") ?: System.getenv("TRAVIS_BUILD_NUMBER")
 }
