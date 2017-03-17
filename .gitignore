@@ -6,3 +6,4 @@
 .settings
 .build_number
 /tomcat.*
+/.idea
