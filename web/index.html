@@ -1,15 +1,51 @@
 <html>
 <head>
-<title>Test</title>
+    <title>Test</title>
 </head>
 <body>
-<h1>Test</h1>
-
-<div id="info">
-<div class="info-state"></div>
-<div class="info-version"></div>
-</div>
-
-<script src="//cdnjs.cloudflare.com/ajax/libs/require.js/2.1.14/require.min.js" data-main="main.js"></script>
+<div id="main"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.0/jquery.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.4.2/react-with-addons.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.4.2/react-dom.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.23/browser.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.3/require.js"></script>
+<script type="text/javascript">
+    var signinOffered;
+    function offerSignin() {
+        if (signinOffered) {
+            signinOffered();
+        }
+        else {
+            signinOffered = true;
+        }
+    }
+    require(['bus'], function(bus) {
+        if (signinOffered) {
+            bus.publish("GoogleAuth.SignInOnOffer", true);
+        }
+        else {
+            signinOffered = function() {
+                bus.publish("GoogleAuth.SignInOnOffer", true);
+                signinOffered = true;
+            }
+        }
+    });
+</script>
+<script type="text/babel">
+    define('babel', { transform: window.babel });
+    define('react', window.React);
+    require(['hashFragmentSettings', 'bus', 'es6!TopLevel', 'es6!ManageUserSession', 'es6!ManageApplicationInfo'],
+        function(hashFragmentSettings, bus, TopLevel, ManageUserSession, ManageApplicationInfo) {
+            function render() {
+                ReactDOM.render(<TopLevel signinOnOffer={ signinOffered === true } locator={ hashFragmentSettings() } />, document.getElementById('main'));
+            }
+            window.onhashchange = render;
+            render();
+            bus.subscribe("GoogleAuth.SignInOnOffer", render, window);
+            new ManageUserSession().initialise();
+            new ManageApplicationInfo(60 * 1000).initialise();
+        });
+</script>
 </body>
 </html>
