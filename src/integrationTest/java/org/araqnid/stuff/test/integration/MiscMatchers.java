@@ -8,18 +8,9 @@ import com.google.common.collect.ImmutableList;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
-import org.junit.Test;
 
-import static org.araqnid.stuff.test.integration.HttpClientMatchers.headerWithValue;
-import static org.araqnid.stuff.test.integration.HttpClientMatchers.responseWithHeader;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.any;
-
-public class ServerIntegrationTest extends IntegrationTest {
-	@Test
-	public void server_identity_in_http_response() throws Exception {
-		assertThat(server.doGet("/"),
-				responseWithHeader("X-Server-Identity", headerWithValue(twoParts(any(String.class), likeAUUID()))));
+public final class MiscMatchers {
+	private MiscMatchers() {
 	}
 
 	public static Matcher<String> likeAUUID() {

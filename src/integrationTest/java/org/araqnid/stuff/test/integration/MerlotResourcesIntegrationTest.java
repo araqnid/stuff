@@ -5,6 +5,7 @@ import java.util.UUID;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import org.araqnid.stuff.MerlotRepository;
+import org.junit.Rule;
 import org.junit.Test;
 
 import static org.araqnid.stuff.JsonStructureMatchers.jsonAny;
@@ -24,7 +25,10 @@ import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
-public class MerlotResourcesIntegrationTest extends IntegrationTest {
+public class MerlotResourcesIntegrationTest {
+	@Rule
+	public final ServerRunner server = new ServerRunner();
+
 	@Test
 	public void status_resource_with_no_cookie() throws Exception {
 		assertThat(

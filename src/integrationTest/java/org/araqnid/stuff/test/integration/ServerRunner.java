@@ -8,6 +8,7 @@ import java.util.function.Supplier;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import com.google.inject.Guice;
@@ -41,6 +42,10 @@ public class ServerRunner extends ExternalResource {
 	private Injector injector;
 	private int port;
 	private CloseableHttpClient httpClient;
+
+	public ServerRunner() {
+		this(() -> ImmutableMap.of(), (binder) -> { });
+	}
 
 	public ServerRunner(Supplier<Map<String, String>> environmentSupplier, Module configuration) {
 		this.environmentSupplier = environmentSupplier;

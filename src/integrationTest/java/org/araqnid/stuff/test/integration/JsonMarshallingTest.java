@@ -2,10 +2,9 @@ package org.araqnid.stuff.test.integration;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.util.List;
+import java.util.Collections;
 import java.util.regex.Pattern;
 import javax.inject.Inject;
-import javax.servlet.ServletContext;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -18,7 +17,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import com.google.inject.AbstractModule;
-import com.google.inject.Module;
 import com.google.inject.Provides;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.araqnid.stuff.config.ResteasyModule;
@@ -27,13 +25,14 @@ import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
-import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
+import static java.time.ZoneOffset.UTC;
 import static org.araqnid.stuff.JsonStructureMatchers.jsonArray;
 import static org.araqnid.stuff.JsonStructureMatchers.jsonNull;
 import static org.araqnid.stuff.JsonStructureMatchers.jsonObject;
@@ -46,7 +45,26 @@ import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.is;
 
 @RunWith(Parameterized.class)
-public class JsonMarshallingTest extends IntegrationTest {
+public class JsonMarshallingTest {
+	@Rule
+	public final ServerRunner server = new ServerRunner(Collections::emptyMap, new AbstractModule() {
+		@Override
+		protected void configure() {
+			bind(Clock.class).toInstance(new SupplierClock(() -> instant, UTC));
+			bind(GuiceResteasyBootstrapServletContextListener.class).toInstance(new ResteasyBindings(new AbstractModule() {
+				@Override
+				protected void configure() {
+					bind(TestResource.class);
+				}
+
+				@Provides
+				public JacksonJsonProvider jacksonJson() {
+					return new JacksonJsonProvider(ResteasyModule.JSON_OBJECT_MAPPER);
+				}
+			}));
+		}
+	});
+
 	@Parameters(name = "@{0}")
 	public static Instant[] parameters() {
 		ImmutableList<Instant> instants = ImmutableList.of(Instant.parse("2015-04-03T13:29:33.123456789Z"),
@@ -58,37 +76,6 @@ public class JsonMarshallingTest extends IntegrationTest {
 
 	@Parameter
 	public Instant instant;
-
-	@Before
-	public void setClock() {
-		clock.setTime(instant);
-	}
-
-	@Override
-	protected Module serverConfiguration() {
-		return new AbstractModule() {
-			@Override
-			protected void configure() {
-				bind(GuiceResteasyBootstrapServletContextListener.class)
-						.toInstance(new GuiceResteasyBootstrapServletContextListener() {
-					@Override
-					protected List<? extends Module> getModules(ServletContext context) {
-						return ImmutableList.of(new AbstractModule() {
-							@Override
-							protected void configure() {
-								bind(TestResource.class);
-							}
-
-							@Provides
-							public JacksonJsonProvider jacksonJson() {
-								return new JacksonJsonProvider(ResteasyModule.JSON_OBJECT_MAPPER);
-							}
-						});
-					}
-				});
-			}
-		};
-	}
 
 	@Test
 	public void jdk_instant_is_marshalled_as_a_nice_string() throws Exception {

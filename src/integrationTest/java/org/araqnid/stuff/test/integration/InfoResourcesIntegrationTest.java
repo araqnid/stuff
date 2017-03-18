@@ -12,6 +12,7 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 
 import static org.araqnid.stuff.JsonStructureMatchers.jsonAny;
@@ -30,7 +31,10 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.anyString;
 
-public class InfoResourcesIntegrationTest extends IntegrationTest {
+public class InfoResourcesIntegrationTest {
+	@Rule
+	public final ServerRunner server = new ServerRunner();
+
 	@Test
 	public void version_resource_as_json() throws Exception {
 		try (CloseableHttpResponse response = server.doGetWithHeaders("/_api/info/version", ImmutableMultimap.of("Accept", "application/json"))) {
