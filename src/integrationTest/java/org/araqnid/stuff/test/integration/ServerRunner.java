@@ -40,7 +40,7 @@ public class ServerRunner extends ExternalResource {
 	private Server server;
 	private Injector injector;
 	private int port;
-	CloseableHttpClient httpClient;
+	private CloseableHttpClient httpClient;
 
 	public ServerRunner(Supplier<Map<String, String>> environmentSupplier, Module configuration) {
 		this.environmentSupplier = environmentSupplier;
