@@ -1,16 +1,16 @@
 apply plugin: 'java'
-apply plugin: 'eclipse'
 apply plugin: 'application'
 
 mainClassName = 'org.araqnid.stuff.Main'
 sourceCompatibility = 1.8
 
 ext {
-  jettyVersion = '9.4.2.v20170220'
-  jacksonVersion = '2.8.6'
-  resteasyVersion = '3.1.1.Final'
-  hibernateVersion = '4.3.8.Final'
-  buildNumber = System.getenv("BUILD_NUMBER") ?: System.getenv("TRAVIS_BUILD_NUMBER")
+    jettyVersion = '9.4.2.v20170220'
+    jacksonVersion = '2.8.6'
+    resteasyVersion = '3.1.1.Final'
+    hibernateVersion = '4.3.8.Final'
+    guavaVersion = '21.0'
+    buildNumber = System.getenv("BUILD_NUMBER") ?: System.getenv("TRAVIS_BUILD_NUMBER")
 }
 
 if (ext.buildNumber) version = '0.0.' + ext.buildNumber
@@ -26,23 +26,7 @@ jar {
     }
 }
 
-sourceSets {
-    integrationTest {
-        compileClasspath += main.output + test.output;
-        runtimeClasspath += main.output + test.output;
-    }
-    browserTest {
-        compileClasspath += main.output;
-        runtimeClasspath += main.output;
-    }
-}
-
 configurations {
-    integrationTestCompile.extendsFrom testCompile
-    integrationTestRuntime.extendsFrom testRuntime
-    browserTestCompile.extendsFrom testCompile
-    browserTestRuntime.extendsFrom testRuntime
-
     compile.exclude group: 'org.apache.geronimo.bundles', module: 'json'
 
     // use jcl-over-slf4j instead
@@ -57,7 +41,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.google.guava:guava:21.0'
+    compile "com.google.guava:guava:$guavaVersion"
     compile 'com.google.inject:guice:4.1.0'
     compile 'com.google.inject.extensions:guice-servlet:4.1.0'
     compile 'com.google.inject.extensions:guice-multibindings:4.1.0'
@@ -81,25 +65,20 @@ dependencies {
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-json-org:' + jacksonVersion
     compile 'com.fasterxml.jackson.module:jackson-module-afterburner:' + jacksonVersion
     compile 'com.fasterxml.jackson.module:jackson-module-mrbean:' + jacksonVersion
-    compile 'org.json:json:20141113'
     compile 'com.fasterxml.woodstox:woodstox-core:5.0.1'
     compile 'org.slf4j:jcl-over-slf4j:1.7.22'
     compile 'commons-codec:commons-codec:1.10'
     compile 'commons-io:commons-io:2.4'
     compile 'xml-apis:xml-apis:1.4.01'
-    compile 'org.threeten:threeten-extra:0.9'
-    compile 'xom:xom:1.2.5'
+    compile 'org.threeten:threeten-extra:1.0'
     runtime 'ch.qos.logback:logback-classic:1.2.2'
     runtime 'net.java.dev.jna:jna:4.2.1'
+    testCompile project(':test-utils')
     testCompile 'junit:junit:4.12'
     testCompile 'org.hamcrest:hamcrest-library:1.3'
     testCompile 'org.hamcrest:hamcrest-integration:1.3'
     testCompile 'org.mockito:mockito-core:1.10.19'
     testCompile 'joda-time:joda-time:2.9.7'
-    browserTestCompile ('org.seleniumhq.selenium:selenium-java:2.53.1') {
-        exclude module: 'httpclient'
-    }
-    integrationTestCompile 'org.apache.httpcomponents:httpclient:4.5.3'
     // marking this as integrationTestCompile causes a conflict for Eclipse which tries to take the transitive 4.2 version via resteasy too
     compile 'org.apache.httpcomponents:httpclient:4.5.3'
 }
@@ -130,43 +109,6 @@ task runtimeDeps(dependsOn: 'processResources') {
 }
 
 jar.dependsOn(runtimeDeps)
-
-task integrationTest(type: Test) {
-    testClassesDir = sourceSets.integrationTest.output.classesDir
-    classpath = sourceSets.integrationTest.runtimeClasspath
-    reports.html.destination = file("$buildDir/reports/integationTests")
-}
-integrationTest.shouldRunAfter(test)
-
-task browserTest(type: Test) {
-    testClassesDir = sourceSets.browserTest.output.classesDir
-    classpath = sourceSets.browserTest.runtimeClasspath
-    reports.html.destination = file("$buildDir/reports/browserTests")
-}
-browserTest.shouldRunAfter(integrationTest)
-
-build.dependsOn(integrationTestClasses, browserTestClasses)
-check.dependsOn(integrationTest)
-
-eclipse {
-    classpath {
-        plusConfigurations += [ configurations.integrationTestCompile ];
-        plusConfigurations += [ configurations.browserTestCompile ];
-        file {
-            whenMerged { classpath ->
-                def libs = classpath.entries.findAll { it.kind == 'lib' }
-                libs.findAll { it.moduleVersion?.group == 'com.google.inject' && it.moduleVersion?.name == 'guice' }.collect { entry ->
-                    entry.accessRules.add(new org.gradle.plugins.ide.eclipse.model.AccessRule('discouraged', 'com/google/inject/Inject'))
-                    entry.accessRules.add(new org.gradle.plugins.ide.eclipse.model.AccessRule('discouraged', 'com/google/inject/Provider'))
-                    entry.accessRules.add(new org.gradle.plugins.ide.eclipse.model.AccessRule('discouraged', 'com/google/inject/BindingAnnotation'))
-                    entry.accessRules.add(new org.gradle.plugins.ide.eclipse.model.AccessRule('discouraged', 'com/google/inject/ScopeAnnotation'))
-                    entry.accessRules.add(new org.gradle.plugins.ide.eclipse.model.AccessRule('discouraged', 'com/google/inject/Singleton'))
-                    entry.accessRules.add(new org.gradle.plugins.ide.eclipse.model.AccessRule('discouraged', 'com/google/inject/name/Named'))
-                }
-            }
-        }
-    }
-}
 
 buildscript {
     repositories {

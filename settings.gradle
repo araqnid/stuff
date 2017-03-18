@@ -1,0 +1,5 @@
+rootProject.name='stuff'
+
+include 'integration-test'
+include 'browser-test'
+include 'test-utils'

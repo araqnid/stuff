@@ -1,0 +1,13 @@
+apply plugin: 'java'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile project(':')
+    testCompile project(':test-utils')
+    testCompile ('org.seleniumhq.selenium:selenium-java:2.53.1') {
+        exclude module: 'httpclient'
+    }
+}
