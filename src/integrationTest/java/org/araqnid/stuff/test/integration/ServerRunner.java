@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
@@ -34,19 +35,21 @@ import static java.util.stream.Collectors.toList;
 
 public class ServerRunner extends ExternalResource {
 	private static final Logger LOG = LoggerFactory.getLogger(ServerRunner.class);
+	private final Supplier<Map<String, String>> environmentSupplier;
 	private final Module configuration;
 	private Server server;
 	private Injector injector;
 	private int port;
 	CloseableHttpClient httpClient;
 
-	public ServerRunner(Module configuration) {
+	public ServerRunner(Supplier<Map<String, String>> environmentSupplier, Module configuration) {
+		this.environmentSupplier = environmentSupplier;
 		this.configuration = configuration;
 	}
 
 	@Override
 	protected void before() throws Throwable {
-		injector = Guice.createInjector(Modules.override(new AppModule()).with(configuration));
+		injector = Guice.createInjector(Modules.override(new AppModule(environmentSupplier.get())).with(configuration));
 		server = injector.getInstance(Server.class);
 		server.start();
 		port = ((ServerConnector) server.getConnectors()[0]).getLocalPort();
