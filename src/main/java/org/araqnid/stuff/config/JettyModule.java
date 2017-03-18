@@ -24,9 +24,8 @@ import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.server.SessionIdManager;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
-import org.eclipse.jetty.server.session.HashSessionIdManager;
+import org.eclipse.jetty.server.session.DefaultSessionIdManager;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
@@ -54,7 +53,6 @@ public final class JettyModule extends AbstractModule {
 					}
 				});
 		services().addBinding().to(JettyService.class);
-		bind(SessionIdManager.class).to(HashSessionIdManager.class);
 		install(new ServletDispatchModule());
 		bind(FilterDispatcher.class).to(Filter30Dispatcher.class);
 		bind(Filter30Dispatcher.class).in(Singleton.class);
@@ -93,7 +91,7 @@ public final class JettyModule extends AbstractModule {
 
 	@Provides
 	@Singleton
-	public Server server(Handler handler, SessionIdManager sessionIdManager) {
+	public Server server(Handler handler) {
 		Server server = new Server();
 		HttpConfiguration config = new HttpConfiguration();
 		HttpConnectionFactory http1 = new HttpConnectionFactory(config);
@@ -101,7 +99,7 @@ public final class JettyModule extends AbstractModule {
 		ServerConnector connector = new ServerConnector(server, http1, http2c);
 		connector.setPort(port);
 		server.setConnectors(new Connector[] { connector });
-		server.setSessionIdManager(sessionIdManager);
+		server.setSessionIdManager(new DefaultSessionIdManager(server));
 		server.setHandler(handler);
 		server.getBean(QueuedThreadPool.class).setName("Jetty");
 		return server;
