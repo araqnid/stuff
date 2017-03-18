@@ -1,7 +1,7 @@
 package org.araqnid.stuff.config;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.EnumSet;
 import java.util.List;
 import javax.inject.Singleton;
@@ -16,7 +16,7 @@ import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.servlet.GuiceFilter;
-import org.araqnid.stuff.JettyAppService;
+import org.araqnid.stuff.JettyService;
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
@@ -53,8 +53,7 @@ public final class JettyModule extends AbstractModule {
 						return ImmutableList.of(new ResteasyModule());
 					}
 				});
-		Multibinder<Service> services = Multibinder.newSetBinder(binder(), Service.class);
-		services.addBinding().to(JettyAppService.class);
+		services().addBinding().to(JettyService.class);
 		bind(SessionIdManager.class).to(HashSessionIdManager.class);
 		install(new ServletDispatchModule());
 		bind(FilterDispatcher.class).to(Filter30Dispatcher.class);
@@ -88,7 +87,7 @@ public final class JettyModule extends AbstractModule {
 			return new EmbeddedResource(classLoader, "stuff/web", ClassPath.from(classLoader));
 		}
 		else {
-			return new PathResource(new File("web").toURI());
+			return new PathResource(Paths.get("web"));
 		}
 	}
 
@@ -106,5 +105,9 @@ public final class JettyModule extends AbstractModule {
 		server.setHandler(handler);
 		server.getBean(QueuedThreadPool.class).setName("Jetty");
 		return server;
+	}
+
+	private Multibinder<Service> services() {
+		return Multibinder.newSetBinder(binder(), Service.class);
 	}
 }
