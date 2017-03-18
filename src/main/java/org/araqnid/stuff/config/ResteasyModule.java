@@ -4,7 +4,6 @@ import java.lang.reflect.Method;
 import java.util.Set;
 import java.util.function.Function;
 import javax.inject.Provider;
-import javax.inject.Singleton;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
@@ -98,12 +97,12 @@ public final class ResteasyModule extends AbstractModule {
 			if (FilterDispatcher.class.isAssignableFrom(dispatcherSource)) {
 				//noinspection unchecked
 				Key<? extends FilterDispatcher> key = Key.get((Class<FilterDispatcher>) dispatcherSource);
-				bind(Dispatcher.class).toProvider(new DispatcherSource<>(key, FilterDispatcher::getDispatcher)).in(Singleton.class);
+				bind(Dispatcher.class).toProvider(new DispatcherSource<>(key, FilterDispatcher::getDispatcher));
 			}
 			else if (HttpServletDispatcher.class.isAssignableFrom(dispatcherSource)) {
 				//noinspection unchecked
 				Key<? extends HttpServletDispatcher> key = Key.get((Class<HttpServletDispatcher>) dispatcherSource);
-				bind(Dispatcher.class).toProvider(new DispatcherSource<>(key, HttpServletDispatcher::getDispatcher)).in(Singleton.class);
+				bind(Dispatcher.class).toProvider(new DispatcherSource<>(key, HttpServletDispatcher::getDispatcher));
 			}
 			else {
 				throw new IllegalStateException("Don't know how to get Dispatcher from " + dispatcherSource);
