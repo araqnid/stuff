@@ -9,19 +9,18 @@ import java.nio.channels.ReadableByteChannel;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.eclipse.jetty.util.resource.Resource;
-
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.ClassPath;
 import com.google.common.reflect.ClassPath.ResourceInfo;
+import org.eclipse.jetty.util.resource.Resource;
 
 public class EmbeddedResource extends Resource {
 	private final ClassLoader classLoader;
 	private final String path;
 	private final ClassPath classPath;
 
-	public EmbeddedResource(ClassLoader classLoader, String path, ClassPath classPath) {
+	EmbeddedResource(ClassLoader classLoader, String path, ClassPath classPath) {
 		this.classLoader = classLoader;
 		this.path = path;
 		this.classPath = classPath;
@@ -54,6 +53,7 @@ public class EmbeddedResource extends Resource {
 	}
 
 	@Override
+	@Deprecated
 	public URL getURL() {
 		return classLoader.getResource(path);
 	}
@@ -112,7 +112,7 @@ public class EmbeddedResource extends Resource {
 	}
 
 	@Override
-	public Resource addPath(String path) throws IOException, MalformedURLException {
+	public Resource addPath(String path) throws IOException {
 		return new EmbeddedResource(classLoader, this.path + path, classPath);
 	}
 

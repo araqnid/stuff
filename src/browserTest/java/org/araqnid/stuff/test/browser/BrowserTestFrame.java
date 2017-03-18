@@ -5,11 +5,17 @@ import java.net.URL;
 import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import org.araqnid.stuff.config.StandaloneAppConfig;
+import com.google.common.base.Splitter;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.Module;
+import com.google.inject.Provides;
+import com.google.inject.util.Modules;
+import org.araqnid.stuff.config.AppModule;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
@@ -19,14 +25,6 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
-
-import com.google.common.base.Splitter;
-import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.Module;
-import com.google.inject.Provides;
-import com.google.inject.util.Modules;
 
 public class BrowserTestFrame {
 	private final String ourHostName;
@@ -90,7 +88,7 @@ public class BrowserTestFrame {
 	}
 
 	public void setUp() throws Exception {
-		Module module = Modules.override(new StandaloneAppConfig()).with(new AbstractModule() {
+		Module module = Modules.override(new AppModule()).with(new AbstractModule() {
 			@Override
 			protected void configure() {
 			}

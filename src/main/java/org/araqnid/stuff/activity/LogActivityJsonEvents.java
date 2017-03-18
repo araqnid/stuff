@@ -4,12 +4,8 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
-
+import javax.annotation.Nullable;
 import javax.inject.Inject;
-
-import org.araqnid.stuff.config.ServerIdentity;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -20,6 +16,9 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import org.araqnid.stuff.config.ServerIdentity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LogActivityJsonEvents implements ActivityEventSink {
 	private static final Logger LOG = LoggerFactory.getLogger(LogActivityJsonEvents.class);
@@ -40,7 +39,7 @@ public class LogActivityJsonEvents implements ActivityEventSink {
 			long nodeParentId,
 			String type,
 			Instant started,
-			Object attributes) {
+			@Nullable Object attributes) {
 		ActivityNodeStartEvent event = new ActivityNodeStartEvent(instanceId, activityId, nodeId, nodeParentId, type,
 				started, attributes);
 		try {
@@ -52,7 +51,7 @@ public class LogActivityJsonEvents implements ActivityEventSink {
 	}
 
 	@Override
-	public void activityNodeEnd(UUID activityId, long nodeId, boolean success, Duration duration, Object attributes) {
+	public void activityNodeEnd(UUID activityId, long nodeId, boolean success, Duration duration, @Nullable Object attributes) {
 		ActivityNodeEndEvent event = new ActivityNodeEndEvent(instanceId, activityId, nodeId, success, duration,
 				attributes);
 		try {
@@ -86,7 +85,7 @@ public class LogActivityJsonEvents implements ActivityEventSink {
 				long nodeParentId,
 				String type,
 				Instant started,
-				Object attributes) {
+				@Nullable Object attributes) {
 			this.instanceId = instanceId;
 			this.activityId = activityId;
 			this.nodeId = nodeId;
@@ -111,7 +110,7 @@ public class LogActivityJsonEvents implements ActivityEventSink {
 				long nodeId,
 				boolean success,
 				Duration duration,
-				Object attributes) {
+				@Nullable Object attributes) {
 			this.instanceId = instanceId;
 			this.activityId = activityId;
 			this.nodeId = nodeId;

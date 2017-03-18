@@ -4,7 +4,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.regex.Pattern;
-
 import javax.inject.Inject;
 import javax.servlet.ServletContext;
 import javax.ws.rs.GET;
@@ -12,9 +11,17 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 
+import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
+import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Multimap;
+import com.google.inject.AbstractModule;
+import com.google.inject.Module;
+import com.google.inject.Provides;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.araqnid.stuff.config.ResteasyModule.JacksonContextResolver;
-import org.araqnid.stuff.resteasy.ResteasyJackson2Provider;
+import org.araqnid.stuff.config.ResteasyModule;
 import org.hamcrest.Description;
 import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
@@ -26,14 +33,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
-
-import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.Multimap;
-import com.google.inject.AbstractModule;
-import com.google.inject.Module;
 
 import static org.araqnid.stuff.JsonStructureMatchers.jsonArray;
 import static org.araqnid.stuff.JsonStructureMatchers.jsonNull;
@@ -78,8 +77,11 @@ public class JsonMarshallingTest extends IntegrationTest {
 							@Override
 							protected void configure() {
 								bind(TestResource.class);
-								bind(JacksonContextResolver.class);
-								bind(ResteasyJackson2Provider.class);
+							}
+
+							@Provides
+							public JacksonJsonProvider jacksonJson() {
+								return new JacksonJsonProvider(ResteasyModule.JSON_OBJECT_MAPPER);
 							}
 						});
 					}

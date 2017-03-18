@@ -1,7 +1,9 @@
 package org.araqnid.stuff.activity;
 
+import javax.annotation.Nullable;
+
 public interface Completable {
-	void complete(boolean success, Object completionAttributes);
+	void complete(boolean success, @Nullable Object completionAttributes);
 
 	default void complete(boolean success) {
 		complete(success, null);

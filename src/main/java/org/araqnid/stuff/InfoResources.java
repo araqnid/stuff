@@ -1,8 +1,5 @@
 package org.araqnid.stuff;
 
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toSet;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -12,88 +9,45 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
 import javax.inject.Inject;
-import javax.inject.Singleton;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.Suspended;
 
-import org.araqnid.stuff.activity.ActivityNode;
-import org.araqnid.stuff.activity.ActivityScope;
-import org.araqnid.stuff.activity.ThreadActivity;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+import com.google.common.io.Resources;
 import org.jboss.resteasy.core.ResourceInvoker;
 import org.jboss.resteasy.core.ResourceMethodInvoker;
 import org.jboss.resteasy.core.ResourceMethodRegistry;
 import org.jboss.resteasy.spi.Registry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Splitter;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Ordering;
-import com.google.common.collect.Sets;
-import com.google.common.io.Resources;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toSet;
 
 @Path("_api/info")
 public class InfoResources {
-	private static final Logger LOG = LoggerFactory.getLogger(InfoResources.class);
-
-	@Singleton
-	public static final class Scheduler {
-		private final ScheduledExecutorService underlying = Executors.newScheduledThreadPool(1,
-				new ThreadFactoryBuilder().setDaemon(true).build());
-
-		public CompletableFuture<?> schedule(Runnable runnable, long delay, TimeUnit units) {
-			CompletableFuture<?> future = new CompletableFuture<Void>();
-			ActivityNode node = ThreadActivity.get();
-			underlying.schedule(() -> {
-				try (ThreadActivity.Scoper s = ThreadActivity.reattach(node)) {
-					runnable.run();
-					future.complete(null);
-				} catch (Throwable t) {
-					future.completeExceptionally(t);
-				}
-			}, delay, units);
-			return future;
-		}
-	}
-
 	private final AppVersion appVersion;
-	private final AppStateMonitor appStateMonitor;
 	private final Registry registry;
-	private final ActivityScope activityScope;
-	private final Scheduler scheduler;
 
 	@Inject
 	public InfoResources(AppVersion appVersion,
-			AppStateMonitor appStateMonitor,
-			Registry registry,
-			ActivityScope activityScope,
-			Scheduler scheduler) {
+						 Registry registry) {
 		this.appVersion = appVersion;
-		this.appStateMonitor = appStateMonitor;
 		this.registry = registry;
-		this.activityScope = activityScope;
-		this.scheduler = scheduler;
 	}
 
 	@GET
@@ -108,48 +62,6 @@ public class InfoResources {
 	@Produces("text/plain")
 	public String getPlainVersion() {
 		return appVersion.version;
-	}
-
-	@GET
-	@Path("async-support")
-	@Produces("text/plain")
-	public void getAsyncSupport(@Suspended AsyncResponse async) {
-		async.setTimeout(1, TimeUnit.MINUTES);
-		ActivityNode activityNode = activityScope.current().begin("AsyncTest");
-		scheduler.schedule(() -> {
-			LOG.info("mark complete");
-			activityNode.complete(true);
-		}, 500, TimeUnit.MILLISECONDS).thenRun(() -> {
-			LOG.info("resuming request");
-			async.resume("ok");
-		});
-	}
-
-	@GET
-	@Path("state")
-	@Produces({ "application/json", "text/plain" })
-	public AppState getAppState() {
-		return appStateMonitor.getState();
-	}
-
-	public static class InvokerDetail {
-		public final String method;
-		public final String resourceClass;
-		public final Set<String> httpMethods;
-		public final Set<String> consumes;
-		public final Set<String> produces;
-
-		public InvokerDetail(String method,
-				String resourceClass,
-				Set<String> httpMethods,
-				Set<String> consumes,
-				Set<String> produces) {
-			this.method = method;
-			this.resourceClass = resourceClass;
-			this.httpMethods = ImmutableSet.copyOf(httpMethods);
-			this.consumes = ImmutableSet.copyOf(consumes);
-			this.produces = ImmutableSet.copyOf(produces);
-		}
 	}
 
 	@GET
@@ -174,8 +86,7 @@ public class InfoResources {
 									.collect(toSet()));
 				}
 				else {
-					invokerInfo = new InvokerDetail(method.getName(), method.getDeclaringClass().getName(), null, null,
-							null);
+					invokerInfo = new InvokerDetail(method.getName(), method.getDeclaringClass().getName(), ImmutableSet.of(), ImmutableSet.of(), ImmutableSet.of());
 				}
 				output.put(e.getKey(), invokerInfo);
 			}
@@ -219,28 +130,23 @@ public class InfoResources {
 	}
 
 	private static abstract class RoutingTree<T extends RoutingTree<T>> {
-		protected final T parent;
-		protected final Map<String, T> segmentMatches = new TreeMap<>();
-		protected final Set<InvokerDetail> methodInvokers = Sets.newHashSet();
+		final T parent;
+		final Map<String, T> segmentMatches = new TreeMap<>();
+		final Set<InvokerDetail> methodInvokers = Sets.newHashSet();
 
-		public RoutingTree() {
+		RoutingTree() {
 			this.parent = null;
 		}
 
-		protected RoutingTree(T parent) {
+		RoutingTree(T parent) {
 			this.parent = parent;
 		}
 
-		public T matchSegment(String segment) {
-			T next = segmentMatches.get(segment);
-			if (next == null) {
-				next = createChild();
-				segmentMatches.put(segment, next);
-			}
-			return next;
+		T matchSegment(String segment) {
+			return segmentMatches.computeIfAbsent(segment, k -> createChild());
 		}
 
-		public void addInvoker(InvokerDetail invoker) {
+		void addInvoker(InvokerDetail invoker) {
 			methodInvokers.add(invoker);
 		}
 
@@ -248,7 +154,7 @@ public class InfoResources {
 	}
 
 	private static class TextDumpNode extends RoutingTree<TextDumpNode> {
-		public TextDumpNode() {
+		TextDumpNode() {
 			super();
 		}
 
@@ -261,7 +167,7 @@ public class InfoResources {
 			return new TextDumpNode(this);
 		}
 
-		public void dump(PrintWriter pw) {
+		void dump(PrintWriter pw) {
 			if (!methodInvokers.isEmpty()) {
 				dumpHandlers(pw);
 				pw.println("");
@@ -283,8 +189,8 @@ public class InfoResources {
 			if (methodInvokers.isEmpty()) return;
 			String handlers = methodInvokers
 					.stream()
-					.sorted(invokerOrdering)
-					.<MethodInvokerPair> flatMap(
+					.sorted(INVOKER_ORDERING)
+					.flatMap(
 							invoker -> invoker.httpMethods.stream()
 									.map(method -> MethodInvokerPair.of(method, invoker)))
 					.map(pair -> pair.method + ":" + pair.invoker.resourceClass + "." + pair.invoker.method)
@@ -305,7 +211,7 @@ public class InfoResources {
 	}
 
 	private static class HtmlDumpNode extends RoutingTree<HtmlDumpNode> {
-		public HtmlDumpNode() {
+		HtmlDumpNode() {
 			super();
 		}
 
@@ -318,7 +224,7 @@ public class InfoResources {
 			return new HtmlDumpNode(this);
 		}
 
-		public void dump(PrintWriter pw) {
+		void dump(PrintWriter pw) {
 			dumpHandlers(pw);
 			dumpSegments(pw);
 		}
@@ -341,7 +247,7 @@ public class InfoResources {
 			if (methodInvokers.isEmpty()) return;
 			pw.println("<ul class='handlers'>");
 			List<InvokerDetail> sortedInvokers = new ArrayList<>(methodInvokers);
-			Collections.sort(sortedInvokers, invokerOrdering);
+			sortedInvokers.sort(INVOKER_ORDERING);
 			for (InvokerDetail invoker : sortedInvokers) {
 				for (String httpMethod : invoker.httpMethods) {
 					pw.print("<li>");
@@ -384,13 +290,31 @@ public class InfoResources {
 		}
 	}
 
-	private static final Ordering<InvokerDetail> invokerOrdering = Ordering.compound(ImmutableList.of(
-			(left, right) -> left.resourceClass.compareTo(right.resourceClass),
-			(left, right) -> left.method.compareTo(right.method)));
+	static class InvokerDetail {
+		@JsonProperty final String method;
+		@JsonProperty final String resourceClass;
+		@JsonProperty final Set<String> httpMethods;
+		@JsonProperty final Set<String> consumes;
+		@JsonProperty final Set<String> produces;
+
+		InvokerDetail(String method,
+					  String resourceClass,
+					  Set<String> httpMethods,
+					  Set<String> consumes,
+					  Set<String> produces) {
+			this.method = method;
+			this.resourceClass = resourceClass;
+			this.httpMethods = ImmutableSet.copyOf(httpMethods);
+			this.consumes = ImmutableSet.copyOf(consumes);
+			this.produces = ImmutableSet.copyOf(produces);
+		}
+	}
+
+	private static final Comparator<InvokerDetail> INVOKER_ORDERING = comparing((InvokerDetail id) -> id.resourceClass).thenComparing(id -> id.method);
 
 	private static class MethodInvokerPair {
-		public final String method;
-		public final InvokerDetail invoker;
+		final String method;
+		final InvokerDetail invoker;
 
 		private MethodInvokerPair(String method, InvokerDetail invoker) {
 			this.method = method;

@@ -3,14 +3,13 @@ package org.araqnid.stuff.activity;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
-
+import javax.annotation.Nullable;
 import javax.inject.Inject;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LogActivityEvents implements ActivityEventSink {
 	private static final Logger LOG = LoggerFactory.getLogger(LogActivityEvents.class);
@@ -27,16 +26,16 @@ public class LogActivityEvents implements ActivityEventSink {
 			long nodeParentId,
 			String type,
 			Instant started,
-			Object attributes) {
+			@Nullable Object attributes) {
 		LOG.info("start {} {} {} {} {} {}", activityId, nodeId, nodeParentId, type, started, toJson(attributes));
 	}
 
 	@Override
-	public void activityNodeEnd(UUID activityId, long nodeId, boolean success, Duration duration, Object attributes) {
+	public void activityNodeEnd(UUID activityId, long nodeId, boolean success, Duration duration, @Nullable Object attributes) {
 		LOG.info("end   {} {} {} {} {}", activityId, nodeId, success ? "OK" : "BAD", duration, toJson(attributes));
 	}
 
-	private String toJson(Object attributes) {
+	private String toJson(@Nullable Object attributes) {
 		try {
 			return mapper.writeValueAsString(attributes);
 		} catch (JsonProcessingException e) {

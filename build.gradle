@@ -64,19 +64,12 @@ dependencies {
     compile 'org.slf4j:slf4j-api:1.7.22'
     compile 'org.eclipse.jetty:jetty-server:' + jettyVersion
     compile 'org.eclipse.jetty:jetty-servlet:' + jettyVersion
-    compile 'org.eclipse.jetty:apache-jsp:' + jettyVersion
-    compile 'org.eclipse.jetty:apache-jstl:' + jettyVersion
     compile 'org.eclipse.jetty.http2:http2-server:' + jettyVersion
-    compile 'com.surftools:BeanstalkClient:1.4.6'
-    compile 'redis.clients:jedis:2.9.0'
     compile 'com.google.code.findbugs:jsr305:3.0.0'
-    compile 'org.hibernate:hibernate-core:' + hibernateVersion
-    compile 'org.hibernate:hibernate-entitymanager:' + hibernateVersion
     compile 'org.jboss.resteasy:resteasy-jaxrs:' + resteasyVersion
     compile 'org.jboss.resteasy:resteasy-guice:' + resteasyVersion
     compile 'com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:' + jacksonVersion
     compile 'com.fasterxml.jackson.jaxrs:jackson-jaxrs-xml-provider:' + jacksonVersion
-    compile 'com.fasterxml.jackson.module:jackson-module-guice:' + jacksonVersion
     compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-smile:' + jacksonVersion
     compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-csv:' + jacksonVersion
     compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:' + jacksonVersion
@@ -88,15 +81,14 @@ dependencies {
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-json-org:' + jacksonVersion
     compile 'com.fasterxml.jackson.module:jackson-module-afterburner:' + jacksonVersion
     compile 'com.fasterxml.jackson.module:jackson-module-mrbean:' + jacksonVersion
-    compile 'org.elasticsearch:elasticsearch:2.0.0'
     compile 'org.json:json:20141113'
     compile 'com.fasterxml.woodstox:woodstox-core:5.0.1'
-    compile 'com.lexicalscope.eventcast:eventcast:1.0.2'
-    compile 'org.postgresql:postgresql:9.4.1212'
     compile 'org.slf4j:jcl-over-slf4j:1.7.22'
     compile 'commons-codec:commons-codec:1.10'
     compile 'commons-io:commons-io:2.4'
     compile 'xml-apis:xml-apis:1.4.01'
+    compile 'org.threeten:threeten-extra:0.9'
+    compile 'xom:xom:1.2.5'
     runtime 'ch.qos.logback:logback-classic:1.2.2'
     runtime 'net.java.dev.jna:jna:4.2.1'
     testCompile 'junit:junit:4.12'
@@ -104,8 +96,6 @@ dependencies {
     testCompile 'org.hamcrest:hamcrest-integration:1.3'
     testCompile 'org.mockito:mockito-core:1.10.19'
     testCompile 'joda-time:joda-time:2.9.7'
-    testCompile 'org.threeten:threeten-extra:0.9'
-    testCompile 'xom:xom:1.2.5'
     browserTestCompile ('org.seleniumhq.selenium:selenium-java:2.53.1') {
         exclude module: 'httpclient'
     }

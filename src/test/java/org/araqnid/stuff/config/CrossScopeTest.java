@@ -1,19 +1,13 @@
 package org.araqnid.stuff.config;
 
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.Map;
-
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
-import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -25,7 +19,10 @@ import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Scope;
 import com.google.inject.Stage;
-import com.google.inject.util.Providers;
+import org.junit.Test;
+
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 
 public class CrossScopeTest {
 	private Map<Key<?>, Object> scopedThings;
@@ -36,21 +33,17 @@ public class CrossScopeTest {
 				@SuppressWarnings("restriction")
 				@Override
 				public <T> com.google.inject.Provider<T> scope(final Key<T> key, final com.google.inject.Provider<T> unscoped) {
-					return Providers.guicify(new Provider<T>() {
-						@Override
-						public T get() {
-							if (scopedThings == null) throw new IllegalStateException("Scope not entered yet");
-							if (!scopedThings.containsKey(key)) {
-								scopedThings.put(key, unscoped.get());
-							}
-							@SuppressWarnings("unchecked")
-							T thing = (T) scopedThings.get(key);
-							return thing;
+					return () -> {
+						if (scopedThings == null) throw new IllegalStateException("Scope not entered yet");
+						if (!scopedThings.containsKey(key)) {
+							scopedThings.put(key, unscoped.get());
 						}
-					});
+						@SuppressWarnings("unchecked")
+						T thing = (T) scopedThings.get(key);
+						return thing;
+					};
 				}
 			});
-			bind(SomeScopedThing.class);
 		}
 	};
 
@@ -58,7 +51,7 @@ public class CrossScopeTest {
 	public void scoped_object_returned_from_map() {
 		Injector injector = Guice.createInjector(testScopeModule);
 		SomeScopedThing instance1 = new SomeScopedThing();
-		scopedThings = ImmutableMap.<Key<?>, Object> of(Key.get(SomeScopedThing.class), instance1);
+		scopedThings = ImmutableMap.of(Key.get(SomeScopedThing.class), instance1);
 		SomeScopedThing instance2 = injector.getInstance(SomeScopedThing.class);
 		assertSame(instance1, instance2);
 	}
@@ -137,6 +130,7 @@ public class CrossScopeTest {
 		});
 	}
 
+	@SuppressWarnings("WeakerAccess")
 	@javax.inject.Scope
 	@Target({ ElementType.TYPE, ElementType.METHOD })
 	@Retention(RetentionPolicy.RUNTIME)
@@ -144,7 +138,7 @@ public class CrossScopeTest {
 	}
 
 	@TestScope
-	public static class SomeScopedThing {
+	static class SomeScopedThing {
 	}
 
 	public interface SingletonThing {

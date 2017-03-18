@@ -1,5 +1,19 @@
 package org.araqnid.stuff.test.integration;
 
+import java.io.IOException;
+
+import com.google.common.collect.ImmutableMultimap;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.util.EntityUtils;
+import org.araqnid.stuff.test.integration.HttpClientMatchers.HttpContentMatcher;
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.hamcrest.TypeSafeDiagnosingMatcher;
+import org.junit.Ignore;
+import org.junit.Test;
+
 import static org.araqnid.stuff.JsonStructureMatchers.jsonAny;
 import static org.araqnid.stuff.JsonStructureMatchers.jsonObject;
 import static org.araqnid.stuff.JsonStructureMatchers.jsonString;
@@ -16,30 +30,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.anyString;
 
-import java.io.IOException;
-
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.util.EntityUtils;
-import org.araqnid.stuff.test.integration.HttpClientMatchers.HttpContentMatcher;
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
-import org.hamcrest.TypeSafeDiagnosingMatcher;
-import org.junit.Ignore;
-import org.junit.Test;
-
-import com.google.common.collect.ImmutableMultimap;
-
 public class InfoResourcesIntegrationTest extends IntegrationTest {
-	@Test
-	@Ignore
-	public void version_resource_default_is_json() throws Exception {
-		try (CloseableHttpResponse response = doGet("/_api/info/version")) {
-			assertThat(response, is(allOf(ok(), responseWithJsonContent(jsonAny()))));
-		}
-	}
-
 	@Test
 	public void version_resource_as_json() throws Exception {
 		try (CloseableHttpResponse response = doGetWithHeaders("/_api/info/version",
@@ -81,37 +72,6 @@ public class InfoResourcesIntegrationTest extends IntegrationTest {
 	public void health_resource() throws Exception {
 		try (CloseableHttpResponse response = doGet("/_api/info/health")) {
 			assertThat(response, is(allOf(ok(), responseWithJsonContent(jsonString(any(String.class))))));
-		}
-	}
-
-	@Test
-	public void state_resource_default_is_json() throws Exception {
-		try (CloseableHttpResponse response = doGet("/_api/info/state")) {
-			assertThat(response, is(allOf(ok(), responseWithJsonContent(jsonAny()))));
-		}
-	}
-
-	@Test
-	public void state_resource_as_json() throws Exception {
-		try (CloseableHttpResponse response = doGetWithHeaders("/_api/info/state",
-				ImmutableMultimap.of("Accept", "application/json"))) {
-			assertThat(response, is(allOf(ok(), responseWithJsonContent(jsonString(any(String.class))))));
-		}
-	}
-
-	@Test
-	public void state_resource_as_plain_text() throws Exception {
-		try (CloseableHttpResponse response = doGetWithHeaders("/_api/info/state",
-				ImmutableMultimap.of("Accept", "text/plain"))) {
-			assertThat(response, is(allOf(ok(), responseWithTextContent(any(String.class)))));
-		}
-	}
-
-	@Test
-	@Ignore
-	public void routing_resource_default_is_json() throws Exception {
-		try (CloseableHttpResponse response = doGet("/_api/info/routing")) {
-			assertThat(response, is(allOf(ok(), responseWithJsonContent(jsonAny()))));
 		}
 	}
 

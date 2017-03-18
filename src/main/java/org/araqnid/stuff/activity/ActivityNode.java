@@ -4,7 +4,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-
 import javax.annotation.Nullable;
 
 import com.google.common.base.Stopwatch;
@@ -13,15 +12,14 @@ public class ActivityNode implements Completable {
 	public static final long NO_PARENT = 0L;
 	private static final AtomicLong EVENT_ID_SOURCE = new AtomicLong();
 	public final long id = EVENT_ID_SOURCE.incrementAndGet();
-	@Nullable
-	public final ActivityNode parent;
+	@Nullable public final ActivityNode parent;
 	public final String type;
 	public final Activity activity;
 	public final Instant started = Instant.now();
 	public final Stopwatch stopwatch = Stopwatch.createStarted();
-	public final Object nodeAttributes;
+	@Nullable public final Object nodeAttributes;
 
-	public ActivityNode(Activity activity, ActivityNode parent, String type, Object nodeAttributes) {
+	public ActivityNode(Activity activity, @Nullable ActivityNode parent, String type, @Nullable Object nodeAttributes) {
 		this.activity = activity;
 		this.parent = parent;
 		this.type = type;
@@ -32,7 +30,7 @@ public class ActivityNode implements Completable {
 		return begin(type, null);
 	}
 
-	public ActivityNode begin(String type, Object attributes) {
+	public ActivityNode begin(String type, @Nullable Object attributes) {
 		ActivityNode node = new ActivityNode(activity, this, type, attributes);
 		node.begin();
 		return node;
@@ -42,7 +40,7 @@ public class ActivityNode implements Completable {
 		return recordActivity(type, null);
 	}
 
-	public Completable.Rec<ActivityNode> recordActivity(String type, Object attributes) {
+	public Completable.Rec<ActivityNode> recordActivity(String type, @Nullable Object attributes) {
 		return new Completable.Rec<>(begin(type, attributes));
 	}
 
@@ -53,7 +51,7 @@ public class ActivityNode implements Completable {
 	}
 
 	@Override
-	public void complete(boolean success, Object completionAttributes) {
+	public void complete(boolean success, @Nullable Object completionAttributes) {
 		activity.sink.activityNodeEnd(activity.id, id, success,
 				Duration.ofNanos(stopwatch.elapsed(TimeUnit.NANOSECONDS)), completionAttributes);
 		ThreadActivity.transition(this, parent);

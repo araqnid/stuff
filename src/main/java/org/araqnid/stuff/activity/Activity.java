@@ -1,6 +1,7 @@
 package org.araqnid.stuff.activity;
 
 import java.util.UUID;
+import javax.annotation.Nullable;
 
 public class Activity implements Completable {
 	public final UUID id;
@@ -18,7 +19,7 @@ public class Activity implements Completable {
 	}
 
 	@Override
-	public void complete(boolean success, Object attributes) {
+	public void complete(boolean success, @Nullable Object attributes) {
 		root.complete(success, attributes);
 	}
 

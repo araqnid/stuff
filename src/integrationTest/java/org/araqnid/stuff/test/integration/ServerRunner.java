@@ -6,15 +6,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
 import javax.inject.Singleton;
-
-import org.araqnid.stuff.config.StandaloneAppConfig;
-import org.eclipse.jetty.server.Connector;
-import org.eclipse.jetty.server.Handler;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.util.thread.ThreadPool;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
@@ -26,6 +18,12 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.util.Modules;
+import org.araqnid.stuff.config.AppModule;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.util.thread.ThreadPool;
 
 public class ServerRunner {
 	private static final ExecutorService SHARED_THREADS = Executors.newCachedThreadPool(new ThreadFactoryBuilder()
@@ -83,7 +81,7 @@ public class ServerRunner {
 				return (ServerConnector) server.getConnectors()[0];
 			}
 		};
-		injector = Guice.createInjector(Modules.override(new StandaloneAppConfig()).with(
+		injector = Guice.createInjector(Modules.override(new AppModule()).with(
 				Iterables.<Module> concat(ImmutableSet.of(jettyConfig), additionalConfig)));
 		server = injector.getInstance(Server.class);
 		server.start();

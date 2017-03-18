@@ -1,12 +1,10 @@
 package org.araqnid.stuff.activity;
 
 import java.util.Optional;
-
 import javax.annotation.Nullable;
 
-import org.slf4j.MDC;
-
 import com.google.common.base.Preconditions;
+import org.slf4j.MDC;
 
 public final class ThreadActivity {
 	private static final ThreadLocal<ActivityNode> STATE = new ThreadLocal<>();
@@ -43,7 +41,7 @@ public final class ThreadActivity {
 		return current().orElseThrow(() -> new IllegalStateException("No activity attached to this thread"));
 	}
 
-	public static void transition(ActivityNode from, @Nullable ActivityNode to) {
+	public static void transition(@Nullable ActivityNode from, @Nullable ActivityNode to) {
 		if (to == null)
 			detach(from);
 		else if (STATE.get() == from) STATE.set(to);
