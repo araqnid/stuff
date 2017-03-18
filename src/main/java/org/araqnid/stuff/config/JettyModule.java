@@ -24,6 +24,7 @@ import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.Slf4jRequestLog;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.server.session.DefaultSessionIdManager;
 import org.eclipse.jetty.servlet.DefaultServlet;
@@ -102,6 +103,7 @@ public final class JettyModule extends AbstractModule {
 		server.setSessionIdManager(new DefaultSessionIdManager(server));
 		server.setHandler(handler);
 		server.getBean(QueuedThreadPool.class).setName("Jetty");
+		server.setRequestLog(new Slf4jRequestLog());
 		return server;
 	}
 
