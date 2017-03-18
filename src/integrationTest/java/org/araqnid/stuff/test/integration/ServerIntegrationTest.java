@@ -3,13 +3,12 @@ package org.araqnid.stuff.test.integration;
 import java.util.Iterator;
 import java.util.regex.Pattern;
 
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.Test;
-
-import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
 
 import static org.araqnid.stuff.test.integration.HttpClientMatchers.headerWithValue;
 import static org.araqnid.stuff.test.integration.HttpClientMatchers.responseWithHeader;
@@ -19,7 +18,7 @@ import static org.hamcrest.Matchers.any;
 public class ServerIntegrationTest extends IntegrationTest {
 	@Test
 	public void server_identity_in_http_response() throws Exception {
-		assertThat(doGet("/"),
+		assertThat(server.doGet("/"),
 				responseWithHeader("X-Server-Identity", headerWithValue(twoParts(any(String.class), likeAUUID()))));
 	}
 

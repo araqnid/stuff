@@ -33,8 +33,7 @@ import static org.mockito.Matchers.anyString;
 public class InfoResourcesIntegrationTest extends IntegrationTest {
 	@Test
 	public void version_resource_as_json() throws Exception {
-		try (CloseableHttpResponse response = doGetWithHeaders("/_api/info/version",
-				ImmutableMultimap.of("Accept", "application/json"))) {
+		try (CloseableHttpResponse response = server.doGetWithHeaders("/_api/info/version", ImmutableMultimap.of("Accept", "application/json"))) {
 			assertThat(
 					response,
 					is(allOf(
@@ -46,8 +45,7 @@ public class InfoResourcesIntegrationTest extends IntegrationTest {
 
 	@Test
 	public void version_resource_as_xml() throws Exception {
-		try (CloseableHttpResponse response = doGetWithHeaders("/_api/info/version",
-				ImmutableMultimap.of("Accept", "application/xml"))) {
+		try (CloseableHttpResponse response = server.doGetWithHeaders("/_api/info/version", ImmutableMultimap.of("Accept", "application/xml"))) {
 			assertThat(
 					response,
 					is(allOf(
@@ -60,8 +58,7 @@ public class InfoResourcesIntegrationTest extends IntegrationTest {
 
 	@Test
 	public void version_resource_as_plain_text() throws Exception {
-		try (CloseableHttpResponse response = doGetWithHeaders("/_api/info/version",
-				ImmutableMultimap.of("Accept", "text/plain"))) {
+		try (CloseableHttpResponse response = server.doGetWithHeaders("/_api/info/version", ImmutableMultimap.of("Accept", "text/plain"))) {
 			assertThat(response,
 					is(allOf(ok(), either(responseWithTextContent(any(String.class))).or(responseWithNullEntity()))));
 		}
@@ -70,31 +67,28 @@ public class InfoResourcesIntegrationTest extends IntegrationTest {
 	@Test
 	@Ignore
 	public void health_resource() throws Exception {
-		try (CloseableHttpResponse response = doGet("/_api/info/health")) {
+		try (CloseableHttpResponse response = server.doGet("/_api/info/health")) {
 			assertThat(response, is(allOf(ok(), responseWithJsonContent(jsonString(any(String.class))))));
 		}
 	}
 
 	@Test
 	public void routing_resource_as_json() throws Exception {
-		try (CloseableHttpResponse response = doGetWithHeaders("/_api/info/routing",
-				ImmutableMultimap.of("Accept", "application/json"))) {
+		try (CloseableHttpResponse response = server.doGetWithHeaders("/_api/info/routing", ImmutableMultimap.of("Accept", "application/json"))) {
 			assertThat(response, is(allOf(ok(), responseWithJsonContent(jsonAny()))));
 		}
 	}
 
 	@Test
 	public void routing_resource_as_plain_text() throws Exception {
-		try (CloseableHttpResponse response = doGetWithHeaders("/_api/info/routing",
-				ImmutableMultimap.of("Accept", "text/plain"))) {
+		try (CloseableHttpResponse response = server.doGetWithHeaders("/_api/info/routing", ImmutableMultimap.of("Accept", "text/plain"))) {
 			assertThat(response, is(allOf(ok(), responseWithTextContent(any(String.class)))));
 		}
 	}
 
 	@Test
 	public void routing_resource_as_html() throws Exception {
-		try (CloseableHttpResponse response = doGetWithHeaders("/_api/info/routing",
-				ImmutableMultimap.of("Accept", "text/html"))) {
+		try (CloseableHttpResponse response = server.doGetWithHeaders("/_api/info/routing", ImmutableMultimap.of("Accept", "text/html"))) {
 			assertThat(response, is(allOf(ok(), responseWithHtmlContent(any(String.class)))));
 		}
 	}

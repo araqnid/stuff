@@ -92,39 +92,39 @@ public class JsonMarshallingTest extends IntegrationTest {
 
 	@Test
 	public void jdk_instant_is_marshalled_as_a_nice_string() throws Exception {
-		assertThat(doGet("/_api/test/jdk/instant"), is(both(ok()).and(responseWithJsonContent(
+		assertThat(server.doGet("/_api/test/jdk/instant"), is(both(ok()).and(responseWithJsonContent(
 				jsonString(like("2015-04-03T13:\\d\\d:\\d\\d(\\.\\d\\d\\d(\\d\\d\\d(\\d\\d\\d)?)?)?Z"))))));
 	}
 
 	@Test
 	public void jdk_localdate_is_marshalled_as_a_nice_string() throws Exception {
-		assertThat(doGet("/_api/test/jdk/localdate"),
+		assertThat(server.doGet("/_api/test/jdk/localdate"),
 				is(both(ok()).and(responseWithJsonContent(jsonString(like("\\d\\d\\d\\d-\\d\\d-\\d\\d"))))));
 	}
 
 	@Test
 	public void jdk_localtime_is_marshalled_as_a_nice_string() throws Exception {
-		assertThat(doGet("/_api/test/jdk/localtime"), is(both(ok()).and(responseWithJsonContent(
+		assertThat(server.doGet("/_api/test/jdk/localtime"), is(both(ok()).and(responseWithJsonContent(
 				jsonString(like("\\d\\d:\\d\\d(:\\d\\d(\\.\\d\\d\\d(\\d\\d\\d(\\d\\d\\d)?)?)?)?"))))));
 	}
 
 	@Test
 	public void jdk_localdatetime_is_marshalled_as_a_nice_string() throws Exception {
-		assertThat(doGet("/_api/test/jdk/localdatetime"), is(both(ok()).and(responseWithJsonContent(jsonString(like(
+		assertThat(server.doGet("/_api/test/jdk/localdatetime"), is(both(ok()).and(responseWithJsonContent(jsonString(like(
 				"2015-04-03T13:\\d\\d(:\\d\\d(\\.\\d\\d\\d(\\d\\d\\d(\\d\\d\\d(\\d\\d\\d(\\d\\d\\d)?)?)?)?)?)?"))))));
 	}
 
 	@Test
 	public void present_optional_is_marshalled_directly() throws Exception {
 		String value = randomString();
-		try (CloseableHttpResponse response = doGet("/_api/test/guava/optional/present/" + value)) {
+		try (CloseableHttpResponse response = server.doGet("/_api/test/guava/optional/present/" + value)) {
 			assertThat(response, is(both(ok()).and(responseWithJsonContent(jsonString(value)))));
 		}
 	}
 
 	@Test
 	public void absent_optional_is_marshalled_as_null() throws Exception {
-		try (CloseableHttpResponse response = doGet("/_api/test/guava/optional/absent")) {
+		try (CloseableHttpResponse response = server.doGet("/_api/test/guava/optional/absent")) {
 			assertThat(response, is(both(ok()).and(responseWithJsonContent(jsonNull()))));
 		}
 	}
@@ -132,7 +132,7 @@ public class JsonMarshallingTest extends IntegrationTest {
 	@Test
 	public void present_optional_property_is_marshalled_directly() throws Exception {
 		String value = randomString();
-		try (CloseableHttpResponse response = doGet("/_api/test/guava/object-with-optional/present/" + value)) {
+		try (CloseableHttpResponse response = server.doGet("/_api/test/guava/object-with-optional/present/" + value)) {
 			assertThat(response,
 					is(both(ok()).and(responseWithJsonContent(jsonObject().withProperty("value", jsonString(value))))));
 		}
@@ -140,7 +140,7 @@ public class JsonMarshallingTest extends IntegrationTest {
 
 	@Test
 	public void absent_optional_property_is_marshalled_as_null() throws Exception {
-		try (CloseableHttpResponse response = doGet("/_api/test/guava/object-with-optional/absent")) {
+		try (CloseableHttpResponse response = server.doGet("/_api/test/guava/object-with-optional/absent")) {
 			assertThat(response,
 					is(both(ok()).and(responseWithJsonContent(jsonObject().withProperty("value", jsonNull())))));
 		}
@@ -152,13 +152,11 @@ public class JsonMarshallingTest extends IntegrationTest {
 		String key2 = randomString();
 		String value1 = randomString();
 		String value2 = randomString();
-		try (CloseableHttpResponse response = doGet(
-				"/_api/test/guava/multimap/" + Joiner.on('/').join(key1, value1, value2))) {
+		try (CloseableHttpResponse response = server.doGet("/_api/test/guava/multimap/" + Joiner.on('/').join(key1, value1, value2))) {
 			assertThat(response, is(both(ok()).and(responseWithJsonContent(
 					jsonObject().withProperty(key1, jsonArray().of(jsonString(value1), jsonString(value2)))))));
 		}
-		try (CloseableHttpResponse response = doGet(
-				"/_api/test/guava/multimap/" + Joiner.on('/').join(key1, value1, key2, value2))) {
+		try (CloseableHttpResponse response = server.doGet("/_api/test/guava/multimap/" + Joiner.on('/').join(key1, value1, key2, value2))) {
 			assertThat(response,
 					is(both(ok()).and(
 							responseWithJsonContent(jsonObject().withProperty(key1, jsonArray().of(jsonString(value1)))
