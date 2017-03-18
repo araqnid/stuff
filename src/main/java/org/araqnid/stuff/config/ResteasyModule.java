@@ -1,5 +1,11 @@
 package org.araqnid.stuff.config;
 
+import java.lang.reflect.Method;
+import java.util.Set;
+import java.util.function.Function;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -13,13 +19,20 @@ import com.fasterxml.jackson.jaxrs.xml.JacksonXMLProvider;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.reflect.AbstractInvocationHandler;
+import com.google.common.reflect.Reflection;
 import com.google.inject.AbstractModule;
+import com.google.inject.Key;
 import com.google.inject.Provides;
+import com.google.inject.spi.Dependency;
+import com.google.inject.spi.ProviderWithDependencies;
 import org.araqnid.stuff.HelloResource;
 import org.araqnid.stuff.InfoResources;
 import org.araqnid.stuff.MerlotResources;
 import org.jboss.resteasy.core.Dispatcher;
-import org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher;
+import org.jboss.resteasy.plugins.server.servlet.FilterDispatcher;
+import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
 import org.jboss.resteasy.spi.Registry;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 
@@ -59,6 +72,8 @@ public final class ResteasyModule extends AbstractModule {
 		bind(HelloResource.class);
 		bind(InfoResources.class);
 		bind(MerlotResources.class);
+
+		install(new GenericProviders(FilterDispatcher.class));
 	}
 
 	@Provides
@@ -71,38 +86,80 @@ public final class ResteasyModule extends AbstractModule {
 		return new JacksonXMLProvider(XML_OBJECT_MAPPER);
 	}
 
-	@Provides
-	public Dispatcher dispatcher(HttpServlet30Dispatcher servlet) {
-		return servlet.getDispatcher();
-	}
+	public static class GenericProviders extends AbstractModule {
+		private final Class<?> dispatcherSource;
 
-	@Provides
-	public Registry dispatcher(Dispatcher dispatcher) {
-		return dispatcher.getRegistry();
-	}
+		GenericProviders(Class<?> dispatcherSource) {
+			this.dispatcherSource = dispatcherSource;
+		}
 
-	@Provides
-	public ResteasyProviderFactory providerFactory(Dispatcher dispatcher) {
-		return dispatcher.getProviderFactory();
-	}
+		@Override
+		protected void configure() {
+			if (FilterDispatcher.class.isAssignableFrom(dispatcherSource)) {
+				//noinspection unchecked
+				Key<? extends FilterDispatcher> key = Key.get((Class<FilterDispatcher>) dispatcherSource);
+				bind(Dispatcher.class).toProvider(new DispatcherSource<>(key, FilterDispatcher::getDispatcher)).in(Singleton.class);
+			}
+			else if (HttpServletDispatcher.class.isAssignableFrom(dispatcherSource)) {
+				//noinspection unchecked
+				Key<? extends HttpServletDispatcher> key = Key.get((Class<HttpServletDispatcher>) dispatcherSource);
+				bind(Dispatcher.class).toProvider(new DispatcherSource<>(key, HttpServletDispatcher::getDispatcher)).in(Singleton.class);
+			}
+			else {
+				throw new IllegalStateException("Don't know how to get Dispatcher from " + dispatcherSource);
+			}
 
-	@Provides
-	public javax.ws.rs.core.Request request() {
-		return ResteasyProviderFactory.getContextData(javax.ws.rs.core.Request.class);
-	}
+			bindResteasyContextData(javax.ws.rs.core.Request.class);
+			bindResteasyContextData(javax.ws.rs.core.HttpHeaders.class);
+			bindResteasyContextData(javax.ws.rs.core.UriInfo.class);
+			bindResteasyContextData(javax.ws.rs.core.SecurityContext.class);
+		}
 
-	@Provides
-	public javax.ws.rs.core.HttpHeaders httpHeaders() {
-		return ResteasyProviderFactory.getContextData(javax.ws.rs.core.HttpHeaders.class);
-	}
+		@Provides
+		public Registry dispatcher(Dispatcher dispatcher) {
+			return dispatcher.getRegistry();
+		}
 
-	@Provides
-	public javax.ws.rs.core.UriInfo uriInfo() {
-		return ResteasyProviderFactory.getContextData(javax.ws.rs.core.UriInfo.class);
-	}
+		@Provides
+		public ResteasyProviderFactory providerFactory(Dispatcher dispatcher) {
+			return dispatcher.getProviderFactory();
+		}
 
-	@Provides
-	public javax.ws.rs.core.SecurityContext securityContext() {
-		return ResteasyProviderFactory.getContextData(javax.ws.rs.core.SecurityContext.class);
+		private <T> void bindResteasyContextData(Class<T> clazz) {
+			bind(clazz).toInstance(Reflection.newProxy(clazz, new AbstractInvocationHandler() {
+				@Override
+				protected Object handleInvocation(Object proxy, Method method, Object[] args) throws Throwable {
+					T target = ResteasyProviderFactory.getContextData(clazz);
+					return method.invoke(target, args);
+				}
+
+				@Override
+				public String toString() {
+					return "ResteasyContextData proxy for " + clazz.getName();
+				}
+			}));
+		}
+
+		private class DispatcherSource<T> implements ProviderWithDependencies<Dispatcher> {
+			private final Provider<? extends T> provider;
+			private final Function<? super T, ? extends Dispatcher> extract;
+			private final Set<Dependency<?>> dependencies;
+
+			public DispatcherSource(Key<T> key, Function<? super T, ? extends Dispatcher> extract) {
+				this.provider = binder().getProvider(key);
+				this.dependencies = ImmutableSet.of(Dependency.get(key));
+				this.extract = extract;
+			}
+
+			@Override
+			public Dispatcher get() {
+				return extract.apply(provider.get());
+			}
+
+			@Override
+			public Set<Dependency<?>> getDependencies() {
+				return dependencies;
+			}
+		}
 	}
 }

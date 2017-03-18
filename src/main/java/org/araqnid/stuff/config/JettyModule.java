@@ -34,7 +34,8 @@ import org.eclipse.jetty.util.resource.PathResource;
 import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
-import org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher;
+import org.jboss.resteasy.plugins.server.servlet.Filter30Dispatcher;
+import org.jboss.resteasy.plugins.server.servlet.FilterDispatcher;
 
 public final class JettyModule extends AbstractModule {
 	private final int port;
@@ -56,7 +57,8 @@ public final class JettyModule extends AbstractModule {
 		services.addBinding().to(JettyAppService.class);
 		bind(SessionIdManager.class).to(HashSessionIdManager.class);
 		install(new ServletDispatchModule());
-		bind(HttpServlet30Dispatcher.class).in(Singleton.class);
+		bind(FilterDispatcher.class).to(Filter30Dispatcher.class);
+		bind(Filter30Dispatcher.class).in(Singleton.class);
 	}
 
 	@Provides
