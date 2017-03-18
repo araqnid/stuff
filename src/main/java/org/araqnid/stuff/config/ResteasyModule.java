@@ -26,9 +26,7 @@ import com.google.inject.Key;
 import com.google.inject.Provides;
 import com.google.inject.spi.Dependency;
 import com.google.inject.spi.ProviderWithDependencies;
-import org.araqnid.stuff.HelloResource;
 import org.araqnid.stuff.InfoResources;
-import org.araqnid.stuff.MerlotResources;
 import org.jboss.resteasy.core.Dispatcher;
 import org.jboss.resteasy.plugins.server.servlet.FilterDispatcher;
 import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
@@ -68,9 +66,7 @@ public final class ResteasyModule extends AbstractModule {
 
 	@Override
 	protected void configure() {
-		bind(HelloResource.class);
 		bind(InfoResources.class);
-		bind(MerlotResources.class);
 
 		install(new GenericProviders(FilterDispatcher.class));
 	}
